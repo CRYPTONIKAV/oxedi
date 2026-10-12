@@ -1,0 +1,30 @@
+name: Set up uv
+description: >-
+  Installs uv with its download cache (written only from master). With python-version, creates
+  .venv with that Python and activates it for the following steps.
+inputs:
+  python-version:
+    description: Python of .venv; empty creates no environment
+    required: false
+    default: ""
+  cache-suffix:
+    description: Separates the uv cache of jobs that install different packages
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      with:
+        enable-cache: true
+        cache-suffix: ${{ inputs.cache-suffix }}
+        save-cache: ${{ github.ref == 'refs/heads/master' }}
+    - name: Environment
+      if: inputs.python-version != ''
+      shell: bash
+      env:
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: |
+        uv venv --python "$PYTHON_VERSION" .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+        echo "$PWD/.venv/bin" >> "$GITHUB_PATH"

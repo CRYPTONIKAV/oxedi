@@ -1,0 +1,47 @@
+name: Rust
+
+# Formatting, clippy, rustdoc, the workspace tests, the benches' compilation and the two drift
+# checks (the Python stub and the PyPI README). Called by ci.yml and nightly.yml.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          components: clippy, rustfmt
+          cache-key: lint
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Rustdoc
+        run: make doc
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: test
+      - name: Build
+        run: cargo build --workspace --all-targets --locked
+      - name: Test
+        run: cargo test --workspace --locked
+      - name: Benches compile
+        run: cargo bench --workspace --no-run --locked
+      - name: Stub drift
+        run: |
+          cargo run --locked -p oxedi_py --bin stub_gen
+          git diff --exit-code crates/oxedi_py/python/oxedi/_core.pyi
+      - name: PyPI README drift
+        run: make readme-py-check

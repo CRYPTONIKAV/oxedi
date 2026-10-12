@@ -1,0 +1,36 @@
+name: Docs
+
+# The site in strict mode and every python and sql block of the docs and README (the SQL ones
+# load the DuckDB extension built here). Called by ci.yml and nightly.yml; deploying is docs.yml.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Site and examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: docs
+          workspaces: |
+            . -> target
+            crates/oxedi_duckdb -> crates/oxedi_duckdb/target
+      - uses: ./.github/actions/setup-uv
+        with:
+          cache-suffix: docs
+      - name: Build the DuckDB extension
+        run: |
+          make configure_ci
+          make release
+      - uses: ./.github/actions/docs-venv
+      - name: Site (strict)
+        run: make docs
+      - name: Examples
+        run: make docs-test
