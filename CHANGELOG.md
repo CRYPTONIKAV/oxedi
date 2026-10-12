@@ -10,7 +10,7 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 ## [Unreleased]
 
 ### Added
-- A documentation site at <https://javillegasna.github.io/oxedi/> (versioned, with a Python API
+- A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.
 
 ## [0.5.0] - 2026-10-12

@@ -10,7 +10,7 @@ core is written in Rust and is available from Python and from DuckDB.
 - **Problems are reported, not raised.** Questionable data still parses; each issue is a
   diagnostic that names the rule, the position and the value.
 
-Documentation: **<https://javillegasna.github.io/oxedi/latest/>**
+Documentation: **<https://javillegas.dev/oxedi/latest/>**
 
 ## Install
 
@@ -28,7 +28,7 @@ LOAD oxedi;
 ```
 
 `INSTALL` gives extension 0.1.x, which reads files. Writing with `COPY` needs 0.2.0, which is
-not in the community repository yet. See [DuckDB](https://javillegasna.github.io/oxedi/latest/duckdb/).
+not in the community repository yet. See [DuckDB](https://javillegas.dev/oxedi/latest/duckdb/).
 
 ## Read
 
@@ -84,14 +84,14 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 
 | Page | What is in it |
 |---|---|
-| [Reading](https://javillegasna.github.io/oxedi/latest/reading/) | Tables in depth, large files, diagnostics, the document |
-| [Writing](https://javillegasna.github.io/oxedi/latest/writing/) | The envelope, findings, balancing rules, your own tables |
-| [DuckDB](https://javillegasna.github.io/oxedi/latest/duckdb/) | `read_835` parameters, `COPY` options, limits |
-| [The spec](https://javillegasna.github.io/oxedi/latest/spec/) | Spec versions (5010, 4010) and patches |
-| [Validating with pyx12](https://javillegasna.github.io/oxedi/latest/pyx12/) | What `validate` reports and where |
-| [Recipes](https://javillegasna.github.io/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
-| [API reference](https://javillegasna.github.io/oxedi/latest/api/parsing/) | Every public function and class |
-| [Migrating from edi-835-parser](https://javillegasna.github.io/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
+| [Reading](https://javillegas.dev/oxedi/latest/reading/) | Tables in depth, large files, diagnostics, the document |
+| [Writing](https://javillegas.dev/oxedi/latest/writing/) | The envelope, findings, balancing rules, your own tables |
+| [DuckDB](https://javillegas.dev/oxedi/latest/duckdb/) | `read_835` parameters, `COPY` options, limits |
+| [The spec](https://javillegas.dev/oxedi/latest/spec/) | Spec versions (5010, 4010) and patches |
+| [Validating with pyx12](https://javillegas.dev/oxedi/latest/pyx12/) | What `validate` reports and where |
+| [Recipes](https://javillegas.dev/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
+| [API reference](https://javillegas.dev/oxedi/latest/api/parsing/) | Every public function and class |
+| [Migrating from edi-835-parser](https://javillegas.dev/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
 
 ## Versioning, contributing, license
 

@@ -1,6 +1,6 @@
 site_name: oxedi
 site_description: Lossless, fast X12 EDI 835 parser and writer for Python and DuckDB
-site_url: https://javillegasna.github.io/oxedi/
+site_url: https://javillegas.dev/oxedi/
 repo_url: https://github.com/javillegasna/oxedi
 repo_name: javillegasna/oxedi
 docs_dir: docs

@@ -29,7 +29,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/javillegasna/oxedi"
-Documentation = "https://javillegasna.github.io/oxedi/latest/"
+Documentation = "https://javillegas.dev/oxedi/latest/"
 Repository = "https://github.com/javillegasna/oxedi"
 Issues = "https://github.com/javillegasna/oxedi/issues"
 Changelog = "https://github.com/javillegasna/oxedi/blob/master/CHANGELOG.md"
