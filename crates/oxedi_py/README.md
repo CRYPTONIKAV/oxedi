@@ -10,7 +10,8 @@ core is written in Rust and is available from Python and from DuckDB.
 - **Problems are reported, not raised.** Questionable data still parses; each issue is a
   diagnostic that names the rule, the position and the value.
 
-Documentation: **<https://javillegas.dev/oxedi/latest/>**
+Documentation: **<https://javillegas.dev/oxedi/latest/>**. New here? Start with the
+[five-minute tutorial](https://javillegas.dev/oxedi/latest/start/).
 
 ## Install
 
@@ -56,7 +57,7 @@ Parse, change a value, write:
 import datetime
 import polars as pl
 
-frames = {name: result.tables[name].to_polars() for name in result.tables.keys()}
+frames = result.tables.to_polars()               # {table name: polars frame}
 frames["payments"] = frames["payments"].with_columns(trace_number=pl.lit("CHK100235"))
 
 envelope = oxedi.Envelope(
@@ -84,12 +85,15 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 
 | Page | What is in it |
 |---|---|
-| [Reading](https://javillegas.dev/oxedi/latest/python/reading/) | Tables in depth, large files, diagnostics, the document |
-| [Writing](https://javillegas.dev/oxedi/latest/python/writing/) | The envelope, findings, balancing rules, your own tables |
+| [Get started](https://javillegas.dev/oxedi/latest/start/) | A five-minute tutorial on an example file |
+| [The 835 in five minutes](https://javillegas.dev/oxedi/latest/start/the-835/) | What a remittance holds and how it maps to the tables |
+| [Reading](https://javillegas.dev/oxedi/latest/python/reading/) | Tables in depth, [large files](https://javillegas.dev/oxedi/latest/python/large-files/), [diagnostics](https://javillegas.dev/oxedi/latest/python/diagnostics/) |
+| [Writing](https://javillegas.dev/oxedi/latest/python/writing/) | The envelope, [your own tables](https://javillegas.dev/oxedi/latest/python/own-tables/), [when the writer refuses](https://javillegas.dev/oxedi/latest/python/when-write-refuses/) |
 | [DuckDB](https://javillegas.dev/oxedi/latest/duckdb/) | `read_835` parameters, `COPY` options, limits |
 | [The spec](https://javillegas.dev/oxedi/latest/customize/spec/) | Spec versions (5010, 4010) and patches |
 | [Validating with pyx12](https://javillegas.dev/oxedi/latest/python/pyx12/) | What `validate` reports and where |
 | [Recipes](https://javillegas.dev/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
+| [Tables and columns](https://javillegas.dev/oxedi/latest/reference/tables/) | Every column, its type and its source element; a [glossary](https://javillegas.dev/oxedi/latest/reference/glossary/) |
 | [API reference](https://javillegas.dev/oxedi/latest/reference/api/parsing/) | Every public function and class |
 | [Migrating from edi-835-parser](https://javillegas.dev/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
 | [Roadmap](https://javillegas.dev/oxedi/latest/roadmap/) | What is available, what comes next, what is being considered |
