@@ -4,6 +4,13 @@ Snapshot for picking the project up cold. Update when a stage changes state.
 
 ## Pick up here (2026-10-12)
 
+- **Stage 8 in PR** (branch `stage-8-docs-site`): MkDocs Material site from `docs/` with the
+  Python API reference, three recipes (lakehouse, Polars, pipelines), every `python` and `sql`
+  block run by `make docs-test`, the README as front page (the PyPI one generated from it), and
+  `.github/workflows/docs.yml` (`mike`: `dev` from master, `X.Y` + `latest` from final `v*`
+  tags). After merge the owner enables Pages (Settings, Pages, source: branch `gh-pages`) once
+  the first deploy has created the branch. Plan `plans/stage-8-docs-site.md`.
+
 - **Now:** releasing 0.5.0 (`v0.5.0rc1` is on TestPyPI, its install verified on all six wheel
   platforms and by hand: write round trip and `validate` on both balanced fixtures; 0.5.0 goes
   to PyPI): `Result.spec`,

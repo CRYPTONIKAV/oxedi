@@ -77,6 +77,20 @@ right before its fence, with a reason; the run lists every skipped block:
 
     <!-- docs-test: skip needs the reader's own tables -->
 
+Use it for blocks that need something the runner cannot provide (a network, an orchestrator,
+dbt templating), and when the equivalent runs elsewhere on the page, say so in the reason. A
+`python` or `sql` block without the marker must run.
+
+To add a page, put it in `docs/` and in the `nav` of `mkdocs.yml`; the strict build rejects a
+page outside the navigation.
+
+### Deploy
+
+`.github/workflows/docs.yml` publishes with `mike` to the `gh-pages` branch. A push to `master`
+publishes `dev`. A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
+the site root redirects to. Pre-release tags and `duckdb-v*` tags publish nothing. Pull requests
+only build the site (the Documentation job in `ci.yml`). Never commit to `gh-pages` by hand.
+
 ## Releases
 
 `make release-check TAG=v<version>` checks the tag, a clean tree and the changelog entry before
