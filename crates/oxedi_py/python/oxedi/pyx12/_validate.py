@@ -271,7 +271,7 @@ def validate(source: Source) -> list[Diagnostic]:
     caller configures; levels, propagation and ``logging.disable`` stay as
     the caller set them.
 
-    Each finding is an :class:`oxedi.Diagnostic`, the type ``parse``
+    Each finding is an ``oxedi.Diagnostic``, the type ``parse``
     returns, so both lists mix, sort by ``level`` and filter by ``origin``.
     A pyx12 finding has ``kind == "External"``, ``origin == "pyx12"`` and
     ``code`` set to pyx12's own error code; ``rule`` is pyx12's message.

@@ -54,6 +54,19 @@ Load a local build with `duckdb -unsigned` and
 PyPI. Change the root `README.md` and regenerate the other with `make readme-py`; `make gates` and CI
 run `make readme-py-check`, which fails when the two differ.
 
+## Documentation site
+
+The site is built with MkDocs Material from `mkdocs.yml` and `docs/`. Its tools live in
+`requirements-docs.txt`, in their own environment (`.venv-docs`), never in the package.
+
+```bash
+make docs         # strict build into site/: a broken link or a page outside the navigation fails
+make docs-serve   # preview at http://127.0.0.1:8000
+```
+
+The API reference under `docs/api/` is generated from the installed package and its type stub;
+write a symbol's documentation in its docstring, not in the page.
+
 ## Releases
 
 `make release-check TAG=v<version>` checks the tag, a clean tree and the changelog entry before

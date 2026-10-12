@@ -15,6 +15,7 @@ jobs:
     outputs:
       python: ${{ steps.filter.outputs.python }}
       duckdb: ${{ steps.filter.outputs.duckdb }}
+      docs: ${{ steps.filter.outputs.docs }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -34,6 +35,21 @@ jobs:
               - 'THIRD_PARTY_NOTICES'
               - '.github/workflows/ci.yml'
             duckdb:
+              - 'crates/oxedi_core/**'
+              - 'crates/oxedi_duckdb/**'
+              - 'crates/oxedi_py/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'Makefile'
+              - 'rust-toolchain.toml'
+              - '.cargo/**'
+              - '.gitmodules'
+              - '.github/workflows/ci.yml'
+            docs:
+              - 'docs/**'
+              - 'mkdocs.yml'
+              - 'requirements-docs.txt'
+              - 'README.md'
               - 'crates/oxedi_core/**'
               - 'crates/oxedi_duckdb/**'
               - 'crates/oxedi_py/**'
@@ -158,3 +174,15 @@ jobs:
         run: make test_release DUCKDB_TEST_VERSION='${{ matrix.duckdb.test_version }}'
       - name: Oracle against oxedi.parse_file
         run: make duckdb-oracle
+
+  docs:
+    name: Documentation
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v7
+      - name: Site (strict)
+        run: make docs

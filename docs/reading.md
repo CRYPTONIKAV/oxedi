@@ -1,7 +1,7 @@
 # Reading 835 files
 
 How to read a file into tables, handle large files, use the diagnostics and write the file
-back byte for byte. The [README](../README.md) has the short version.
+back byte for byte. The [home page](index.md) has the short version.
 
 ## Parse
 

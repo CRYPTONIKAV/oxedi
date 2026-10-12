@@ -17,7 +17,7 @@ The extension was accepted into DuckDB's community repository
 that pinned the operating system's error text. The fixed release (0.1.2, PR #135) is built and
 green and waits for the maintainers to merge duckdb/community-extensions#2942. Until then
 `INSTALL oxedi FROM community` is not available: build the extension (see
-[CONTRIBUTING](../CONTRIBUTING.md#duckdb-extension)) and load the file.
+[CONTRIBUTING](https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md#duckdb-extension)) and load the file.
 
 ## Reading
 
@@ -167,4 +167,4 @@ follow them (see [Writing](writing.md#from-your-own-tables)):
 
 The extension is versioned separately from the Python package (its version is in the crate's
 `Cargo.toml`), and its releases are tagged `duckdb-v*`. Its own changelog is
-[`crates/oxedi_duckdb/CHANGELOG.md`](../crates/oxedi_duckdb/CHANGELOG.md).
+[`crates/oxedi_duckdb/CHANGELOG.md`](https://github.com/javillegasna/oxedi/blob/master/crates/oxedi_duckdb/CHANGELOG.md).
