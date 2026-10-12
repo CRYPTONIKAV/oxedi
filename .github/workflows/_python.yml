@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   python:
-    name: Python ${{ matrix.python }}
+    name: ${{ matrix.python }}
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   viewer:
-    name: Viewer
+    name: Module and browser tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -31,7 +31,8 @@ jobs:
         run: make wasm
       - name: Size
         run: make wasm-size-check
-      # The docs environment holds Playwright; the browser is cached by Playwright's version.
+      # The docs environment holds Playwright; the browser is cached by Playwright's version and
+      # written only from master.
       - uses: ./.github/actions/docs-venv
       - name: Playwright version
         id: playwright
@@ -41,13 +42,19 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Restore the browser
         id: browser
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
       - name: Browser for the page tests
         if: steps.browser.outputs.cache-hit != 'true'
         run: .venv-docs/bin/playwright install --with-deps chromium
+      - name: Save the browser
+        if: github.ref == 'refs/heads/master' && steps.browser.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.browser.outputs.cache-primary-key }}
       - name: Browser's system libraries
         if: steps.browser.outputs.cache-hit == 'true'
         run: .venv-docs/bin/playwright install-deps chromium

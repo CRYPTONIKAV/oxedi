@@ -2,13 +2,13 @@ name: WebAssembly tools
 description: >-
   Puts the wasm-bindgen CLI and wasm-opt on PATH with crates/oxedi_wasm/scripts/install_tools.sh.
   The installed binaries are cached under a key made from that script, which pins their versions
-  and checksums. Needs the Rust toolchain: the version Cargo.lock resolves is read with cargo.
+  and checksums; the cache is written only from master. Needs the Rust toolchain: the version Cargo.lock resolves is read with cargo.
 runs:
   using: composite
   steps:
     - name: Restore the tools
       id: cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.oxedi-wasm-tools/bin
         key: wasm-tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('crates/oxedi_wasm/scripts/install_tools.sh') }}
@@ -16,6 +16,12 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: WASM_TOOLS_BIN="$HOME/.oxedi-wasm-tools/bin" crates/oxedi_wasm/scripts/install_tools.sh
+    - name: Save the tools
+      if: github.ref == 'refs/heads/master' && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.oxedi-wasm-tools/bin
+        key: ${{ steps.cache.outputs.cache-primary-key }}
     - name: Cached tools match Cargo.lock
       if: steps.cache.outputs.cache-hit == 'true'
       shell: bash

@@ -136,8 +136,9 @@ pre-release leg (`next`), which reports and does not block. Run it by hand from 
 when a change needs the full set before merging.
 
 `CI result` is the one check to require: it fails when an area failed or was cancelled and
-passes when each one passed or was not needed. Compile caches are written only from `master`;
-pull requests read them.
+passes when each one passed or was not needed. Caches are written only from `master`;
+pull requests read them. The checks of a push to `master` are never cancelled or replaced by
+a later push.
 
 ## Releases
 

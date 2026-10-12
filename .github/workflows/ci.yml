@@ -3,8 +3,10 @@ name: CI
 # Runs each area (Rust, Python, DuckDB, Docs, Viewer) only when files it depends on changed: on a
 # pull request against its base, on a push against the previous commit of the branch. A draft
 # pull request runs Rust only; the rest runs once it is ready for review. nightly.yml runs every
-# area on master. `CI result` is the one check to require: it fails when any area failed or was
-# cancelled and passes when each one passed or was not needed.
+# area on master. Runs of a pull request share a group and a new push cancels the running one;
+# each push to a branch has its own group, so no push is replaced by a later one. `CI result` is
+# the one check to require: it fails when any area failed or was cancelled and passes when each
+# one passed or was not needed.
 on:
   push:
     branches: [main, master]
@@ -12,7 +14,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

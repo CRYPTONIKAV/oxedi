@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   extension:
-    name: DuckDB (${{ matrix.leg }})
+    name: ${{ matrix.leg }}
     runs-on: ubuntu-latest
     # `next` is a moving pre-release of DuckDB: it reports, it does not block.
     continue-on-error: ${{ matrix.leg == 'next' }}
