@@ -12,6 +12,9 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 ### Added
 - A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.
+- The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
+  reference of every table and column, a glossary, and short guides by task. Old page addresses
+  redirect to the new ones.
 
 ## [0.5.0] - 2026-10-12
 
