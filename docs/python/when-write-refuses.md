@@ -94,9 +94,17 @@ The writer checks the balancing rules. It never uses them to fill in a total:
 - `BPR02` against the claims' payments and the `PLB` adjustments.
 - Each claim's and each service's charge minus payment against their `CAS` adjustments.
 
-!!! warning "Interest"
-    The claim rule does not model interest (`AMT*I`). A claim whose payment includes interest
-    does not balance, and is refused unless you set `allow_findings`.
+!!! note "Interest"
+    Interest a payer owes the provider for a late claim is not part of the claim's payment:
+    `CLP04` and the `CAS` adjustments show the adjudication only. The claim reports its interest
+    in `AMT*I`, which takes no part in balancing, and the money is paid in `PLB` with reason code
+    `L6` as a negative amount, so it adds to `BPR02`. Interest the patient owes is a `CAS`
+    adjustment, and so is already in the claim's sum. X12 states this in its public
+    [interpretation 1705](https://x12.org/resources/requests-for-interpretation/rfi-1705-5010-835-interest-payment).
+
+    The balancing rules follow that layout. A file that puts interest into `CLP04` without a
+    matching `CAS` does not balance, and the writer refuses it, as it should, unless you set
+    `allow_findings`.
 
 ## Null and empty text
 
