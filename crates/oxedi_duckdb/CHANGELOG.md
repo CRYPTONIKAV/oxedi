@@ -7,7 +7,7 @@ and the extension has its own version.
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-10-06
+## [0.2.0] - 2026-10-12
 
 ### Added
 - The copy format `edi835`: `COPY (SELECT {'payments': ..., 'claims': ...}) TO 'out.835' (FORMAT
