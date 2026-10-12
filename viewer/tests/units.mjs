@@ -32,6 +32,13 @@ assert.equal(decode(bytes, ...name), 'AC�ME');
 assert.equal(decode(bytes, ...elementRange(bytes, view, 0, 0)), 'N1');
 assert.equal(decode(bytes, ...elementRange(bytes, view, 0, 3, 2)), 'Y');
 assert.equal(elementRange(bytes, view, 0, 9), null);
+// A valid two-byte character is one UTF-16 unit but two bytes: ranges after it are byte offsets.
+const utf8 = Uint8Array.from([...Buffer.from('N1*PR*AC'), 0xc3, 0x91, ...Buffer.from('ME*X:Y:Z~')]);
+const utf8View = { ...view, segments: [{ id: 'N1', start: 0, end: utf8.length, node: 0 }] };
+const utf8Name = elementRange(utf8, utf8View, 0, 2);
+assert.deepEqual(utf8Name, [6, 12]);
+assert.equal(decode(utf8, ...utf8Name), 'ACÑME');
+assert.equal(decode(utf8, ...elementRange(utf8, utf8View, 0, 3, 2)), 'Y');
 // A component of a repeated element is cut at the repetition separator.
 const rep = Uint8Array.from(Buffer.from('X*A:B^C:D~'));
 const repView = {

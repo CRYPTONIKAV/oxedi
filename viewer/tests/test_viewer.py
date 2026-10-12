@@ -16,6 +16,17 @@ def text_of(viewer, selector: str) -> str:
     return viewer.page.inner_text(selector)
 
 
+def element_text(data: bytes, diagnostic) -> str:
+    """The text of the element (or component) a diagnostic names, cut from the raw bytes."""
+    text = data.decode("utf-8", errors="replace")
+    element_sep, component_sep, terminator = text[3], text[104], text[105]
+    segment = text.split(terminator)[diagnostic.segment].strip("\r\n")
+    value = segment.split(element_sep)[diagnostic.element]
+    if diagnostic.component is not None:
+        value = value.split(component_sep)[diagnostic.component - 1]
+    return value
+
+
 def test_sample_summary_tables_and_csv(viewer, tmp_path):
     viewer.open()
     viewer.load_sample()
@@ -84,7 +95,7 @@ def test_dropped_file_with_diagnostics_links_to_text(viewer):
     if first.element is not None:
         mark = current.locator("mark")
         assert mark.count() == 1
-        assert mark.inner_text() != ""
+        assert mark.inner_text() == element_text(path.read_bytes(), first)
 
 
 def test_non_835_shows_the_core_error_then_the_sample_loads(viewer):
@@ -103,23 +114,34 @@ def test_non_835_shows_the_core_error_then_the_sample_loads(viewer):
     assert "ACME HEALTH PLAN" in text_of(viewer, "#panel-summary")
 
 
-def test_non_utf8_bytes_keep_offsets_aligned(viewer, tmp_path):
+@pytest.mark.parametrize(
+    ("replacement", "shown"),
+    [
+        # One invalid byte decodes to one replacement character.
+        (b"SUN\xd1ISE", "SUN\ufffdISE CLINIC"),
+        # Two bytes are one character: a page that sliced decoded text by byte offsets would drift.
+        (b"SUN\xc3\x91ISE", "SUN\u00d1ISE CLINIC"),
+    ],
+    ids=["latin1", "utf8-two-bytes"],
+)
+def test_non_utf8_bytes_keep_offsets_aligned(viewer, tmp_path, replacement, shown):
     data = SAMPLE_FIXTURE.read_bytes()
-    assert b"SUNRISE" in data
-    latin1 = tmp_path / "latin1.835"
-    latin1.write_bytes(data.replace(b"SUNRISE", b"SUN\xd1ISE"))
+    # Only the payee name changes: the ISA segment has fixed widths.
+    assert b"N1*PE*SUNRISE CLINIC" in data
+    changed = tmp_path / "changed.835"
+    changed.write_bytes(data.replace(b"N1*PE*SUNRISE", b"N1*PE*" + replacement, 1))
     viewer.open()
-    viewer.load(latin1)
+    viewer.load(changed)
     viewer.wait_loaded()
 
-    assert "SUN�ISE CLINIC" in text_of(viewer, "#panel-summary")
+    assert shown in text_of(viewer, "#panel-summary")
 
     viewer.tab("tables")
     viewer.page.click("#panel-tables button[data-segment]")
     current = viewer.page.locator("#panel-text .line.current .raw")
     # Line breaks before a segment are shown as glyphs; the segment itself starts at its own id.
-    shown = current.inner_text().lstrip("\u240d\u240a")
-    assert shown.startswith("CLP*CLM1001"), "the segment after the Latin-1 byte is not shifted"
+    text = current.inner_text().lstrip("\u240d\u240a")
+    assert text.startswith("CLP*CLM1001"), "the segment after the changed bytes is not shifted"
 
 
 def test_csp_blocks_network_and_is_declared(viewer):
@@ -139,25 +161,34 @@ def test_csp_blocks_network_and_is_declared(viewer):
 def test_largest_sample_is_shown_in_under_a_second(viewer):
     path = SAMPLES / "edi835_test_united.rmt"
     viewer.open()
-    # Time from the input's change event to the results becoming visible.
+    # Time from the input's change event to the results becoming visible. The page's error
+    # alert or a 10 s bound ends the wait, so a regression fails with a message, not a hang.
     viewer.page.evaluate(
         """() => {
           window.__timing = new Promise((resolve) => {
             let t0 = 0;
+            const results = document.getElementById('results');
+            const alert = document.getElementById('alert');
+            const done = (outcome) => { observer.disconnect(); clearTimeout(bound); resolve(outcome); };
             window.addEventListener('change', () => { t0 = performance.now(); }, true);
-            new MutationObserver((_, obs) => {
-              if (!document.getElementById('results').hidden) {
-                obs.disconnect();
-                resolve(performance.now() - t0);
-              }
-            }).observe(document.getElementById('results'), { attributes: true, attributeFilter: ['hidden'] });
+            const observer = new MutationObserver(() => {
+              if (!results.hidden) done({ ms: performance.now() - t0 });
+              else if (!alert.hidden) done({ alert: alert.textContent });
+            });
+            observer.observe(results, { attributes: true, attributeFilter: ['hidden'] });
+            observer.observe(alert, { attributes: true, attributeFilter: ['hidden'] });
+            const bound = setTimeout(() => done({ timeout: performance.now() - t0 }), 10000);
           });
         }"""
     )
     viewer.load(path)
-    elapsed = viewer.page.evaluate("window.__timing")
-    print(f"\nviewer timing: {path.name} ({path.stat().st_size} bytes) shown in {elapsed:.0f} ms")
-    assert elapsed < 1000, f"{elapsed:.0f} ms"
+    outcome = viewer.page.evaluate("window.__timing")
+    name = f"{path.name} ({path.stat().st_size} bytes)"
+    assert "alert" not in outcome, f"{name} raised the alert: {outcome.get('alert')}"
+    assert "timeout" not in outcome, f"{name} was not shown after {outcome.get('timeout'):.0f} ms (limit 1000 ms)"
+    elapsed = outcome["ms"]
+    print(f"\nviewer timing: {name} shown in {elapsed:.0f} ms")
+    assert elapsed < 1000, f"{name} took {elapsed:.0f} ms (limit 1000 ms)"
 
 
 def test_size_guard_function(viewer):

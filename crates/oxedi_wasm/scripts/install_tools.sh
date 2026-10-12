@@ -28,14 +28,24 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 cd "$tmp"
 
+# Downloads URL and fails, naming the URL and both hashes, unless it has the pinned SHA-256.
+fetch() {
+  local url=$1 expected=$2 file actual
+  file=$(basename "$url")
+  curl -fsSLO "$url"
+  actual=$(sha256sum "$file" | cut -d' ' -f1)
+  if [ "$actual" != "$expected" ]; then
+    echo "checksum mismatch for $url: expected $expected, got $actual" >&2
+    exit 1
+  fi
+}
+
 name="wasm-bindgen-$WASM_BINDGEN_VERSION-x86_64-unknown-linux-musl"
-curl -fsSLO "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/$WASM_BINDGEN_VERSION/$name.tar.gz"
-echo "$WASM_BINDGEN_SHA256  $name.tar.gz" | sha256sum -c -
+fetch "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/$WASM_BINDGEN_VERSION/$name.tar.gz" "$WASM_BINDGEN_SHA256"
 tar xzf "$name.tar.gz"
 install "$name/wasm-bindgen" "$bin/"
 
 name="binaryen-version_$BINARYEN_VERSION-x86_64-linux"
-curl -fsSLO "https://github.com/WebAssembly/binaryen/releases/download/version_$BINARYEN_VERSION/$name.tar.gz"
-echo "$BINARYEN_SHA256  $name.tar.gz" | sha256sum -c -
+fetch "https://github.com/WebAssembly/binaryen/releases/download/version_$BINARYEN_VERSION/$name.tar.gz" "$BINARYEN_SHA256"
 tar xzf "$name.tar.gz"
 install "binaryen-version_$BINARYEN_VERSION/bin/wasm-opt" "$bin/"
