@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://javillegas.dev/oxedi/0.5/duckdb/">
       
       
-        <link rel="prev" href="../writing/">
+        <link rel="prev" href="../customize/spec/">
       
       
-        <link rel="next" href="../spec/">
+        <link rel="next" href="reading/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>DuckDB - oxedi</title>
+        <title>Overview - oxedi</title>
       
     
     
@@ -96,9 +96,7 @@
     
       
 
-  
-
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="oxedi" class="md-header__button md-logo" aria-label="oxedi" data-md-component="logo">
       
@@ -120,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              DuckDB
+              Overview
             
           </span>
         </div>
@@ -183,6 +181,8 @@
         </button>
       </nav>
       
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
@@ -220,6 +220,168 @@
       
         
           
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../start/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../python/reading/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Python
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  DuckDB
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../recipes/lakehouse/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Recipes
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/tables/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../migrating-from-edi-835-parser/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -233,8 +395,10 @@
                     
 
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="oxedi" class="md-nav__button md-logo" aria-label="oxedi" data-md-component="logo">
       
@@ -290,35 +454,46 @@
       
   
   
-    
   
   
-  
-    
-    
     
     
       
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
-            
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../start/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
     
   
-    Guides
+    Get started
   
 
     
@@ -326,35 +501,43 @@
   
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Guides
+    Get started
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
+            
+              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../reading/" class="md-nav__link">
+      <a href="../start/install/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reading
+    Install
   
 
     
@@ -375,261 +558,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../writing/" class="md-nav__link">
+      <a href="../start/the-835/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Writing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DuckDB
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DuckDB
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Install
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reading" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Reading">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#text-varchar-and-blob" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Text, VARCHAR and BLOB
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#files-that-are-not-interchanges" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Files that are not interchanges
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#globs-and-remote-paths" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Globs and remote paths
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#writing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Writing
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Writing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Options
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#strict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Strict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#accepted-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accepted types
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#from-your-own-tables" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        From your own tables
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#limits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Limits
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Versions
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../spec/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    The spec
+    The 835 in five minutes
   
 
     
@@ -650,14 +586,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../pyx12/" class="md-nav__link">
+      <a href="../start/viewer/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Validating with pyx12
+    Try it in your browser
   
 
     
@@ -686,22 +622,500 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
     
     
       
-        
+      
         
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/reading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/large-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Large files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/writing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/own-tables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing from your tables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/when-write-refuses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    When the writer refuses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/pyx12/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validating with pyx12
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../customize/spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customizing the spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="./" class="md-nav__link md-nav__link--active">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DuckDB
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link md-nav__link--active" for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DuckDB
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reading with SQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="writing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing with COPY
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="limits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types and limits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -719,8 +1133,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -829,29 +1243,37 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
+    
     
     
       
-        
+      
         
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-    API reference
+    Reference
   
 
     
@@ -862,12 +1284,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
-    API reference
+    Reference
   
 
           </label>
@@ -880,7 +1302,129 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/parsing/" class="md-nav__link">
+      <a href="../reference/tables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tables and columns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/parsing/" class="md-nav__link">
         
   
   
@@ -908,7 +1452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/writing/" class="md-nav__link">
+      <a href="../reference/api/writing/" class="md-nav__link">
         
   
   
@@ -936,7 +1480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/spec/" class="md-nav__link">
+      <a href="../reference/api/spec/" class="md-nav__link">
         
   
   
@@ -964,7 +1508,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/diagnostics/" class="md-nav__link">
+      <a href="../reference/api/diagnostics/" class="md-nav__link">
         
   
   
@@ -992,7 +1536,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/pyx12/" class="md-nav__link">
+      <a href="../reference/api/pyx12/" class="md-nav__link">
         
   
   
@@ -1020,7 +1564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/edi_835_parser/" class="md-nav__link">
+      <a href="../reference/api/edi_835_parser/" class="md-nav__link">
         
   
   
@@ -1047,9 +1591,79 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    About
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -1074,9 +1688,66 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/javillegasna/oxedi/blob/master/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1098,6 +1769,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1140,132 +1819,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading" class="md-nav__link">
+  <a href="#read-your-first-file" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading
+        Read your first file
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Reading">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#text-varchar-and-blob" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Text, VARCHAR and BLOB
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#files-that-are-not-interchanges" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Files that are not interchanges
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#globs-and-remote-paths" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Globs and remote paths
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#writing" class="md-nav__link">
+  <a href="#next" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Writing
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Writing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Options
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#strict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Strict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#accepted-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Accepted types
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#from-your-own-tables" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        From your own tables
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#limits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Limits
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Versions
+        Next
       
     </span>
   </a>
@@ -1293,223 +1861,62 @@
 
 
 <h1 id="duckdb-extension">DuckDB extension<a class="headerlink" href="#duckdb-extension" title="Permanent link">&para;</a></h1>
-<p>The <code>oxedi</code> extension reads X12 EDI 835 remittance files as DuckDB tables, and writes tables
-back into an 835, with the same parser, writer and tables as the Python package. Every DuckDB
-client (Python, R, Java, Node, Go, .NET, Rust, the CLI) gets it. It is built on DuckDB's stable
-C API and loads on DuckDB 1.5.6 and later.</p>
+<p>The <code>oxedi</code> extension reads 835 files as DuckDB tables and writes tables back into an 835. It
+uses the same parser, writer and tables as the Python package.</p>
+<ul>
+<li>Every DuckDB client gets it: Python, R, Java, Node, Go, .NET, Rust and the CLI.</li>
+<li>It is built on DuckDB's stable C API and loads on DuckDB 1.5.6 and later.</li>
+</ul>
+<p>To look at a file first, without installing anything, use the
+<a href="../start/viewer/">viewer in your browser</a>.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
 <div class="highlight"><pre><span></span><code><span class="n">INSTALL</span><span class="w"> </span><span class="n">oxedi</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">community</span><span class="p">;</span>
 <span class="k">LOAD</span><span class="w"> </span><span class="n">oxedi</span><span class="p">;</span>
 </code></pre></div>
-<p><code>INSTALL</code> gives extension 0.1.x from DuckDB's community repository, which reads files. Writing
-with <code>COPY</code> needs 0.2.0, which is not in the community repository yet. Until then, build the
-extension (see
+<div class="admonition warning">
+<p class="admonition-title">Writing needs extension 0.2.0</p>
+<p><code>INSTALL</code> gives extension 0.1.x from DuckDB's community repository, which reads files.
+Writing with <code>COPY</code> needs 0.2.0, which is not in the community repository yet. Until then,
+build the extension (see
 <a href="https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md#duckdb-extension">CONTRIBUTING</a>)
 and load the file.</p>
-<h2 id="reading">Reading<a class="headerlink" href="#reading" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">);</span><span class="w">                                   </span><span class="c1">-- claims (the default table)</span>
-<span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remits/*.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'services'</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="k">true</span><span class="p">);</span>
-<span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">([</span><span class="s1">'a.835'</span><span class="p">,</span><span class="w"> </span><span class="s1">'b.835'</span><span class="p">],</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'payments'</span><span class="p">);</span>
-
-<span class="c1">-- the findings of the parse, one row each</span>
-<span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remits/*.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'diagnostics'</span><span class="p">,</span><span class="w"> </span><span class="n">ignore_errors</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="k">true</span><span class="p">);</span>
-
-<span class="k">COPY</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remits/*.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'claims'</span><span class="p">))</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="s1">'claims.parquet'</span><span class="p">;</span>
+</div>
+<h2 id="read-your-first-file">Read your first file<a class="headerlink" href="#read-your-first-file" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">claim_id</span><span class="p">,</span><span class="w"> </span><span class="n">claim_status</span><span class="p">,</span><span class="w"> </span><span class="n">charge_amount</span><span class="p">,</span><span class="w"> </span><span class="n">payment_amount</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">);</span>
 </code></pre></div>
-<p><code>read_835(path, ...)</code> takes a path, a glob pattern or a list of them, and returns one table per
-call. Parameters:</p>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>table_name</code></td>
-<td><code>'claims'</code></td>
-<td><code>payments</code>, <code>claims</code>, <code>services</code>, <code>adjustments</code>, <code>provider_adjustments</code> or <code>diagnostics</code></td>
-</tr>
-<tr>
-<td><code>filename</code></td>
-<td><code>false</code></td>
-<td>add a <code>filename</code> column with the path each row came from</td>
-</tr>
-<tr>
-<td><code>version</code></td>
-<td>the file's own</td>
-<td>force the built-in spec, <code>'5010'</code> or <code>'4010'</code>; by default each file uses the version it declares (5010 if none)</td>
-</tr>
-<tr>
-<td><code>binary</code></td>
-<td><code>false</code></td>
-<td>return text columns as <code>BLOB</code> (the raw bytes) instead of <code>VARCHAR</code></td>
-</tr>
-<tr>
-<td><code>ignore_errors</code></td>
-<td><code>false</code></td>
-<td>report a file that is not an X12 interchange as a <code>diagnostics</code> row and go on</td>
-</tr>
-</tbody>
-</table>
-<p>To see the columns of a table, read any file:
-<code>DESCRIBE SELECT * FROM read_835('remittance.835', table_name := 'claims')</code> lists the names and
-types. A schema that does not need a file is tracked in
-<a href="https://github.com/javillegasna/oxedi/issues/138">#138</a>.</p>
-<h3 id="text-varchar-and-blob">Text, VARCHAR and BLOB<a class="headerlink" href="#text-varchar-and-blob" title="Permanent link">&para;</a></h3>
-<p>Text columns are <code>VARCHAR</code>, so a field that is not valid UTF-8 fails the query with an error
-that names the file and the cell. Pass <code>binary := true</code> to read those fields byte for byte
-(nothing is lost to an encoding guess). The other columns are typed as in the Python tables:
-decimals, dates and times.</p>
-<h3 id="files-that-are-not-interchanges">Files that are not interchanges<a class="headerlink" href="#files-that-are-not-interchanges" title="Permanent link">&para;</a></h3>
-<p>Without <code>ignore_errors</code>, a file that is not an interchange fails the query. With it, the file
-contributes no rows to any table but one <code>diagnostics</code> row whose <code>rule</code> is the error, so run
-the query with <code>table_name := 'diagnostics'</code> as well to see what was skipped. In that row
-<code>datum</code> holds the bytes found instead of <code>ISA</code>: as escaped ASCII text (other bytes written as <code>\xNN</code>, always valid UTF-8) by
-default, and raw with <code>binary := true</code>.</p>
-<h3 id="globs-and-remote-paths">Globs and remote paths<a class="headerlink" href="#globs-and-remote-paths" title="Permanent link">&para;</a></h3>
-<p>Glob patterns are expanded by a private in-memory DuckDB that honours your settings.
-<code>enable_external_access</code> and <code>disabled_filesystems</code> apply: with <code>enable_external_access</code> off, a
-glob pattern is an error. A remote pattern such as <code>s3://bucket/*.835</code> sees persistent secrets
-only, not temporary <code>CREATE SECRET</code> ones. Plain paths and lists are read through your own file
-system and secrets.</p>
-<h2 id="writing">Writing<a class="headerlink" href="#writing" title="Permanent link">&para;</a></h2>
-<p>Writing with <code>COPY</code> needs extension 0.2.0 or later; until it reaches the community repository,
-build the extension.</p>
-<p><code>COPY ... TO ... (FORMAT edi835, ...)</code> writes an 835 with the same writer as the Python
-package's <code>oxedi.write</code>; the file is byte for byte what <code>oxedi.write</code> gives for the same
-tables and envelope. The query returns <strong>one <code>STRUCT</code> column</strong> whose fields are named after the
-spec's tables, each a list of structs (one struct per row, the table's columns as fields).
-This example reads the tables of a file into temporary tables, then writes them back:</p>
-<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="n">TEMP</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">payments</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'payments'</span><span class="p">);</span>
-<span class="k">CREATE</span><span class="w"> </span><span class="n">TEMP</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">claims</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'claims'</span><span class="p">);</span>
-<span class="k">CREATE</span><span class="w"> </span><span class="n">TEMP</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">services</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'services'</span><span class="p">);</span>
-<span class="k">CREATE</span><span class="w"> </span><span class="n">TEMP</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">adjustments</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'adjustments'</span><span class="p">);</span>
-<span class="k">CREATE</span><span class="w"> </span><span class="n">TEMP</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">provider_adjustments</span><span class="w"> </span><span class="k">AS</span>
-<span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'provider_adjustments'</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code>┌──────────┬──────────────┬───────────────┬────────────────┐
+│ claim_id │ claim_status │ charge_amount │ payment_amount │
+│ varchar  │   varchar    │ decimal(38,2) │ decimal(38,2)  │
+├──────────┼──────────────┼───────────────┼────────────────┤
+│ CLM1001  │ 1            │        300.00 │         200.00 │
+│ CLM1002  │ 2            │        700.00 │         400.00 │
+│ CLM2001  │ 1            │        150.00 │         120.00 │
+│ CLM2002  │ 4            │         80.00 │           0.00 │
+└──────────┴──────────────┴───────────────┴────────────────┘
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span><span class="p">(</span>
-<span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="err">{</span>
-<span class="w">    </span><span class="s1">'payments'</span><span class="p">:</span><span class="w">             </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">list</span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="ss">"row"</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">payments</span><span class="w"> </span><span class="n">t</span><span class="p">),</span>
-<span class="w">    </span><span class="s1">'claims'</span><span class="p">:</span><span class="w">               </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">list</span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="ss">"row"</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">claims</span><span class="w"> </span><span class="n">t</span><span class="p">),</span>
-<span class="w">    </span><span class="s1">'services'</span><span class="p">:</span><span class="w">             </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">list</span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="ss">"row"</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">services</span><span class="w"> </span><span class="n">t</span><span class="p">),</span>
-<span class="w">    </span><span class="s1">'adjustments'</span><span class="p">:</span><span class="w">          </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">list</span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="ss">"row"</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">adjustments</span><span class="w"> </span><span class="n">t</span><span class="p">),</span>
-<span class="w">    </span><span class="s1">'provider_adjustments'</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">list</span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="ss">"row"</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">provider_adjustments</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
-<span class="w">  </span><span class="err">}</span>
-<span class="p">)</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="s1">'out.835'</span><span class="w"> </span><span class="p">(</span><span class="n">FORMAT</span><span class="w"> </span><span class="n">edi835</span><span class="p">,</span><span class="w"> </span><span class="n">sender_id</span><span class="w"> </span><span class="s1">'ACMEPAYER'</span><span class="p">,</span><span class="w"> </span><span class="n">receiver_id</span><span class="w"> </span><span class="s1">'SUNRISECLINIC'</span><span class="p">,</span>
-<span class="w">                </span><span class="nb">date</span><span class="w"> </span><span class="nb">DATE</span><span class="w"> </span><span class="s1">'2024-01-10'</span><span class="p">,</span><span class="w"> </span><span class="k">time</span><span class="w"> </span><span class="k">TIME</span><span class="w"> </span><span class="s1">'09:00'</span><span class="p">);</span>
+<p><code>read_835</code> returns the claims by default. Pick another table with <code>table_name</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">procedure_code</span><span class="p">,</span><span class="w"> </span><span class="n">charge_amount</span><span class="p">,</span><span class="w"> </span><span class="n">payment_amount</span><span class="p">,</span><span class="w"> </span><span class="n">service_date</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'services'</span><span class="p">);</span>
 </code></pre></div>
-<p><code>payments</code>, <code>claims</code> and the rest can be any tables or views with those names, built in SQL
-or read from a file as above and changed before writing. Temporary tables, views and the open
-transaction are visible. The lists of several rows of the query concatenate into one
-interchange. A table left out has no rows and a column left out is null.</p>
-<p>To write from tables with your own keys, see
-<a href="../writing/#with-sql-duckdb">From your own tables</a>.</p>
-<h3 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Default</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>sender_id</code>, <code>receiver_id</code></td>
-<td>required</td>
-<td>interchange sender and receiver ids</td>
-</tr>
-<tr>
-<td><code>date</code>, <code>time</code></td>
-<td>required</td>
-<td>the interchange date (<code>DATE</code>) and time (<code>TIME</code> or <code>TIME_NS</code>)</td>
-</tr>
-<tr>
-<td><code>sender_qualifier</code>, <code>receiver_qualifier</code></td>
-<td><code>'ZZ'</code></td>
-<td>ISA qualifiers</td>
-</tr>
-<tr>
-<td><code>usage_indicator</code></td>
-<td><code>'P'</code></td>
-<td><code>'P'</code> production or <code>'T'</code> test</td>
-</tr>
-<tr>
-<td><code>control_number</code></td>
-<td><code>1</code></td>
-<td>first interchange control number</td>
-</tr>
-<tr>
-<td><code>application_sender</code>, <code>application_receiver</code></td>
-<td>the ids</td>
-<td>group header sender and receiver codes</td>
-</tr>
-<tr>
-<td><code>delimiters</code></td>
-<td><code>*</code> <code>:</code> <code>~</code> <code>^</code></td>
-<td>a struct such as <code>{'element': '\|', 'repetition': '^'}</code> with any of <code>element</code>, <code>component</code>, <code>segment</code>, <code>repetition</code>, <code>release</code>; fields left out take the defaults of <code>oxedi.Delimiters()</code> (<code>*</code>, <code>:</code>, <code>~</code>, and no repetition or release), so on 5010 give <code>repetition</code></td>
-</tr>
-<tr>
-<td><code>line_break</code></td>
-<td><code>false</code></td>
-<td>a line break after each segment</td>
-</tr>
-<tr>
-<td><code>version</code></td>
-<td><code>'5010'</code></td>
-<td>the built-in spec, <code>'5010'</code> or <code>'4010'</code></td>
-</tr>
-</tbody>
-</table>
-<p>The options are those of <code>oxedi.Envelope</code>, with the same defaults.</p>
-<h3 id="strict">Strict<a class="headerlink" href="#strict" title="Permanent link">&para;</a></h3>
-<p>The written file is read back with the spec, and every diagnostic of that read is a finding, as
-is anything the writer cannot place (a missing required element, a code outside its list, a row
-whose parent does not exist or is out of order, money that does not balance). Any finding fails
-the <code>COPY</code> with the listing <code>oxedi.WriteError</code> shows, each finding naming the table, row and
-column, and nothing is written. There is no <code>allow_findings</code> here yet.</p>
-<h3 id="accepted-types">Accepted types<a class="headerlink" href="#accepted-types" title="Permanent link">&para;</a></h3>
-<p>Per column of the spec:</p>
+<div class="highlight"><pre><span></span><code>┌────────────────┬───────────────┬────────────────┬──────────────┐
+│ procedure_code │ charge_amount │ payment_amount │ service_date │
+│    varchar     │ decimal(38,2) │ decimal(38,2)  │     date     │
+├────────────────┼───────────────┼────────────────┼──────────────┤
+│ 99213          │        200.00 │         150.00 │ 2024-01-05   │
+│ 85025          │        100.00 │          50.00 │ 2024-01-05   │
+│ 97110          │        700.00 │         450.00 │ 2024-01-06   │
+│ 99212          │        150.00 │         150.00 │ 2024-01-07   │
+└────────────────┴───────────────┴────────────────┴──────────────┘
+</code></pre></div>
+<p><a href="../reference/tables/">Tables and columns</a> lists every table and column.</p>
+<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Text takes <code>VARCHAR</code>, <code>ENUM</code> or <code>BLOB</code>.</li>
-<li>An integer column takes any integer type, or a <code>FLOAT</code> or <code>DOUBLE</code> holding a whole number.</li>
-<li>A decimal column takes any <code>DECIMAL</code> or integer type that holds the value exactly (never
-  <code>FLOAT</code> or <code>DOUBLE</code>).</li>
-<li>A date column takes <code>DATE</code>, or <code>TIMESTAMP</code> at midnight.</li>
-<li>A time column takes <code>TIME</code> or <code>TIME_NS</code> in whole seconds.</li>
+<li><a href="reading/">Reading with SQL</a>: parameters, folders, remote files, diagnostics.</li>
+<li><a href="writing/" id="writing">Writing with COPY</a>: turn tables back into an 835.</li>
+<li><a href="limits/">Types and limits</a>: what <code>COPY</code> accepts, and the extension's versions.</li>
 </ul>
-<h3 id="from-your-own-tables">From your own tables<a class="headerlink" href="#from-your-own-tables" title="Permanent link">&para;</a></h3>
-<p>The writer asks for the spec's names and nothing else, so tables built elsewhere work when they
-follow them (see <a href="../writing/#from-your-own-tables">Writing</a>):</p>
-<ul>
-<li><strong>Tolerated:</strong> a missing table (no rows), a missing column (null), a column of a narrower or
-  compatible type (<code>INTEGER</code> for <code>BIGINT</code>, a <code>DECIMAL</code> of another scale that holds the value,
-  <code>ENUM</code> or <code>BLOB</code> for text).</li>
-<li><strong>Refused, naming the table, row and column:</strong> a table or column that is not in the spec, a float
-  for money, a value that would change in the conversion (a decimal that does not fit, a number
-  outside the column's range), and a file that does not balance or is missing a required
-  element.</li>
-</ul>
-<h3 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>PARTITION_BY</code> and <code>PER_THREAD_OUTPUT</code> ask for several files; DuckDB consumes them and the
-  format refuses a second file. <code>compression</code> is refused too: compress afterwards.</li>
-<li>An existing file is left untouched when the <code>COPY</code> fails only for a local path written with
-  DuckDB's default temporary file. Without it (<code>USE_TMP_FILE false</code>, or a path that is not
-  local) the file is written over from its first byte, an existing file longer than the new
-  content is refused ("remove it first") and what happens to the target of a failed <code>COPY</code> is
-  up to DuckDB (some versions remove it).</li>
-<li>A bare <code>NULL</code> inside a struct is typed <code>INTEGER</code> by DuckDB and a text column refuses it;
-  write <code>NULL::VARCHAR</code> (or the column's type).</li>
-</ul>
-<h2 id="versions">Versions<a class="headerlink" href="#versions" title="Permanent link">&para;</a></h2>
-<p>The extension is versioned separately from the Python package (its version is in the crate's
-<code>Cargo.toml</code>), and its releases are tagged <code>duckdb-v*</code>. Its own changelog is
-<a href="https://github.com/javillegasna/oxedi/blob/master/crates/oxedi_duckdb/CHANGELOG.md"><code>crates/oxedi_duckdb/CHANGELOG.md</code></a>.</p>
 
 
 
@@ -1527,6 +1934,8 @@ follow them (see <a href="../writing/#from-your-own-tables">Writing</a>):</p>
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1539,6 +1948,46 @@ follow them (see <a href="../writing/#from-your-own-tables">Writing</a>):</p>
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../customize/spec/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Customizing the spec">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Customizing the spec
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="reading/" class="md-footer__link md-footer__link--next" aria-label="Next: Reading with SQL">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Reading with SQL
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1565,7 +2014,7 @@ follow them (see <a href="../writing/#from-your-own-tables">Writing</a>):</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.sections", "navigation.top", "navigation.footer", "content.tabs.link", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
