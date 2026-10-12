@@ -177,7 +177,7 @@ The file as oxedi holds it, indexed into segments and kept byte for byte.
 ### Envelope
 
 What the writer needs besides the tables: sender, receiver, date, time and control number. In
-Python it is `oxedi.Envelope`. See [Writing](../python/writing.md#envelope).
+Python it is `oxedi.Envelope`. See [Writing](../python/writing.md#fill-in-the-envelope).
 
 ### Lossless
 

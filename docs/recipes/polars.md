@@ -83,6 +83,6 @@ summary = claims.group_by("payer").agg(
 print(summary.with_columns(paid_share=(pl.col("paid").cast(pl.Float64) / pl.col("charged").cast(pl.Float64)).round(3)))
 ```
 
-For large folders, use `oxedi.stream` per file to keep memory bounded; see
-[Reading](../python/reading.md). When the data already lives in DuckDB or Parquet, see
-[a Parquet lakehouse](lakehouse.md) and read the result with `pl.read_parquet`.
+For large folders, use `oxedi.stream` per file to keep memory bounded. See
+[Reading large files](../python/large-files.md). When the data already lives in DuckDB or
+Parquet, see [a Parquet lakehouse](lakehouse.md) and read the result with `pl.read_parquet`.

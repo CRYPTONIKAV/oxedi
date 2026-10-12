@@ -1,7 +1,10 @@
 # Migrating from edi-835-parser
 
 This guide is for projects that use the `edi-835-parser` library and want to move to `oxedi`.
-There are two paths: keep your code and change the import, or move to the native API.
+You have two paths:
+
+- Keep your code and change the import.
+- Move to the native API.
 
 ## Switch the import
 
@@ -16,9 +19,11 @@ from oxedi.edi_835_parser import parse
 frame = parse("remittances/").to_dataframe()    # same rows, columns, order and dtypes
 ```
 
-`oxedi.edi_835_parser` exposes the same API as the library. `parse` reads a file, or every
-`.txt`, `.835` and `.DAT` file of a folder. `parse_bytes(data, file_path=...)`,
-`parse_file_obj(f)` and `parse_many([...])` (bytes or binary file objects) read from memory.
+`oxedi.edi_835_parser` exposes the same API as the library:
+
+- `parse` reads a file, or every `.txt`, `.835` and `.DAT` file of a folder.
+- `parse_bytes(data, file_path=...)`, `parse_file_obj(f)` and `parse_many([...])` (bytes or
+  binary file objects) read from memory.
 
 The frame equals edi-835-parser 1.8.0's cell for cell on our test files. Payer ids that are not
 numbers (`N104` with qualifier `XV`) work.
@@ -30,9 +35,9 @@ These are the differences you are most likely to notice.
 - **One `TransactionSet` per `ST`**, not per file. The separators come from the ISA instead of
   being guessed per element.
 - **Repeated segments take the first.** A second `NM1*QC`, `NM1*82` or `DTM*232`/`233` in a
-  claim makes the library raise `AssertionError`; we take the first.
-- **A claim without `NM1*QC`.** The library raises `AssertionError`; we give `patient` as
-  `None` and count it once in `count_patients`.
+  claim makes the library raise `AssertionError`. oxedi takes the first.
+- **A claim without `NM1*QC`.** The library raises `AssertionError`. oxedi gives `patient` as
+  `None` and counts it once in `count_patients`.
 - **An unknown claim status** gives `"unknown"` instead of an error.
 - **Path-like inputs.** `parse` also accepts `pathlib.Path`, where the library raises
   `TypeError`. `""` gives `FileNotFoundError` instead of `IndexError`.
@@ -52,21 +57,24 @@ holding only `None` to `float64` with NaN.
 
 ## Edge cases
 
-These matter only for unusual files. The compatibility layer gives an empty result for these;
-the library reads on or raises:
+These matter only for unusual files.
 
-- Arbitrary non-whitespace bytes before the ISA (other than a UTF-8 BOM followed by ASCII
-  whitespace), a doubled BOM, or non-ASCII whitespace after a BOM give an empty result where
-  the library reads the segments after the first.
-- A vertical tab or form feed before the ISA without a BOM gives an empty result.
-- Without a BOM, an unreadable ISA preceded by a newline gives an empty result where the
-  library raises `IndexError`.
+??? note "Details: files that start oddly"
+    The compatibility layer gives an empty result for these, where the library reads on or
+    raises:
 
-The native API (`oxedi.parse`) is strict and raises `ParseError` for all of these. It does read
-a file that starts with a UTF-8 BOM (then optional spaces, tabs or line breaks) before the ISA:
-the mark stays in the first segment's `raw`, `write()` gives the file back unchanged, and a
-`ByteOrderMark` diagnostic says it was there. The compatibility layer keeps the library's
-reading (no `interchange` for such a file).
+    - Arbitrary non-whitespace bytes before the ISA (other than a UTF-8 BOM followed by ASCII
+      whitespace), a doubled BOM, or non-ASCII whitespace after a BOM. The library reads the
+      segments after the first.
+    - A vertical tab or form feed before the ISA without a BOM.
+    - Without a BOM, an unreadable ISA preceded by a newline. The library raises `IndexError`.
+
+    The native API (`oxedi.parse`) is strict and raises `ParseError` for all of these.
+
+    It does read a file that starts with a UTF-8 BOM (then optional spaces, tabs or line
+    breaks) before the ISA. The mark stays in the first segment's `raw`, `write()` gives the
+    file back unchanged, and a `ByteOrderMark` diagnostic says it was there. The compatibility
+    layer keeps the library's reading (no `interchange` for such a file).
 
 ## Move to the native API
 

@@ -1,32 +1,44 @@
 # Types and limits
 
-Which column types `COPY` accepts, what it refuses, and which versions the extension has.
+Which column types `COPY` accepts, what it refuses, and how the extension is versioned.
 
-## Accepted types
+## Types COPY accepts
 
 Per column of the spec:
 
-- Text takes `VARCHAR`, `ENUM` or `BLOB`.
-- An integer column takes any integer type, or a `FLOAT` or `DOUBLE` holding a whole number.
-- A decimal column takes any `DECIMAL` or integer type that holds the value exactly (never
-  `FLOAT` or `DOUBLE`).
-- A date column takes `DATE`, or `TIMESTAMP` at midnight.
-- A time column takes `TIME` or `TIME_NS` in whole seconds.
+| Column type | Accepts |
+|---|---|
+| Text | `VARCHAR`, `ENUM` or `BLOB` |
+| Integer | Any integer type, or a `FLOAT` or `DOUBLE` holding a whole number |
+| Decimal | Any `DECIMAL` or integer type that holds the value exactly. Never `FLOAT` or `DOUBLE`. |
+| Date | `DATE`, or `TIMESTAMP` at midnight |
+| Time | `TIME` or `TIME_NS` in whole seconds |
 
-## Limits
+[Tables and columns](../reference/tables.md) gives the type of every column.
 
-- `PARTITION_BY` and `PER_THREAD_OUTPUT` ask for several files; DuckDB consumes them and the
-  format refuses a second file. `compression` is refused too: compress afterwards.
-- An existing file is left untouched when the `COPY` fails only for a local path written with
-  DuckDB's default temporary file. Without it (`USE_TMP_FILE false`, or a path that is not
-  local) the file is written over from its first byte, an existing file longer than the new
-  content is refused ("remove it first") and what happens to the target of a failed `COPY` is
-  up to DuckDB (some versions remove it).
-- A bare `NULL` inside a struct is typed `INTEGER` by DuckDB and a text column refuses it;
-  write `NULL::VARCHAR` (or the column's type).
+!!! warning "A bare `NULL` inside a struct"
+    DuckDB types a bare `NULL` inside a struct as `INTEGER`, and a text column refuses it.
+    Write `NULL::VARCHAR`, or the column's type.
+
+## What COPY refuses
+
+- `PARTITION_BY` and `PER_THREAD_OUTPUT` ask for several files. DuckDB consumes them, and the
+  format refuses a second file.
+- `compression` is refused too. Compress the file afterwards.
+
+## What happens to an existing file
+
+- With DuckDB's default temporary file and a local path, an existing file is left untouched
+  when the `COPY` fails.
+- Without it (`USE_TMP_FILE false`, or a path that is not local), the file is written over from
+  its first byte.
+- In that case, an existing file longer than the new content is refused ("remove it first").
+- What happens to the target of a failed `COPY` is then up to DuckDB. Some versions remove it.
 
 ## Versions
 
-The extension is versioned separately from the Python package (its version is in the crate's
-`Cargo.toml`), and its releases are tagged `duckdb-v*`. Its own changelog is
-[`crates/oxedi_duckdb/CHANGELOG.md`](https://github.com/javillegasna/oxedi/blob/master/crates/oxedi_duckdb/CHANGELOG.md).
+- The extension is versioned separately from the Python package. Its version is in the crate's
+  `Cargo.toml`.
+- Its releases are tagged `duckdb-v*`.
+- Its own changelog is
+  [`crates/oxedi_duckdb/CHANGELOG.md`](https://github.com/javillegasna/oxedi/blob/master/crates/oxedi_duckdb/CHANGELOG.md).

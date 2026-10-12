@@ -1,15 +1,21 @@
 # Writing with COPY
 
-How to write an 835 from SQL with `COPY ... (FORMAT edi835)`, its options and strict mode.
+`COPY ... TO ... (FORMAT edi835, ...)` writes an 835 from SQL. It uses the same writer as the
+Python package's `oxedi.write`. For the same tables and envelope, the file is byte for byte
+what `oxedi.write` gives.
 
-Writing with `COPY` needs extension 0.2.0 or later; until it reaches the community repository,
-build the extension.
+!!! warning "Needs extension 0.2.0"
+    Writing with `COPY` needs extension 0.2.0 or later. Until it reaches the community
+    repository, build the extension (see [Install](index.md#install)).
 
-`COPY ... TO ... (FORMAT edi835, ...)` writes an 835 with the same writer as the Python
-package's `oxedi.write`; the file is byte for byte what `oxedi.write` gives for the same
-tables and envelope. The query returns **one `STRUCT` column** whose fields are named after the
-spec's tables, each a list of structs (one struct per row, the table's columns as fields).
-This example reads the tables of a file into temporary tables, then writes them back:
+## Write a file
+
+The query you copy returns **one `STRUCT` column**:
+
+- Its fields are named after the spec's tables.
+- Each field is a list of structs: one struct per row, with the table's columns as fields.
+
+This example reads the tables of a file into temporary tables:
 
 ```sql
 CREATE TEMP TABLE payments AS FROM read_835('remittance.835', table_name := 'payments');
@@ -19,6 +25,8 @@ CREATE TEMP TABLE adjustments AS FROM read_835('remittance.835', table_name := '
 CREATE TEMP TABLE provider_adjustments AS
   FROM read_835('remittance.835', table_name := 'provider_adjustments');
 ```
+
+Then it writes them back:
 
 ```sql
 COPY (
@@ -33,13 +41,26 @@ COPY (
                 date DATE '2024-01-10', time TIME '09:00');
 ```
 
-`payments`, `claims` and the rest can be any tables or views with those names, built in SQL
-or read from a file as above and changed before writing. Temporary tables, views and the open
-transaction are visible. The lists of several rows of the query concatenate into one
-interchange. A table left out has no rows and a column left out is null.
+The new file reads back like any other:
 
-To write from tables with your own keys, see
-[Writing from your tables](../python/own-tables.md#with-sql-duckdb).
+```sql
+SELECT count(*) AS claims, sum(payment_amount) AS paid FROM read_835('out.835');
+```
+
+```text
+┌────────┬───────────────┐
+│ claims │     paid      │
+│ int64  │ decimal(38,2) │
+├────────┼───────────────┤
+│      4 │        720.00 │
+└────────┴───────────────┘
+```
+
+- `payments`, `claims` and the rest can be any tables or views with those names. Build them in
+  SQL, or read them from a file as above and change them before writing.
+- Temporary tables, views and the open transaction are visible.
+- The lists of several rows of the query concatenate into one interchange.
+- A table left out has no rows. A column left out is null.
 
 ## Options
 
@@ -51,29 +72,53 @@ To write from tables with your own keys, see
 | `usage_indicator` | `'P'` | `'P'` production or `'T'` test |
 | `control_number` | `1` | first interchange control number |
 | `application_sender`, `application_receiver` | the ids | group header sender and receiver codes |
-| `delimiters` | `*` `:` `~` `^` | a struct such as `{'element': '\|', 'repetition': '^'}` with any of `element`, `component`, `segment`, `repetition`, `release`; fields left out take the defaults of `oxedi.Delimiters()` (`*`, `:`, `~`, and no repetition or release), so on 5010 give `repetition` |
+| `delimiters` | `*` `:` `~` `^` | a struct of delimiters (see below) |
 | `line_break` | `false` | a line break after each segment |
 | `version` | `'5010'` | the built-in spec, `'5010'` or `'4010'` |
 
-The options are those of `oxedi.Envelope`, with the same defaults.
+The options are those of [`oxedi.Envelope`](../python/writing.md#fill-in-the-envelope), with the
+same defaults.
 
-## Strict
+??? note "Details: the `delimiters` struct"
+    Pass a struct such as `{'element': '|', 'repetition': '^'}` with any of `element`,
+    `component`, `segment`, `repetition` and `release`. Fields left out take the defaults of
+    `oxedi.Delimiters()`: `*`, `:`, `~`, and no repetition or release. So on 5010, give
+    `repetition`.
 
-The written file is read back with the spec, and every diagnostic of that read is a finding, as
-is anything the writer cannot place (a missing required element, a code outside its list, a row
-whose parent does not exist or is out of order, money that does not balance). Any finding fails
-the `COPY` with the listing `oxedi.WriteError` shows, each finding naming the table, row and
-column, and nothing is written. There is no `allow_findings` here yet.
+## When COPY refuses
 
-## From your own tables
+`COPY` is strict, like `oxedi.write`. The written file is read back with the spec. Every
+diagnostic of that read is a finding, and so is anything the writer cannot place:
 
-The writer asks for the spec's names and nothing else, so tables built elsewhere work when they
-follow them (see [Writing](../python/own-tables.md)):
+- A missing required element.
+- A code outside its list.
+- A row whose parent does not exist or is out of order.
+- Money that does not balance.
 
-- **Tolerated:** a missing table (no rows), a missing column (null), a column of a narrower or
-  compatible type (`INTEGER` for `BIGINT`, a `DECIMAL` of another scale that holds the value,
-  `ENUM` or `BLOB` for text).
-- **Refused, naming the table, row and column:** a table or column that is not in the spec, a float
-  for money, a value that would change in the conversion (a decimal that does not fit, a number
-  outside the column's range), and a file that does not balance or is missing a required
-  element.
+Any finding fails the `COPY` with the listing `oxedi.WriteError` shows, each finding naming the
+table, row and column. Nothing is written. There is no `allow_findings` here yet.
+[When the writer refuses a file](../python/when-write-refuses.md) explains findings in detail.
+
+## Write from your own tables
+
+The writer asks for the spec's names and nothing else. Tables built elsewhere work when they
+follow them.
+
+Tolerated:
+
+- A missing table (no rows).
+- A missing column (null).
+- A column of a narrower or compatible type: `INTEGER` for `BIGINT`, a `DECIMAL` of another
+  scale that holds the value, `ENUM` or `BLOB` for text.
+
+Refused, naming the table, row and column:
+
+- A table or column that is not in the spec.
+- A float for money.
+- A value that would change in the conversion: a decimal that does not fit, or a number outside
+  the column's range.
+- A file that does not balance or is missing a required element.
+
+To number rows from tables with your own keys, see
+[Writing from your tables](../python/own-tables.md#translate-your-keys) (SQL tab).
+[Types and limits](limits.md) lists the accepted types per column.
