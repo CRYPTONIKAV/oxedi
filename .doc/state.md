@@ -4,7 +4,9 @@ Snapshot for picking the project up cold. Update when a stage changes state.
 
 ## Pick up here (2026-10-12)
 
-- **Now:** releasing 0.5.0 (`v0.5.0rc1` to TestPyPI first, then 0.5.0 to PyPI): `Result.spec`,
+- **Now:** releasing 0.5.0 (`v0.5.0rc1` is on TestPyPI, its install verified on all six wheel
+  platforms and by hand: write round trip and `validate` on both balanced fixtures; 0.5.0 goes
+  to PyPI): `Result.spec`,
   the pyx12 adapter (#146), no ST03 on write, faster `Segment.raw`/`id`, the new PyPI metadata
   and the reorganized documentation. The rc is the first run of the TestPyPI check on all six
   wheel platforms (#66). Then: tag `duckdb-v0.2.0` (copy format, merged) and update the
