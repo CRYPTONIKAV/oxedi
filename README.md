@@ -10,29 +10,25 @@ core is written in Rust and is available from Python and from DuckDB.
 - **Problems are reported, not raised.** Questionable data still parses; each issue is a
   diagnostic that names the rule, the position and the value.
 
+Documentation: **<https://javillegasna.github.io/oxedi/latest/>**
+
 ## Install
 
 ```bash
-pip install oxedi               # no Python dependencies
-pip install "oxedi[polars]"     # with Polars
-pip install "oxedi[pandas]"     # with pandas and pyarrow
-pip install "oxedi[pyx12]"      # with pyx12 validation
-pip install "oxedi[edi-835-parser]"  # drop-in layer for edi-835-parser users
+pip install oxedi                    # no Python dependencies
+pip install "oxedi[polars]"          # or [pandas], [pyx12], [edi-835-parser]
 ```
 
-Requires Python 3.11 or later. Wheels are available for Linux (x86_64 and aarch64, plus musl
-on x86_64), macOS (Intel and Apple silicon) and Windows (x86_64).
+Requires Python 3.11 or later. For DuckDB:
 
-For DuckDB:
-
+<!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
 ```sql
 INSTALL oxedi FROM community;
 LOAD oxedi;
 ```
 
-The community build is not available yet: it waits for the maintainers to merge
-duckdb/community-extensions#2942. Until then, build the extension and `LOAD` the file; see
-[DuckDB](docs/duckdb.md).
+`INSTALL` gives extension 0.1.x, which reads files. Writing with `COPY` needs 0.2.0, which is
+not in the community repository yet. See [DuckDB](https://javillegasna.github.io/oxedi/latest/duckdb/).
 
 ## Read
 
@@ -42,45 +38,19 @@ import oxedi
 result = oxedi.parse_file("remittance.835")      # or oxedi.parse(data) from bytes
 
 claims = result.tables["claims"].to_polars()     # or .to_pandas()
-services = result.tables["services"].to_polars()
-
 print(result.count_claims(), result.sum_payments())  # sum_payments() is a Decimal
 print(result.payer["name"], result.payee["name"])
-```
 
-There are five tables: `payments`, `claims`, `services`, `adjustments` and
-`provider_adjustments`. Child tables point to their parents by row number. Tables also follow
-the Arrow PyCapsule interface, so DuckDB and any Arrow-aware library read them directly:
-
-```python
-import duckdb
-
-claims = result.tables["claims"]
-duckdb.sql("select claim_status, sum(payment_amount) from claims group by 1")
-```
-
-A file that is not an 835 at all raises `oxedi.ParseError`. Anything else parses, and its
-problems come back as diagnostics:
-
-```python
-for diagnostic in result.diagnostics:
+for diagnostic in result.diagnostics:            # problems come back as data
     print(diagnostic)
 ```
 
-For large files, `stream` yields one transaction at a time, so memory stays bounded:
-
-```python
-from pathlib import Path
-
-for batch in oxedi.stream(Path("big.835").read_bytes()):
-    services = batch.tables["services"].to_polars()
-```
-
-To get a parsed file back byte for byte: `result.document.write()`.
+A file that is not an 835 raises `oxedi.ParseError`; anything else parses. `oxedi.stream`
+yields one transaction at a time for large files.
 
 ## Write
 
-`oxedi.write` turns tables into an 835. Parse, change a value, write:
+Parse, change a value, write:
 
 ```python
 import datetime
@@ -94,25 +64,12 @@ envelope = oxedi.Envelope(
     receiver_id="SUNRISECLINIC",
     date=datetime.date(2024, 1, 10),
     time=datetime.time(9, 0),
-    usage_indicator="T",  # "P" (production) is the default
 )
 data = oxedi.write(frames, envelope, spec=result.spec)  # bytes, one interchange
 ```
 
-Pass `spec=result.spec` so the tables are written with the spec that parsed them (4010 or
-5010). The writer is strict: if the file would not read back clean, or the money does not
-balance, it raises `oxedi.WriteError` listing every finding, and writes nothing. To get the
-file anyway, for example to build invalid test files:
-
-```python
-try:
-    data = oxedi.write(frames, envelope, spec=result.spec)
-except oxedi.WriteError as error:
-    for finding in error.findings:
-        print(finding.table, finding.row, finding.column, finding)
-
-data, findings = oxedi.write(frames, envelope, spec=result.spec, allow_findings=True)
-```
+The writer is strict: if the money does not balance or the file would not read back clean, it
+raises `oxedi.WriteError` and writes nothing.
 
 ## DuckDB
 
@@ -123,66 +80,20 @@ FROM read_835('remits/*.835', table_name := 'services', filename := true);
 FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true);
 ```
 
-Write tables back with `COPY`. This needs extension 0.2.0 or later; until it reaches the
-community repository, build the extension. `payments`, `claims` and the rest are tables or
-views with those names, for example `CREATE TEMP TABLE claims AS FROM read_835('remittance.835',
-table_name := 'claims')`, changed in SQL before writing:
+## Documentation
 
-```sql
-COPY (
-  SELECT {
-    'payments':             (SELECT list(t ORDER BY t."row") FROM payments t),
-    'claims':               (SELECT list(t ORDER BY t."row") FROM claims t),
-    'services':             (SELECT list(t ORDER BY t."row") FROM services t),
-    'adjustments':          (SELECT list(t ORDER BY t."row") FROM adjustments t),
-    'provider_adjustments': (SELECT list(t ORDER BY t."row") FROM provider_adjustments t)
-  }
-) TO 'out.835' (FORMAT edi835, sender_id 'ACMEPAYER', receiver_id 'SUNRISECLINIC',
-                date DATE '2024-01-10', time TIME '09:00');
-```
-
-## Validate with pyx12
-
-```python
-import oxedi
-from oxedi.pyx12 import validate
-
-result = oxedi.parse_file("remittance.835")
-findings = result.diagnostics + validate("remittance.835")   # bytes, a path or a binary file
-for d in sorted(findings, key=lambda d: d.level):
-    print(d.origin, d.code, d)                   # "oxedi" or "pyx12"
-```
-
-`parse` never calls pyx12; `validate` does, on demand, and returns the same `Diagnostic` type.
-
-## Spec versions
-
-`parse`, `parse_file` and `stream` read the version a file declares and use the matching
-built-in spec: 5010 (`005010X221A1`) by default, 4010 (`004010X091A1`) for 4010 files. Pass
-`spec=oxedi.Spec.builtin("4010")` to choose one. A JSON patch adds segments or table columns
-without touching the code; see [The spec](docs/spec.md).
-
-## More detail
-
-| Guide | What is in it |
+| Page | What is in it |
 |---|---|
-| [Reading](docs/reading.md) | Tables in depth, large files, diagnostics, the document |
-| [Writing](docs/writing.md) | The envelope, findings, balancing rules, writing from your own tables |
-| [DuckDB](docs/duckdb.md) | `read_835` parameters, `COPY` options, accepted types, limits |
-| [The spec](docs/spec.md) | Spec versions and patches |
-| [Validating with pyx12](docs/pyx12.md) | What `validate` reports and where |
-| [Migrating from edi-835-parser](docs/migrating-from-edi-835-parser.md) | Change the import, or move to the native API |
+| [Reading](https://javillegasna.github.io/oxedi/latest/reading/) | Tables in depth, large files, diagnostics, the document |
+| [Writing](https://javillegasna.github.io/oxedi/latest/writing/) | The envelope, findings, balancing rules, your own tables |
+| [DuckDB](https://javillegasna.github.io/oxedi/latest/duckdb/) | `read_835` parameters, `COPY` options, limits |
+| [The spec](https://javillegasna.github.io/oxedi/latest/spec/) | Spec versions (5010, 4010) and patches |
+| [Validating with pyx12](https://javillegasna.github.io/oxedi/latest/pyx12/) | What `validate` reports and where |
+| [Recipes](https://javillegasna.github.io/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
+| [API reference](https://javillegasna.github.io/oxedi/latest/api/parsing/) | Every public function and class |
+| [Migrating from edi-835-parser](https://javillegasna.github.io/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
 
-## Versioning
+## Versioning, contributing, license
 
-The project follows semantic versioning. While the version is `0.x`, a minor release may
-change the API. See [`CHANGELOG.md`](CHANGELOG.md). The DuckDB extension is versioned
-separately.
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-## License
-
-MIT. See [`LICENSE`](https://github.com/javillegasna/oxedi/blob/master/LICENSE) and [`THIRD_PARTY_NOTICES`](https://github.com/javillegasna/oxedi/blob/master/THIRD_PARTY_NOTICES).
+Semantic versioning; while the version is `0.x`, a minor release may change the API. See
+[`CHANGELOG.md`](CHANGELOG.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md). MIT license, see [`LICENSE`](https://github.com/javillegasna/oxedi/blob/master/LICENSE) and [`THIRD_PARTY_NOTICES`](https://github.com/javillegasna/oxedi/blob/master/THIRD_PARTY_NOTICES).

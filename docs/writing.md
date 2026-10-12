@@ -134,6 +134,7 @@ does not need a file is tracked in [#138](https://github.com/javillegasna/oxedi/
 
 Use `with_row_index("row")` to number the rows.
 
+<!-- docs-test: skip needs the reader's own tables (my_payments and the others), which the example files do not provide -->
 ```python
 import polars as pl
 
@@ -192,6 +193,7 @@ This example takes `my_payments` (key `pay_key`), `my_claims` (`claim_key`, `pay
 when the adjustment is on a service) and `my_provider_adjustments` (`pay_key`), each with the
 spec's other columns:
 
+<!-- docs-test: skip needs the reader's own tables (my_payments and the others), which the example files do not provide -->
 ```sql
 COPY (
   WITH payments AS (

@@ -1,0 +1,77 @@
+site_name: oxedi
+site_description: Lossless, fast X12 EDI 835 parser and writer for Python and DuckDB
+site_url: https://javillegasna.github.io/oxedi/
+repo_url: https://github.com/javillegasna/oxedi
+repo_name: javillegasna/oxedi
+docs_dir: docs
+strict: true
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+extra:
+  version:
+    provider: mike
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [crates/oxedi_py/python]
+          options:
+            allow_inspection: false
+            docstring_style: null
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            heading_level: 2
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Reading: reading.md
+      - Writing: writing.md
+      - DuckDB: duckdb.md
+      - The spec: spec.md
+      - Validating with pyx12: pyx12.md
+  - Recipes:
+      - A Parquet lakehouse: recipes/lakehouse.md
+      - Analytics with Polars: recipes/polars.md
+      - oxedi in a pipeline: recipes/pipelines.md
+  - API reference:
+      - Parsing and results: api/parsing.md
+      - Writing: api/writing.md
+      - Spec: api/spec.md
+      - Diagnostics: api/diagnostics.md
+      - pyx12: api/pyx12.md
+      - edi_835_parser: api/edi_835_parser.md
+  - Migrating from edi-835-parser: migrating-from-edi-835-parser.md
+  - Contributing: https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md

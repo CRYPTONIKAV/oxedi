@@ -14,3 +14,6 @@ crates/oxedi_py/python/oxedi/*.so
 
 # DuckDB extension artifacts copied to the root for DuckDB's CI.
 /build/
+# Documentation site: its environment and the build output.
+.venv-docs/
+/site/

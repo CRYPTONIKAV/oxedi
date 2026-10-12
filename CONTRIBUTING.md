@@ -54,6 +54,45 @@ Load a local build with `duckdb -unsigned` and
 PyPI. Change the root `README.md` and regenerate the other with `make readme-py`; `make gates` and CI
 run `make readme-py-check`, which fails when the two differ.
 
+## Documentation site
+
+The site is built with MkDocs Material from `mkdocs.yml` and `docs/`. Its tools live in
+`requirements-docs.txt`, in their own environment (`.venv-docs`), never in the package.
+
+```bash
+make docs         # strict build into site/: a broken link or a page outside the navigation fails
+make docs-serve   # preview at http://127.0.0.1:8000
+make release      # build the DuckDB extension once; the SQL examples load it
+make docs-test    # run every python and sql block of docs/**/*.md and README.md
+```
+
+The API reference under `docs/api/` is generated from the installed package and its type stub;
+write a symbol's documentation in its docstring, not in the page.
+
+`make docs-test` runs the blocks of a page in order, in one namespace (Python) or one DuckDB
+connection (SQL), inside a temporary directory that holds `remittance.835`, `remittance-4010.835`, `big.835`, `a.835`,
+`b.835`, `remits/*.835` and `remittances/*.835` (copies of the files under
+`crates/oxedi_core/tests/fixtures/`). A block that cannot run carries a comment on the line
+right before its fence, with a reason; the run lists every skipped block:
+
+    <!-- docs-test: skip needs the reader's own tables -->
+
+Use it for blocks that need something the runner cannot provide (a network, an orchestrator,
+dbt templating), and when the equivalent runs elsewhere on the page, say so in the reason. A
+`python` or `sql` block without the marker must run.
+
+To add a page, put it in `docs/` and in the `nav` of `mkdocs.yml`; the strict build rejects a
+page outside the navigation.
+
+### Deploy
+
+`.github/workflows/docs.yml` publishes with `mike` to the `gh-pages` branch. A push to `master`
+publishes `dev` (titled "dev (unreleased)"). A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
+the site root redirects to. Pre-release tags and `duckdb-v*` tags publish nothing. Pull requests
+only build the site (the Documentation job in `ci.yml`). To publish a release that was tagged before the workflow existed, run "Docs deploy" manually
+from `master` with the `version` input (`X.Y`, for example `0.5`); it also moves `latest`.
+Never commit to `gh-pages` by hand.
+
 ## Releases
 
 `make release-check TAG=v<version>` checks the tag, a clean tree and the changelog entry before
