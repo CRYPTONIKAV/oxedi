@@ -118,7 +118,7 @@ def test_pyx12_finds_in_the_written_file_exactly_what_it_finds_in_the_original(n
 
     def named(finding):
         found = element.findall(finding[3])
-        return found[-1] if found else finding[6].decode()
+        return found[-1] if found else (finding[6] or b"").decode()
 
     assert sorted(named(f) for f in original.elements()) == PYX12_FINDINGS.get(name, [])
     kept = collections.Counter({f: n for f, n in original.items() if named(f) not in UNWRITTEN})

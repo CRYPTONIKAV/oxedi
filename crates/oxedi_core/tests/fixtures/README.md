@@ -94,5 +94,5 @@ What they cover:
 
 `pyx12` finds nothing in the 4010 file and one thing in the 5010 file: the second `PLB` segment.
 Its 5010 map wraps `PLB` in a loop that may occur once, and pyx12 counts a second `PLB` as a
-second occurrence of that loop, although the map lets `PLB` itself repeat; the 4010 map has no
-such loop.
+second occurrence of that loop, although the map lets `PLB` itself repeat; the 4010 map's
+loop may repeat.

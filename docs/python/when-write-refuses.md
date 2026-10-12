@@ -98,9 +98,13 @@ The writer checks the balancing rules. It never uses them to fill in a total:
     Interest a payer owes the provider for a late claim is not part of the claim's payment:
     `CLP04` and the `CAS` adjustments show the adjudication only. The claim reports its interest
     in `AMT*I`, which takes no part in balancing, and the money is paid in `PLB` with reason code
-    `L6` as a negative amount, so it adds to `BPR02`. Interest the patient owes is a `CAS`
-    adjustment, and so is already in the claim's sum. X12 states this in its public
+    `L6`. Interest the patient owes is a `CAS` adjustment, and so is already in the claim's sum.
+    X12 states this in its public
     [interpretation 1705](https://x12.org/resources/requests-for-interpretation/rfi-1705-5010-835-interest-payment).
+    The `PLB` amount is negative, so it adds to `BPR02`, because `BPR02` is the claims' payments
+    minus the `PLB` amounts. UnitedHealthcare's public
+    [provider-level adjustments guide](https://www.uhcprovider.com/content/dam/provider/docs/public/resources/edi/EDI-835-Provider-Level-Adjustments.pdf)
+    describes the same sign convention.
 
     The balancing rules follow that layout. A file that puts interest into `CLP04` without a
     matching `CAS` does not balance, and the writer refuses it, as it should, unless you set
