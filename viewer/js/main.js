@@ -38,9 +38,15 @@ export function showSegment(index, element, component) {
 for (const t of TABS) {
   tabButtons[t].addEventListener('click', () => selectTab(t));
   tabButtons[t].addEventListener('keydown', (event) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-    if (!step) return;
-    const next = TABS[(TABS.indexOf(t) + step + TABS.length) % TABS.length];
+    const at = TABS.indexOf(t);
+    const target = {
+      ArrowRight: (at + 1) % TABS.length,
+      ArrowLeft: (at - 1 + TABS.length) % TABS.length,
+      Home: 0,
+      End: TABS.length - 1,
+    }[event.key];
+    if (target === undefined) return;
+    const next = TABS[target];
     selectTab(next);
     tabButtons[next].focus();
     event.preventDefault();
@@ -122,8 +128,12 @@ async function start() {
   const sample = $('sample');
   sample.disabled = false;
   sample.addEventListener('click', async () => {
-    const { SAMPLE, SAMPLE_NAME } = await import('../pkg/sample.js');
-    loader.loadBytes(SAMPLE_NAME, SAMPLE);
+    try {
+      const { SAMPLE, SAMPLE_NAME } = await import('../pkg/sample.js');
+      loader.loadBytes(SAMPLE_NAME, SAMPLE);
+    } catch (err) {
+      fail(`The sample could not be loaded (${err instanceof Error ? err.message : String(err)}). If you build this page yourself, run "make wasm" first.`);
+    }
   });
 }
 

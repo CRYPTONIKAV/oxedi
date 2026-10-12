@@ -3,6 +3,7 @@
 // absolutely inside it.
 
 const OVERSCAN = 6;
+const MAX_HEIGHT = 10_000_000;
 
 /**
  * @param {object} options
@@ -21,10 +22,20 @@ export function createVirtualList({ scroller, rowHeight, render, header }) {
   let count = 0;
   let rows = new Map();
   let pending = false;
+  let scale = 1;
+
+  // Browsers cap an element's height; past MAX_HEIGHT the sizer stays at the
+  // cap and the scroll position is mapped proportionally onto the full list.
+  const headerHeight = () => (header ? header.offsetHeight : 0);
+  const scrollable = () => Math.max(0, sizer.offsetHeight + headerHeight() - scroller.clientHeight);
+  const fullScrollable = () => Math.max(0, count * rowHeight + headerHeight() - scroller.clientHeight);
+  // The list offset the viewport top shows.
+  const virtualTop = () => (scale === 1 ? scroller.scrollTop : scroller.scrollTop * (fullScrollable() / (scrollable() || 1)));
 
   function paint() {
     pending = false;
-    const top = Math.max(0, scroller.scrollTop - (header ? header.offsetHeight : 0));
+    const vtop = virtualTop();
+    const top = Math.max(0, vtop - headerHeight());
     const height = scroller.clientHeight;
     const first = Math.max(0, Math.floor(top / rowHeight) - OVERSCAN);
     const last = Math.min(count - 1, Math.ceil((top + height) / rowHeight) + OVERSCAN);
@@ -41,10 +52,12 @@ export function createVirtualList({ scroller, rowHeight, render, header }) {
       el.style.top = '0';
       el.style.left = '0';
       el.style.height = `${rowHeight}px`;
-      el.style.transform = `translateY(${index * rowHeight}px)`;
       sizer.append(el);
       rows.set(index, el);
     }
+    // Position relative to the viewport, so a scaled scroll still lines up.
+    const shift = scroller.scrollTop - vtop;
+    for (const [index, el] of rows) el.style.transform = `translateY(${index * rowHeight + shift}px)`;
   }
 
   function schedule() {
@@ -61,7 +74,9 @@ export function createVirtualList({ scroller, rowHeight, render, header }) {
     /** Replaces the row count and drops every rendered row. */
     setCount(next) {
       count = next;
-      sizer.style.height = `${count * rowHeight}px`;
+      const full = count * rowHeight;
+      scale = full > MAX_HEIGHT ? MAX_HEIGHT / full : 1;
+      sizer.style.height = `${Math.min(full, MAX_HEIGHT)}px`;
       for (const el of rows.values()) el.remove();
       rows = new Map();
       paint();
@@ -78,9 +93,8 @@ export function createVirtualList({ scroller, rowHeight, render, header }) {
     },
     /** Scrolls so that the row is roughly in the middle of the viewport. */
     scrollToIndex(index) {
-      const offset = header ? header.offsetHeight : 0;
-      const target = index * rowHeight + offset - (scroller.clientHeight - rowHeight) / 2;
-      scroller.scrollTop = Math.max(0, target);
+      const wanted = Math.max(0, index * rowHeight + headerHeight() - (scroller.clientHeight - rowHeight) / 2);
+      scroller.scrollTop = scale === 1 ? wanted : wanted * (scrollable() / (fullScrollable() || 1));
       paint();
     },
     get count() {

@@ -256,3 +256,5 @@ jobs:
         run: make wasm-size-check
       - name: Oracle against oxedi.parse
         run: make viewer-oracle
+      - name: Page unit checks
+        run: make viewer-units

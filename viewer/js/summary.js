@@ -1,17 +1,12 @@
 // The Summary tab: one card per payment and the file's counts.
 
+import { el } from './dom.js';
+
 const MAX_CARDS = 50;
 
 export function columnValue(table, name, row) {
   const column = table?.columns.find((c) => c.name === name);
   return column ? (column.values[row] ?? null) : null;
-}
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
 }
 
 function field(label, value) {

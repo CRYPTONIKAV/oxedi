@@ -34,11 +34,11 @@
 
     <div id="results" hidden>
       <div class="tabs" role="tablist" aria-label="Views">
-        <button role="tab" id="tab-summary" aria-controls="panel-summary" data-tab="summary" type="button">Summary</button>
-        <button role="tab" id="tab-tables" aria-controls="panel-tables" data-tab="tables" type="button">Tables</button>
-        <button role="tab" id="tab-diagnostics" aria-controls="panel-diagnostics" data-tab="diagnostics" type="button">Diagnostics <span id="diag-count" class="badge">0</span></button>
-        <button role="tab" id="tab-text" aria-controls="panel-text" data-tab="text" type="button">Text</button>
-        <button role="tab" id="tab-loops" aria-controls="panel-loops" data-tab="loops" type="button">Loops</button>
+        <button role="tab" id="tab-summary" aria-controls="panel-summary" data-tab="summary" aria-selected="true" tabindex="0" type="button">Summary</button>
+        <button role="tab" id="tab-tables" aria-controls="panel-tables" data-tab="tables" aria-selected="false" tabindex="-1" type="button">Tables</button>
+        <button role="tab" id="tab-diagnostics" aria-controls="panel-diagnostics" data-tab="diagnostics" aria-selected="false" tabindex="-1" type="button">Diagnostics <span id="diag-count" class="badge">0</span></button>
+        <button role="tab" id="tab-text" aria-controls="panel-text" data-tab="text" aria-selected="false" tabindex="-1" type="button">Text</button>
+        <button role="tab" id="tab-loops" aria-controls="panel-loops" data-tab="loops" aria-selected="false" tabindex="-1" type="button">Loops</button>
       </div>
       <section role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0"></section>
       <section role="tabpanel" id="panel-tables" aria-labelledby="tab-tables" tabindex="0" hidden></section>

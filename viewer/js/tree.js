@@ -1,19 +1,16 @@
 // The Loops tab: the loop tree as nested <details>, children built on first open.
 
-const MAX_IDS = 16;
+import { el } from './dom.js';
 
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
+const MAX_IDS = 16;
 
 /**
  * @param {HTMLElement} root
  * @param {{onJump: (segment: number) => void}} options
  */
 export function createTree(root, { onJump }) {
+  // Builds a node's children the first time it opens.
+  const fillers = new WeakMap();
   let view = null;
   let own = [];
 
@@ -67,7 +64,7 @@ export function createTree(root, { onJump }) {
     details.addEventListener('toggle', () => {
       if (details.open) fill();
     });
-    details.fill = fill;
+    fillers.set(details, fill);
     return details;
   }
 
@@ -86,7 +83,7 @@ export function createTree(root, { onJump }) {
       // Open the root and follow a chain of single children (interchange, group, transaction).
       for (;;) {
         details.open = true;
-        details.fill?.();
+        fillers.get(details)?.();
         const node = view.nodes[index];
         if (node.children.length !== 1) break;
         index = node.children[0];

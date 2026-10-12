@@ -1,14 +1,9 @@
 // The Diagnostics tab: findings grouped by level, each linked to its segment.
 
+import { el } from './dom.js';
+
 const LEVELS = ['SNIP 1', 'SNIP 2', 'SNIP 3'];
 const PAGE = 200;
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
 
 /**
  * @param {HTMLElement} root

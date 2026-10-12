@@ -1,26 +1,29 @@
 // The Tables tab: a table selector, a text filter, a virtualized grid and CSV export.
 
 import { createVirtualList } from './virtual.js';
+import { el } from './dom.js';
 
 const ROW_HEIGHT = 28;
 const CELL_WIDTH = 176;
 
-/** RFC 4180 text for the given rows; a null cell is an empty field. */
+const FORMULA = /^[=+@\t\r]/;
+const NUMBER = /^-\d+(\.\d+)?$/;
+
+/**
+ * RFC 4180 text for the given rows; a null cell is an empty field. A cell a
+ * spreadsheet would read as a formula (it starts with =, +, @, tab or CR, or
+ * with - and is not a plain number) gets a leading apostrophe, so text from
+ * the file cannot run in the reader's spreadsheet; negative amounts stay numeric.
+ */
 export function toCsv(names, rows) {
-  const field = (value) => {
-    if (value === null || value === undefined) return '';
+  const field = (cell) => {
+    if (cell === null || cell === undefined) return '';
+    const value = FORMULA.test(cell) || (cell.startsWith('-') && !NUMBER.test(cell)) ? `'${cell}` : cell;
     return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
   };
   const lines = [names.map(field).join(',')];
   for (const row of rows) lines.push(row.map(field).join(','));
   return `${lines.join('\r\n')}\r\n`;
-}
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
 }
 
 /**
@@ -48,7 +51,7 @@ export function createTables(root, { onJump }) {
   bar.append(group, filter, count, download);
   const scroller = el('div', 'grid');
   scroller.tabIndex = 0;
-  scroller.setAttribute('role', 'region');
+  scroller.setAttribute('role', 'table');
   scroller.setAttribute('aria-label', 'Table rows');
   root.append(bar, scroller);
 
@@ -62,6 +65,7 @@ export function createTables(root, { onJump }) {
 
   function cell(value, column, row) {
     const td = el('span', 'cell');
+    td.setAttribute('role', 'cell');
     td.style.width = `${CELL_WIDTH}px`;
     if (value === null) {
       td.classList.add('null');
@@ -84,6 +88,7 @@ export function createTables(root, { onJump }) {
     const row = shown[position];
     const div = el('div', 'row');
     div.setAttribute('role', 'row');
+    div.setAttribute('aria-rowindex', String(position + 2));
     if (position % 2) div.classList.add('odd');
     div.style.width = `${table.columns.length * CELL_WIDTH}px`;
     table.columns.forEach((column, c) => div.append(cell(column.values[row], c, row)));
@@ -99,9 +104,9 @@ export function createTables(root, { onJump }) {
     count.textContent = needle
       ? `${shown.length.toLocaleString()} of ${table.rows.toLocaleString()} rows`
       : `${table.rows.toLocaleString()} rows`;
-    list.setCount(shown.length);
     scroller.scrollTop = 0;
-    list.refresh();
+    list.setCount(shown.length);
+    scroller.setAttribute('aria-rowcount', String(shown.length + 1));
   }
 
   function choose(tableName) {
@@ -114,6 +119,7 @@ export function createTables(root, { onJump }) {
     }
     const header = el('div', 'row head');
     header.setAttribute('role', 'row');
+    header.setAttribute('aria-rowindex', '1');
     header.style.width = `${table.columns.length * CELL_WIDTH}px`;
     for (const column of table.columns) {
       const th = el('span', 'cell', column.name);
@@ -125,6 +131,7 @@ export function createTables(root, { onJump }) {
     if (list) list.destroy();
     list = createVirtualList({ scroller, rowHeight: ROW_HEIGHT, render: renderRow, header });
     list.setWidth(`${table.columns.length * CELL_WIDTH}px`);
+    scroller.setAttribute('aria-colcount', String(table.columns.length));
     applyFilter();
   }
 

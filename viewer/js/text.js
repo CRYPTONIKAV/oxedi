@@ -3,15 +3,9 @@
 
 import { createVirtualList } from './virtual.js';
 import { decode, elementRange, loopPath, visible } from './bytes.js';
+import { el } from './dom.js';
 
 const ROW_HEIGHT = 22;
-
-function el(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
 
 export function createText(root) {
   root.textContent = '';

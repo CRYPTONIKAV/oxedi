@@ -30,11 +30,10 @@ export function createLoader({ parse, status, alert, onLoad, onClear }) {
     alert.hidden = false;
   }
 
-  async function loadBytes(name, bytes) {
-    const mine = ++ticket;
+  async function parseBytes(mine, name, bytes) {
     alert.hidden = true;
     alert.textContent = '';
-    status.textContent = 'Parsing…';
+    status.textContent = 'Parsing\u2026';
     status.hidden = false;
     await nextFrame();
     if (mine !== ticket) return;
@@ -49,6 +48,10 @@ export function createLoader({ parse, status, alert, onLoad, onClear }) {
     }
   }
 
+  function loadBytes(name, bytes) {
+    return parseBytes(++ticket, name, bytes);
+  }
+
   async function loadFile(file) {
     if (needsConfirmation(file)) {
       const ok = window.confirm(
@@ -56,19 +59,23 @@ export function createLoader({ parse, status, alert, onLoad, onClear }) {
       );
       if (!ok) return;
     }
-    const mine = ticket + 1;
-    status.textContent = 'Reading…';
+    // The latest file chosen wins, whatever order the reads finish in.
+    const mine = ++ticket;
+    alert.hidden = true;
+    status.textContent = 'Reading\u2026';
     status.hidden = false;
     let buffer;
     try {
       buffer = await file.arrayBuffer();
     } catch (err) {
-      status.hidden = true;
-      fail(`${file.name}: could not be read (${err instanceof Error ? err.message : String(err)})`);
+      if (mine === ticket) {
+        status.hidden = true;
+        fail(`${file.name}: could not be read (${err instanceof Error ? err.message : String(err)})`);
+      }
       return;
     }
-    if (ticket >= mine) return;
-    await loadBytes(file.name, new Uint8Array(buffer));
+    if (mine !== ticket) return;
+    await parseBytes(mine, file.name, new Uint8Array(buffer));
   }
 
   return { loadFile, loadBytes };

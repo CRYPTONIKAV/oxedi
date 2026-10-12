@@ -45,7 +45,10 @@ export function splitRange(bytes, start, end, separator) {
 
 /**
  * Byte range of an element (1-based; 0 is the segment id) and, when given, of
- * one of its components (1-based). Null when the segment has no such part.
+ * one of its components (1-based). An element with repetitions is cut at the
+ * repetition separator first and the first repetition is used (a finding
+ * carries no repetition index), so a component never spans the separator.
+ * Null when the segment has no such part.
  */
 export function elementRange(bytes, view, segmentIndex, element, component) {
   const segment = view.segments[segmentIndex];
@@ -56,7 +59,9 @@ export function elementRange(bytes, view, segmentIndex, element, component) {
   const part = parts[element];
   if (!part) return null;
   if (component === undefined || component === null) return part;
-  const subs = splitRange(bytes, part[0], part[1], sep.component.charCodeAt(0));
+  let [from, to] = part;
+  if (sep.repetition) [[from, to]] = splitRange(bytes, from, to, sep.repetition.charCodeAt(0));
+  const subs = splitRange(bytes, from, to, sep.component.charCodeAt(0));
   return subs[component - 1] ?? null;
 }
 
