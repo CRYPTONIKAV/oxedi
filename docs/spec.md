@@ -14,7 +14,7 @@ use the matching built-in spec: 5010 (`005010X221A1`) by default, 4010 (`004010X
 from pathlib import Path
 import oxedi
 
-data = Path("remittance.835").read_bytes()
+data = Path("remittance-4010.835").read_bytes()
 spec = oxedi.Spec.builtin(version="4010")
 result = oxedi.parse(data, spec=spec)
 ```

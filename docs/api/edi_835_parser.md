@@ -7,11 +7,3 @@ See [Migrating from edi-835-parser](../migrating-from-edi-835-parser.md) for the
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      members:
-        - TransactionSet
-        - TransactionSets
-        - parse
-        - parse_bytes
-        - parse_file_obj
-        - parse_many
-        - spec

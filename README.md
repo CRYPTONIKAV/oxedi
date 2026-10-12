@@ -25,14 +25,14 @@ on x86_64), macOS (Intel and Apple silicon) and Windows (x86_64).
 
 For DuckDB:
 
-<!-- docs-test: skip the community build is not published yet; the runner loads the locally built extension instead -->
+<!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
 ```sql
 INSTALL oxedi FROM community;
 LOAD oxedi;
 ```
 
-The community build is not available yet: it waits for the maintainers to merge
-duckdb/community-extensions#2942. Until then, build the extension and `LOAD` the file; see
+`INSTALL` gives extension 0.1.x, which reads files. Writing with `COPY` needs 0.2.0, which is
+not in the community repository yet; until then, build the extension and `LOAD` the file. See
 [DuckDB](docs/duckdb.md).
 
 ## Read
@@ -126,7 +126,7 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 
 Write tables back with `COPY`. This needs extension 0.2.0 or later; until it reaches the
 community repository, build the extension. `payments`, `claims` and the rest are tables or
-views with those names, here read from a file and changed in SQL before writing:
+views with those names, here read from a file (change them in SQL before writing as needed):
 
 ```sql
 CREATE TEMP TABLE payments AS FROM read_835('remittance.835', table_name := 'payments');

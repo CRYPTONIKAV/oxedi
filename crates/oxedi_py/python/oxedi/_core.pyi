@@ -83,7 +83,12 @@ class Delimiters:
         The release character, or `None` when it is not in use.
         """
     def __eq__(self, other: builtins.object, /) -> builtins.bool: ...
-    def __new__(cls, element: bytes = b"*", component: bytes = b":", segment: bytes = b"~", repetition: typing.Optional[bytes] = None, release: typing.Optional[bytes] = None) -> Delimiters: ...
+    def __new__(cls, element: bytes = b"*", component: bytes = b":", segment: bytes = b"~", repetition: typing.Optional[bytes] = None, release: typing.Optional[bytes] = None) -> Delimiters:
+        r"""
+        Each delimiter is one byte. `element`, `component` and `segment` default to
+        `*`, `:` and `~`; `repetition` and `release` default to `None` (not in use).
+        Raises `ValueError` for a value that is not exactly one byte.
+        """
     def __repr__(self) -> builtins.str: ...
 
 @typing.final

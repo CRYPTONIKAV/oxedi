@@ -7,18 +7,17 @@ C API and loads on DuckDB 1.5.6 and later.
 
 ## Install
 
-<!-- docs-test: skip the community build is not published yet; the runner loads the locally built extension instead -->
+<!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
 ```sql
 INSTALL oxedi FROM community;
 LOAD oxedi;
 ```
 
-The extension was accepted into DuckDB's community repository
-(duckdb/community-extensions#2937), but its first community build failed on Windows on a test
-that pinned the operating system's error text. The fixed release (0.1.2, PR #135) is built and
-green and waits for the maintainers to merge duckdb/community-extensions#2942. Until then
-`INSTALL oxedi FROM community` is not available: build the extension (see
-[CONTRIBUTING](https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md#duckdb-extension)) and load the file.
+`INSTALL` gives extension 0.1.x from DuckDB's community repository, which reads files. Writing
+with `COPY` needs 0.2.0, which is not in the community repository yet. Until then, build the
+extension (see
+[CONTRIBUTING](https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md#duckdb-extension))
+and load the file.
 
 ## Reading
 
@@ -106,9 +105,9 @@ COPY (
 ```
 
 `payments`, `claims` and the rest can be any tables or views with those names, built in SQL
-or read from a file as above and changed before writing. Temporary tables, views and the open transaction are visible. The lists of
-several rows of the query concatenate into one interchange. A table left out has no rows and a
-column left out is null.
+or read from a file as above and changed before writing. Temporary tables, views and the open
+transaction are visible. The lists of several rows of the query concatenate into one
+interchange. A table left out has no rows and a column left out is null.
 
 To write from tables with your own keys, see
 [From your own tables](writing.md#with-sql-duckdb).

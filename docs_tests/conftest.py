@@ -10,6 +10,7 @@ FIXTURES = ROOT / "crates" / "oxedi_core" / "tests" / "fixtures"
 # Conventional file names the pages use, and the fixture each one is a copy of.
 FILES = {
     "remittance.835": "balanced_5010_sample.txt",
+    "remittance-4010.835": "balanced_4010_sample.txt",
     "big.835": "balanced_5010_sample.txt",
     "a.835": "balanced_5010_sample.txt",
     "b.835": "balanced_4010_sample.txt",

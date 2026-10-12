@@ -70,7 +70,7 @@ The API reference under `docs/api/` is generated from the installed package and 
 write a symbol's documentation in its docstring, not in the page.
 
 `make docs-test` runs the blocks of a page in order, in one namespace (Python) or one DuckDB
-connection (SQL), inside a temporary directory that holds `remittance.835`, `big.835`, `a.835`,
+connection (SQL), inside a temporary directory that holds `remittance.835`, `remittance-4010.835`, `big.835`, `a.835`,
 `b.835`, `remits/*.835` and `remittances/*.835` (copies of the files under
 `crates/oxedi_core/tests/fixtures/`). A block that cannot run carries a comment on the line
 right before its fence, with a reason; the run lists every skipped block:

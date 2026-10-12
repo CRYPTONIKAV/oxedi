@@ -44,6 +44,7 @@ plugins:
         python:
           paths: [crates/oxedi_py/python]
           options:
+            allow_inspection: false
             docstring_style: null
             show_root_heading: true
             show_root_full_path: false

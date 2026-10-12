@@ -86,7 +86,7 @@ pyo3_stub_gen::inventory::submit! {
                 optional_delimiter("release"),
             ],
             r#return: || TypeInfo::unqualified("Delimiters"),
-            doc: "",
+            doc: "Each delimiter is one byte. `element`, `component` and `segment` default to\n`*`, `:` and `~`; `repetition` and `release` default to `None` (not in use).\nRaises `ValueError` for a value that is not exactly one byte.",
             r#type: MethodType::New,
             is_async: false,
             deprecated: None,
