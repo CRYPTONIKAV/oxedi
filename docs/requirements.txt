@@ -21,6 +21,8 @@ duckdb==1.5.6
     # via -r docs/requirements.in
 ghp-import==2.1.0
     # via mkdocs
+greenlet==3.5.6
+    # via playwright
 griffelib==2.3.2
     # via mkdocstrings-python
 idna==3.20
@@ -82,7 +84,9 @@ mkdocstrings-python==2.0.9
     # via
     #   -r docs/requirements.in
     #   mkdocstrings
-numpy==2.5.4
+numpy==2.4.6 ; python_full_version < '3.12'
+    # via pandas
+numpy==2.5.4 ; python_full_version >= '3.12'
     # via pandas
 packaging==26.3
     # via
@@ -96,6 +100,8 @@ pathspec==1.1.1
     # via mkdocs
 platformdirs==4.13.0
     # via mkdocs-get-deps
+playwright==1.63.0
+    # via pytest-playwright
 pluggy==1.6.0
     # via pytest
 polars==2.0.0
@@ -104,6 +110,8 @@ polars-runtime-32==2.0.0
     # via polars
 pyarrow==26.0.0
     # via -r docs/requirements.in
+pyee==13.0.1
+    # via playwright
 pygments==2.21.0
     # via
     #   mkdocs-material
@@ -115,11 +123,20 @@ pymdown-extensions==12.2
 pyparsing==3.3.3
     # via mike
 pytest==9.1.1
+    # via
+    #   -r docs/requirements.in
+    #   pytest-base-url
+    #   pytest-playwright
+pytest-base-url==2.1.0
+    # via pytest-playwright
+pytest-playwright==0.7.2
     # via -r docs/requirements.in
 python-dateutil==2.9.0.post0
     # via
     #   ghp-import
     #   pandas
+python-slugify==8.0.4
+    # via pytest-playwright
 pytz==2026.5
     # via pandas
 pyx12==4.0.0
@@ -136,11 +153,17 @@ pyyaml-env-tag==1.1
     #   mike
     #   mkdocs
 requests==2.34.2
-    # via mkdocs-material
+    # via
+    #   mkdocs-material
+    #   pytest-base-url
 ruff==0.17.0
     # via -r docs/requirements.in
 six==1.17.0
     # via python-dateutil
+text-unidecode==1.3
+    # via python-slugify
+typing-extensions==4.16.0
+    # via pyee
 tzdata==2026.5
     # via pandas
 urllib3==2.8.0

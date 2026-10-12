@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/oxedi_core", "crates/oxedi_py", "crates/oxedi_duckdb"]
+members = ["crates/oxedi_core", "crates/oxedi_py", "crates/oxedi_duckdb", "crates/oxedi_wasm"]
 
 [workspace.package]
 version = "0.5.0"

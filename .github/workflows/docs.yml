@@ -4,6 +4,9 @@ name: Docs deploy
 # `X.Y` plus the `latest` alias from every final v* tag (pre-releases and duckdb-v* tags do not
 # publish). A manual run with a `version` (X.Y) publishes that version and moves `latest`, for a
 # release made before this workflow existed. Pull requests only build the site, in the Documentation job of ci.yml.
+#
+# The browser viewer is published next to the versions, in `viewer/` of gh-pages (the latest
+# release) and `viewer/dev/` (master), outside the folders mike manages.
 on:
   push:
     branches: [master]
@@ -29,6 +32,7 @@ jobs:
     # Never from a fork.
     if: github.repository == 'javillegasna/oxedi'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write # push to gh-pages
     steps:
@@ -36,6 +40,8 @@ jobs:
         with:
           fetch-depth: 0 # mike needs the gh-pages history
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - uses: astral-sh/setup-uv@v7
       - name: Version to publish
         id: target
@@ -74,6 +80,24 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Record the viewers already published
+        id: before
+        if: steps.target.outputs.kind != 'skip'
+        run: |
+          git fetch origin gh-pages
+          for name in release:viewer/index.html dev:viewer/dev/index.html; do
+            if git cat-file -e "origin/gh-pages:${name#*:}" 2>/dev/null; then
+              echo "${name%%:*}=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${name%%:*}=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+      - name: wasm-bindgen CLI and wasm-opt
+        if: steps.target.outputs.kind != 'skip'
+        run: crates/oxedi_wasm/scripts/install_tools.sh
+      - name: Build the viewer's module
+        if: steps.target.outputs.kind != 'skip'
+        run: make wasm
       - name: Deploy dev
         if: steps.target.outputs.kind == 'dev'
         env:
@@ -87,3 +111,66 @@ jobs:
         run: |
           mike deploy --push --update-aliases "$VERSION" latest
           mike set-default --push latest
+      - name: Publish the viewer
+        # `viewer/` for a release (keeping `viewer/dev/`), `viewer/dev/` for master. Nothing else
+        # on gh-pages is touched.
+        if: steps.target.outputs.kind != 'skip'
+        env:
+          KIND: ${{ steps.target.outputs.kind }}
+          VERSION: ${{ steps.target.outputs.version }}
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          pages=$(mktemp -d)/gh-pages
+          git worktree add -B viewer-publish "$pages" origin/gh-pages
+          trap 'git worktree remove --force "$pages"' EXIT
+          if [ "$KIND" = "release" ]; then
+            dest="$pages/viewer"
+            mkdir -p "$dest"
+            find "$dest" -mindepth 1 -maxdepth 1 ! -name dev -exec rm -rf {} +
+            label="$VERSION"
+          else
+            dest="$pages/viewer/dev"
+            rm -rf "$dest"
+            mkdir -p "$dest"
+            label="dev"
+          fi
+          # The page embeds the module in pkg/module.js and never fetches the raw .wasm.
+          tar -C viewer --exclude=./tests --exclude=./pkg/oxedi_bg.wasm -cf - . | tar -C "$dest" -xf -
+          cd "$pages"
+          git add -A viewer
+          if git diff --cached --quiet; then
+            echo "The viewer on gh-pages is already up to date."
+          else
+            git commit -m "Viewer $label from ${GITHUB_SHA::7}"
+            git push origin HEAD:gh-pages
+          fi
+      - name: The site and the viewer are intact
+        if: steps.target.outputs.kind != 'skip'
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          has() { git cat-file -e "origin/gh-pages:$1" 2>/dev/null || { echo "gh-pages lacks $1"; exit 1; }; }
+          has versions.json
+          git show origin/gh-pages:versions.json | jq -r '.[].version' | while read -r version; do
+            has "$version/index.html"
+          done
+          # An alias is a symlink to its version's folder.
+          git show origin/gh-pages:versions.json | jq -r '.[].aliases[]' | while read -r alias; do
+            has "$alias"
+          done
+          # A viewer that was there before the run must still be there (mike does not touch it);
+          # this run's own viewer must have been published.
+          if [ "$KIND" = "release" ] || [ "$RELEASE_BEFORE" = "true" ]; then has viewer/index.html; has viewer/pkg/index.js; fi
+          if [ "$KIND" = "dev" ] || [ "$DEV_BEFORE" = "true" ]; then has viewer/dev/index.html; has viewer/dev/pkg/index.js; fi
+          for dir in viewer viewer/dev; do
+            if git cat-file -e "origin/gh-pages:$dir/pkg/oxedi_bg.wasm" 2>/dev/null; then echo "gh-pages holds $dir/pkg/oxedi_bg.wasm, which the page never loads"; exit 1; fi
+          done
+          # The published page must carry the policy that forbids network connections.
+          page=viewer/index.html
+          if [ "$KIND" = "dev" ]; then page=viewer/dev/index.html; fi
+          git show "origin/gh-pages:$page" | grep -q "connect-src 'none'" || { echo "gh-pages $page lacks the Content-Security-Policy (connect-src 'none')"; exit 1; }
+        env:
+          KIND: ${{ steps.target.outputs.kind }}
+          RELEASE_BEFORE: ${{ steps.before.outputs.release }}
+          DEV_BEFORE: ${{ steps.before.outputs.dev }}

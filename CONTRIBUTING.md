@@ -46,6 +46,31 @@ Load a local build with `duckdb -unsigned` and
 `LOAD 'build/release/extension/oxedi/oxedi.duckdb_extension';`. `description.yml` in
 `crates/oxedi_duckdb` is the descriptor for the community repository.
 
+## Browser viewer
+
+The viewer (`viewer/`) is a static page that runs the core as WebAssembly (`crates/oxedi_wasm`,
+an internal binding with no public API). It has no JavaScript build step: `make wasm` builds the
+module and generates `viewer/pkg/` (git-ignored).
+
+```bash
+make wasm              # build the module into viewer/pkg
+make wasm-size-check   # fail if the gzipped module is over 250 KB
+make viewer-serve      # build, then serve at http://127.0.0.1:8001
+make viewer-test       # unit checks (node), the oracle against oxedi.parse, the browser tests
+```
+
+Tools: the `wasm32-unknown-unknown` Rust target (`make wasm` adds it), the `wasm-bindgen` CLI at
+exactly the version `make wasm-bindgen-version` prints (from `Cargo.lock`), `wasm-opt` from
+binaryen (CI uses release 133), Node 24 for the oracle and unit checks, and Chromium for the
+browser tests. `crates/oxedi_wasm/scripts/install_tools.sh` installs the two prebuilt tools with
+pinned checksums; CI and the deploy use it. Bumping the crate's `wasm-bindgen` pin means bumping
+the version and checksum in that script. The browser tests run in the docs environment
+(`make docs-venv`); install the browser once with `.venv-docs/bin/playwright install chromium`.
+
+The page's Content-Security-Policy forbids network connections, so it loads the module from
+generated ES modules instead of fetching it. Do not add a request, a font or a script from
+another origin.
+
 ## Documentation
 
 `README.md` is for GitHub and links to the guides under `docs/` with relative links.
@@ -91,7 +116,10 @@ publishes `dev` (titled "dev (unreleased)"). A final tag `vX.Y.Z` publishes vers
 the site root redirects to. Pre-release tags and `duckdb-v*` tags publish nothing. Pull requests
 only build the site (the Documentation job in `ci.yml`). To publish a release that was tagged before the workflow existed, run "Docs deploy" manually
 from `master` with the `version` input (`X.Y`, for example `0.5`); it also moves `latest`.
-Never commit to `gh-pages` by hand.
+The same workflow publishes the viewer next to the versions: a push to `master` puts it in
+`viewer/dev/`, and a final tag (or the manual run) puts it in `viewer/`, which keeps `viewer/dev/`.
+It then checks that `versions.json`, every version directory and the viewer are still on
+`gh-pages`. Never commit to `gh-pages` by hand.
 
 ## Releases
 

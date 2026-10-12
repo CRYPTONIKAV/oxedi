@@ -16,6 +16,7 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       duckdb: ${{ steps.filter.outputs.duckdb }}
       docs: ${{ steps.filter.outputs.docs }}
+      viewer: ${{ steps.filter.outputs.viewer }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -59,6 +60,18 @@ jobs:
               - '.cargo/**'
               - '.gitmodules'
               - '.github/workflows/docs.yml'
+              - '.github/workflows/ci.yml'
+            viewer:
+              - 'crates/oxedi_core/**'
+              - 'crates/oxedi_py/**'
+              - 'crates/oxedi_wasm/**'
+              - 'viewer/**'
+              - 'docs/requirements.txt'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'Makefile'
+              - 'rust-toolchain.toml'
+              - '.cargo/**'
               - '.github/workflows/ci.yml'
 
   lint:
@@ -194,3 +207,34 @@ jobs:
         run: make docs
       - name: Examples
         run: make docs-test
+
+  viewer:
+    name: Viewer
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.viewer == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: wasm-bindgen CLI (the version Cargo.lock resolves) and wasm-opt
+        run: crates/oxedi_wasm/scripts/install_tools.sh
+      - name: Build the module
+        run: make wasm
+      - name: Size
+        run: make wasm-size-check
+      - name: Browser for the page tests
+        # The docs environment (with Playwright) exists once make docs-venv has run.
+        run: |
+          make docs-venv
+          .venv-docs/bin/playwright install --with-deps chromium
+      - name: Unit checks, oracle and browser tests
+        run: make viewer-test

@@ -15,6 +15,9 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 - The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
   reference of every table and column, a glossary, and short guides by task. Old page addresses
   redirect to the new ones.
+- A viewer in the browser at <https://javillegas.dev/oxedi/viewer/>: drop an 835 file to see its
+  summary, tables, diagnostics, text and loops. The parser runs as WebAssembly in the page, and
+  the page cannot open network connections.
 
 ## [0.5.0] - 2026-10-12
 
