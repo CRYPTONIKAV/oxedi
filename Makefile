@@ -22,7 +22,7 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-units viewer-oracle publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-units viewer-oracle viewer-test publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
 	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -229,6 +229,9 @@ viewer-units: ## run the page's pure-function checks in node
 viewer-oracle: docs-dev wasm ## compare the WebAssembly module with oxedi.parse on every sample and fixture
 	@out=$$(mktemp -d); trap 'rm -rf "$$out"' EXIT; \
 	  $(DOCS_PYTHON) viewer/tests/expected.py "$$out" && node viewer/tests/oracle.mjs "$$out"
+
+viewer-test: viewer-units viewer-oracle ## run the page's unit checks, the oracle and the browser tests (needs: .venv-docs/bin/playwright install chromium)
+	$(DOCS_PYTHON) -m pytest viewer/tests -q
 
 # ---- Release ----
 # Python releases use release-check and tag (tags v*, which start the PyPI workflow).

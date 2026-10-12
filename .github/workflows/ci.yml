@@ -254,7 +254,10 @@ jobs:
         run: make wasm
       - name: Size
         run: make wasm-size-check
-      - name: Oracle against oxedi.parse
-        run: make viewer-oracle
-      - name: Page unit checks
-        run: make viewer-units
+      - name: Browser for the page tests
+        # The docs environment (with Playwright) exists once make docs-venv has run.
+        run: |
+          make docs-venv
+          .venv-docs/bin/playwright install --with-deps chromium
+      - name: Unit checks, oracle and browser tests
+        run: make viewer-test
