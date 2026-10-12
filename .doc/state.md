@@ -1,14 +1,28 @@
-# State — 2026-10-06 (0.4.0 as oxedi; Stage 7b in PR)
+# State — 2026-10-12 (releasing 0.5.0; extension 0.1.2 in the community)
 
 Snapshot for picking the project up cold. Update when a stage changes state.
 
-## Pick up here (2026-10-06)
+## Pick up here (2026-10-12)
 
-- **Now:** choose the next work. Open issues (~24 on Project #8) are medium or stage-sized and
-  need decisions; `.doc/analysis/` is stale since 5d (missing 5e, 5f, 5g, 7a, 7, 7b). The
-  DuckDB extension 0.2.0 (copy format) is merged but not tagged: the owner tags `duckdb-v0.2.0`
-  in a few days and then updates duckdb/community-extensions#2942 (still at 0.1.2, build green,
-  awaiting maintainers) to the new commit, so no extra PR is opened there meanwhile.
+- **Now:** releasing 0.5.0 (`v0.5.0rc1` to TestPyPI first, then 0.5.0 to PyPI): `Result.spec`,
+  the pyx12 adapter (#146), no ST03 on write, faster `Segment.raw`/`id`, the new PyPI metadata
+  and the reorganized documentation. The rc is the first run of the TestPyPI check on all six
+  wheel platforms (#66). Then: tag `duckdb-v0.2.0` (copy format, merged) and update the
+  community descriptor; remove the "community has 0.1.2" notes from the docs once published.
+  Next work candidates: #129 with #131 (money correctness), Stage 10 (AI access, D18), #138.
+  `.doc/analysis/` is stale since 5d.
+- **Community:** duckdb/community-extensions#2942 merged 2026-10-07: `INSTALL oxedi FROM
+  community` installs extension 0.1.2 on DuckDB 1.5.6+ (verified: `read_835` works; `COPY …
+  (FORMAT edi835)` needs 0.2.0).
+- **Merged:** documentation reorganization (PR #151): README of about 185 lines (the PyPI one
+  generated from it, `make readme-py-check` in gates and CI), guides under `docs/` (reading,
+  writing with own-tables mapping, DuckDB, spec, pyx12, migration), `CONTRIBUTING.md`. D18 and
+  candidate Stage 10 (AI access via MCP over folders, globs and buckets) in the roadmap (PR #152).
+- **Merged:** pyx12 adapter (PR #146): `validate` reads pyx12's error tree through a
+  thread-scoped error-handler subclass (no logging changes; `NullHandler` on the `pyx12`
+  logger), loop paths on every finding, count and control-number findings on the trailer, the
+  writer no longer writes ST03. Closed #133 #96 #91 #90 #89; new issues #147–#150. Ledger
+  `analysis/pyx12-adapter-ledger.md`.
 - **Merged:** backlog sprint 4 (PR #143): closed #141 #110 #142 #134 #77 #128 #132 #66, part 1
   of #124 (part 2 open), #53 and #82 closed as resolved by 7a; `Result.spec`/`Tables.spec`,
   spans for `Segment.raw`/`id`, `TIME_NS` in the DuckDB format, PyPI metadata (description,

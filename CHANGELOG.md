@@ -9,6 +9,8 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 
 ## [Unreleased]
 
+## [0.5.0rc1] - 2026-10-12
+
 ### Added
 - `Result.spec` and `Tables.spec`: the spec that projected the tables, the one given to `parse` or
   `stream`, or the built-in selected from the file's version. `oxedi.write(frames, envelope,
@@ -229,7 +231,8 @@ First usable version of oxedi835.
 
 Release candidate of 0.1.0, published to TestPyPI only. Same code as 0.1.0.
 
-[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.5.0rc1...HEAD
+[0.5.0rc1]: https://github.com/javillegasna/oxedi/releases/tag/v0.5.0rc1
 [0.4.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.4.0
 [0.4.0rc1]: https://github.com/javillegasna/oxedi/releases/tag/v0.4.0rc1
 [0.3.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.3.0
