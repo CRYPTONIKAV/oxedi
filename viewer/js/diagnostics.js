@@ -1,0 +1,104 @@
+// The Diagnostics tab: findings grouped by level, each linked to its segment.
+
+const LEVELS = ['SNIP 1', 'SNIP 2', 'SNIP 3'];
+const PAGE = 200;
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+/**
+ * @param {HTMLElement} root
+ * @param {{onJump: (segment: number, element?: number, component?: number) => void}} options
+ */
+export function createDiagnostics(root, { onJump }) {
+  let diagnostics = [];
+  let level = 'all';
+  const tools = el('div', 'diag-tools');
+  tools.setAttribute('role', 'group');
+  tools.setAttribute('aria-label', 'Filter by level');
+  const body = el('div');
+  root.append(tools, body);
+
+  function pathText(path) {
+    return path.map(([name, ordinal]) => `${name} #${ordinal}`).join(' › ');
+  }
+
+  function item(d) {
+    const li = el('li', 'diag');
+    const head = el('div');
+    head.append(el('span', 'level', d.level));
+    if (d.segment !== null) {
+      const jump = el('button', 'jump', `segment ${d.segment}`);
+      jump.type = 'button';
+      jump.addEventListener('click', () => onJump(d.segment, d.element ?? undefined, d.component ?? undefined));
+      head.append(jump);
+    } else {
+      head.append(el('span', 'muted', 'end of file'));
+    }
+    li.append(head, el('div', 'text', d.text));
+    if (d.path.length) li.append(el('div', 'path', pathText(d.path)));
+    return li;
+  }
+
+  function renderList() {
+    body.textContent = '';
+    const shown = diagnostics.filter((d) => level === 'all' || d.level === level);
+    if (diagnostics.length === 0) {
+      body.append(el('p', 'muted', 'No findings: the file passes every check this spec runs.'));
+      return;
+    }
+    if (shown.length === 0) {
+      body.append(el('p', 'muted', 'No findings at this level.'));
+      return;
+    }
+    const list = el('ul', 'diag-list');
+    body.append(list);
+    let next = 0;
+    const more = el('button', null);
+    more.type = 'button';
+    const fill = () => {
+      for (const d of shown.slice(next, next + PAGE)) list.append(item(d));
+      next = Math.min(shown.length, next + PAGE);
+      more.hidden = next >= shown.length;
+      more.textContent = `Show more (${shown.length - next} left)`;
+    };
+    more.addEventListener('click', fill);
+    body.append(more);
+    fill();
+  }
+
+  function renderTools() {
+    tools.textContent = '';
+    const options = [['all', 'All', diagnostics.length]];
+    for (const l of LEVELS) options.push([l, l, diagnostics.filter((d) => d.level === l).length]);
+    for (const [value, label, count] of options) {
+      const button = el('button', null, `${label} (${count})`);
+      button.type = 'button';
+      button.setAttribute('aria-pressed', String(level === value));
+      button.addEventListener('click', () => {
+        level = value;
+        renderTools();
+        renderList();
+      });
+      tools.append(button);
+    }
+  }
+
+  return {
+    show({ view }) {
+      diagnostics = view.diagnostics;
+      level = 'all';
+      renderTools();
+      renderList();
+    },
+    clear() {
+      diagnostics = [];
+      tools.textContent = '';
+      body.textContent = '';
+    },
+  };
+}

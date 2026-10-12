@@ -3,6 +3,9 @@
 import { createLoader } from './load.js';
 import { renderSummary } from './summary.js';
 import { createTables } from './tables.js';
+import { createDiagnostics } from './diagnostics.js';
+import { createText } from './text.js';
+import { createTree } from './tree.js';
 
 const $ = (id) => document.getElementById(id);
 const TABS = ['summary', 'tables', 'diagnostics', 'text', 'loops'];
@@ -27,7 +30,9 @@ export function selectTab(name) {
 
 /** Jumps to a segment of the open file in the Text tab. */
 export function showSegment(index, element, component) {
-  views.showSegment?.(index, element, component);
+  if (!loaded) return;
+  selectTab('text');
+  views.text.showSegment(index, element, component);
 }
 
 for (const t of TABS) {
@@ -43,18 +48,21 @@ for (const t of TABS) {
 }
 
 views.tables = createTables(panels.tables, { onJump: (segment) => showSegment(segment) });
+views.diagnostics = createDiagnostics(panels.diagnostics, { onJump: showSegment });
+views.text = createText(panels.text);
+views.loops = createTree(panels.loops, { onJump: (segment) => showSegment(segment) });
 
 function clearViews() {
   loaded = null;
   $('results').hidden = true;
   panels.summary.textContent = '';
-  views.tables.clear();
+  for (const name of ['tables', 'diagnostics', 'text', 'loops']) views[name].clear();
 }
 
 function showLoaded(file) {
   loaded = file;
   renderSummary(panels.summary, file);
-  views.tables.show(file);
+  for (const name of ['tables', 'diagnostics', 'text', 'loops']) views[name].show(file);
   $('diag-count').textContent = String(file.view.diagnostics.length);
   $('results').hidden = false;
   selectTab('summary');
