@@ -60,6 +60,7 @@ jobs:
               - 'rust-toolchain.toml'
               - '.cargo/**'
               - '.gitmodules'
+              - '.github/workflows/docs.yml'
               - '.github/workflows/ci.yml'
 
   lint:

@@ -1,4 +1,4 @@
-# State — 2026-10-12 (releasing 0.5.0; extension 0.1.2 in the community)
+# State — 2026-10-12 (0.5.0 released; Stage 8 in PR; extension 0.1.2 in the community)
 
 Snapshot for picking the project up cold. Update when a stage changes state.
 
@@ -8,18 +8,15 @@ Snapshot for picking the project up cold. Update when a stage changes state.
   Python API reference, three recipes (lakehouse, Polars, pipelines), every `python` and `sql`
   block run by `make docs-test`, the README as front page (the PyPI one generated from it), and
   `.github/workflows/docs.yml` (`mike`: `dev` from master, `X.Y` + `latest` from final `v*`
-  tags). After merge the owner enables Pages (Settings, Pages, source: branch `gh-pages`) once
-  the first deploy has created the branch. Plan `plans/stage-8-docs-site.md`.
-
-- **Now:** releasing 0.5.0 (`v0.5.0rc1` is on TestPyPI, its install verified on all six wheel
-  platforms and by hand: write round trip and `validate` on both balanced fixtures; 0.5.0 goes
-  to PyPI): `Result.spec`,
-  the pyx12 adapter (#146), no ST03 on write, faster `Segment.raw`/`id`, the new PyPI metadata
-  and the reorganized documentation. The rc is the first run of the TestPyPI check on all six
-  wheel platforms (#66). Then: tag `duckdb-v0.2.0` (copy format, merged) and update the
-  community descriptor; remove the "community has 0.1.2" notes from the docs once published.
-  Next work candidates: #129 with #131 (money correctness), Stage 10 (AI access, D18), #138.
-  `.doc/analysis/` is stale since 5d.
+  tags, or a manual run with `version`). After merge: run "Docs deploy" from master once with
+  version `0.5` (until then `/latest/` is 404), and enable Pages (Settings, Pages, source:
+  branch `gh-pages`). Plan `plans/stage-8-docs-site.md`.
+- **Released:** 0.5.0 (tag `v0.5.0`, on PyPI): `Result.spec`, the pyx12 adapter (#146), no ST03
+  on write, faster `Segment.raw`/`id`, the new PyPI metadata and the reorganized documentation.
+  Follow-ups: extension 0.2.0 (copy format) is submitted as duckdb/community-extensions#3041
+  (tag `duckdb-v0.2.0` is done once merged); remove the "community has 0.1.2" notes from the
+  docs after it is published. Next candidates: #129 with #131 (money correctness), Stage 10
+  (AI access, D18), #138. `.doc/analysis/` is stale since 5d.
 - **Community:** duckdb/community-extensions#2942 merged 2026-10-07: `INSTALL oxedi FROM
   community` installs extension 0.1.2 on DuckDB 1.5.6+ (verified: `read_835` works; `COPY …
   (FORMAT edi835)` needs 0.2.0).

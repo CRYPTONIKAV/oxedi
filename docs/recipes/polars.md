@@ -49,7 +49,8 @@ print(denials.with_columns(rate=pl.col("denied") / pl.col("claims")).sort("rate"
 
 An adjustment belongs to a claim (when `service` is empty) or to one service line. Its
 `group_code` says who bears the amount: `CO` contractual obligation, `PR` patient
-responsibility, `OA` other adjustment. Join the claims to get the payer, then total by group
+responsibility, `OA` other adjustment, `PI` payer-initiated reduction (and `CR` correction,
+in 4010 files). Join the claims to get the payer, then total by group
 and reason.
 
 ```python
@@ -79,7 +80,7 @@ summary = claims.group_by("payer").agg(
     paid=pl.col("payment_amount").sum(),
     patient=pl.col("patient_responsibility").sum(),
 )
-print(summary.with_columns(paid_share=(pl.col("paid") / pl.col("charged")).round(3)))
+print(summary.with_columns(paid_share=(pl.col("paid").cast(pl.Float64) / pl.col("charged").cast(pl.Float64)).round(3)))
 ```
 
 For large folders, use `oxedi.stream` per file to keep memory bounded; see

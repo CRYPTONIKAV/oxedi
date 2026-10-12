@@ -34,4 +34,5 @@ on x86_64), macOS (Intel and Apple silicon) and Windows (x86_64). For DuckDB, se
 | [The spec](spec.md) | Spec versions and patches |
 | [Validating with pyx12](pyx12.md) | What `validate` reports and where |
 | [Migrating from edi-835-parser](migrating-from-edi-835-parser.md) | Change the import, or move to the native API |
+| [Recipes](recipes/lakehouse.md) | A Parquet lakehouse, Polars analytics, pipelines |
 | [API reference](api/parsing.md) | Every public function and class of the Python package |

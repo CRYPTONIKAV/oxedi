@@ -41,7 +41,7 @@ COPY claims_wide TO 'claims_lake' (FORMAT parquet, PARTITION_BY (payer, month), 
 ```
 
 The output has one folder per payer and month, such as
-`claims_lake/payer=ACME HEALTH PLAN/month=2024-01/`. Read it back, with the partition values as
+`claims_lake/payer=ACME%20HEALTH%20PLAN/month=2024-01/` (values are URL-encoded). Read it back, with the partition values as
 columns:
 
 ```sql

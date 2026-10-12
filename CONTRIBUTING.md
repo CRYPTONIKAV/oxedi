@@ -87,9 +87,11 @@ page outside the navigation.
 ### Deploy
 
 `.github/workflows/docs.yml` publishes with `mike` to the `gh-pages` branch. A push to `master`
-publishes `dev`. A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
+publishes `dev` (titled "dev (unreleased)"). A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
 the site root redirects to. Pre-release tags and `duckdb-v*` tags publish nothing. Pull requests
-only build the site (the Documentation job in `ci.yml`). Never commit to `gh-pages` by hand.
+only build the site (the Documentation job in `ci.yml`). To publish a release that was tagged before the workflow existed, run "Docs deploy" manually
+from `master` with the `version` input (`X.Y`, for example `0.5`); it also moves `latest`.
+Never commit to `gh-pages` by hand.
 
 ## Releases
 
