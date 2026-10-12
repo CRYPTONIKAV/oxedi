@@ -65,6 +65,10 @@ jobs:
       - name: Docs environment
         if: steps.target.outputs.kind != 'skip'
         run: make docs-dev
+      - name: Docs tools on PATH
+        if: steps.target.outputs.kind != 'skip'
+        # mike runs mkdocs by name, so the venv's bin must be on PATH.
+        run: echo "$PWD/.venv-docs/bin" >> "$GITHUB_PATH"
       - name: Git identity for mike
         if: steps.target.outputs.kind != 'skip'
         run: |
@@ -74,12 +78,12 @@ jobs:
         if: steps.target.outputs.kind == 'dev'
         env:
           NO_MKDOCS_2_WARNING: "true"
-        run: .venv-docs/bin/mike deploy --push --title "dev (unreleased)" dev
+        run: mike deploy --push --title "dev (unreleased)" dev
       - name: Deploy release and move latest
         if: steps.target.outputs.kind == 'release'
         env:
           NO_MKDOCS_2_WARNING: "true"
           VERSION: ${{ steps.target.outputs.version }}
         run: |
-          .venv-docs/bin/mike deploy --push --update-aliases "$VERSION" latest
-          .venv-docs/bin/mike set-default --push latest
+          mike deploy --push --update-aliases "$VERSION" latest
+          mike set-default --push latest
