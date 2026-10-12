@@ -1884,3 +1884,70 @@ de Python no cambian.
 
 **Fuera de alcance.** `allow_findings` desde DuckDB (T91); `COPY … FROM` (para leer está
 `read_835`); specs personalizadas; particiones; WASM y musl; la 837 (Stage 9).
+
+### Stage 8 · Sitio de documentación — APROBADO 2026-10-12
+
+El stage que publica la documentación de uso como un sitio (D14, adelantado por el dueño el
+2026-10-12). Las guías ya existen en `docs/` (PR #151) y se leen en GitHub; el README de PyPI
+enlaza a `master`, que puede describir lo que aún no salió. El sitio da una documentación por
+versión, una referencia de la API que no se escribe a mano y ejemplos que el CI ejecuta. El libro
+de ideas y patrones de D14 pasa a un Stage 8b propio.
+
+**Decisiones de diseño (cada una con la alternativa descartada).**
+- **T94 · Alcance: sitio, guías, referencia y primeras recetas.** El stage entrega el sitio con las
+  guías de `docs/`, la referencia de la API de Python y la primera tanda de recetas. El libro (D14:
+  ideas, conceptos y patrones sin código) es el Stage 8b. Descartado hacer las dos cosas en un
+  stage (retrasa el sitio por un texto de diseño que pide su propio ritmo).
+- **T95 · MkDocs Material en GitHub Pages, versionado con `mike`.** Una versión por minor (`0.5`,
+  `0.6`, …) con el alias `latest`, que apunta a la última release y es lo que se ve por defecto, y
+  una versión `dev` construida desde `master`, marcada como no publicada. Un tag `v*` publica su
+  versión; un push a `master` actualiza `dev`; los PR solo construyen. Descartadas una sola versión
+  desde `master` (describe lo no publicado) y Read the Docs (un servicio más, con anuncios).
+- **T96 · Referencia de la API.** Python: generada con `mkdocstrings` desde `_core.pyi` y los
+  módulos Python (los stubs llevan los docstrings del binding), sin escribirla a mano. La extensión
+  de DuckDB: la página escrita (`docs/duckdb.md`), porque DuckDB no ofrece un generador. El núcleo en
+  Rust no entra mientras no se publique (`publish = false`). Descartado escribir la referencia de
+  Python a mano (se desalinea).
+- **T97 · Los ejemplos se ejecutan desde las páginas.** Un plugin de pytest ejecuta cada bloque
+  `python`; un test propio ejecuta cada bloque `sql` contra la extensión compilada. Todos corren en
+  un directorio temporal con archivos de nombre convencional copiados de los fixtures
+  (`remittance.835`, `remits/*.835`, …), de modo que las páginas usan nombres naturales. Un bloque
+  que no puede correr (S3, marcadores de posición) se marca explícitamente y el test cuenta los
+  saltados. Descartado guardar los ejemplos como scripts aparte incluidos en la página (el texto
+  queda partido y se edita peor).
+- **T98 · Primera tanda de recetas**, todas ejecutables en CI sin servicios externos: (1) DuckDB a
+  un lakehouse en Parquet: carpetas y globs con `read_835`, particiones por pagador y mes, la tabla
+  `diagnostics` como control de calidad y las fuentes para dbt; (2) analítica con Polars:
+  negaciones por pagador, ajustes CO/PR, cobrado frente a pagado; (3) «oxedi dentro de un
+  pipeline»: el patrón recibir bytes, parsear, revisar diagnósticos y escribir, con notas cortas
+  para Airflow, Dagster y Kafka. PySpark o Ray van en una segunda tanda (probarlos pide levantar
+  Spark o Ray en local); la conciliación 837 ↔ 835 llega con el Stage 9. Descartado un árbol grande
+  de recetas por herramienta (mucho mantenimiento, poca diferencia entre ellas).
+- **T99 · El README pasa a ser portada.** Con el sitio publicado, el README se recorta a unas 80–100
+  líneas (qué es, instalación, un ejemplo de leer, uno de escribir, uno de DuckDB y los enlaces al
+  sitio); el README de PyPI se sigue generando de él y apunta a la URL versionada; `Documentation`
+  en la metadata apunta al sitio.
+- **T100 · Construcción y CI.** Las dependencias de documentación (`mkdocs-material`,
+  `mkdocstrings[python]`, `mike`, el plugin de pytest) van en un grupo de desarrollo, no en el
+  paquete. Cada PR ejecuta `mkdocs build --strict` (enlaces rotos y páginas fuera de la navegación
+  fallan) y los ejemplos; el despliegue a Pages solo ocurre en tags y en `master`. Activar Pages en
+  el repositorio (rama `gh-pages`) lo hace el dueño. Todo en inglés, con el tono de las guías:
+  frases cortas, directas, sin detalles de implementación.
+
+**Entregable / contrato.**
+- `mkdocs.yml`, la navegación (guías, recetas, referencia de la API, migración), la referencia de
+  Python generada, las tres recetas, el runner de ejemplos Python y SQL, los workflows de
+  construcción y despliegue, el README como portada y su copia para PyPI.
+- `CONTRIBUTING.md`: cómo construir y previsualizar el sitio y cómo marcar un bloque que no corre.
+
+**Gate de verificación.**
+- `mkdocs build --strict` sin avisos; cada bloque `python` y `sql` del sitio ejecutado en CI, con
+  los saltados listados y justificados.
+- La referencia de Python cubre la API pública (`parse`, `parse_file`, `stream`, `write`,
+  `Envelope`, `Spec`, `Result`, `Tables`, `Diagnostic`, `WriteError`, `oxedi.pyx12.validate`,
+  `oxedi.edi_835_parser`) sin páginas vacías.
+- Un despliegue de prueba de `dev` visible en Pages; el README y PyPI enlazan al sitio.
+- `make gates` y las pruebas de Python y de la extensión en verde.
+
+**Fuera de alcance.** El libro (Stage 8b); recetas de PySpark o Ray (segunda tanda); la referencia
+del núcleo en Rust; un dominio propio; traducciones.
