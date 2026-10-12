@@ -1,5 +1,5 @@
 use super::*;
-use oxedi_core::{Document, Processor, Spec};
+use oxedi_core::{Document, Event, Processor, Spec};
 use std::path::{Path, PathBuf};
 
 fn corpus() -> Vec<PathBuf> {
@@ -40,34 +40,114 @@ fn ranges_are_contiguous_and_cover_the_file() {
     }
 }
 
+/// The open loops at each segment, outermost first, as `(name, ordinal)`:
+/// the engine's stack when the segment is captured, left unmatched or found
+/// empty, the way the Python binding's `_loop_paths` reads it.
+fn engine_paths(spec: &Spec, document: &Document<'_>) -> Vec<Vec<(String, usize)>> {
+    let mut engine = oxedi_core::LoopEngine::new(spec);
+    let mut ordinals = vec![0usize; spec.loops().len()];
+    let mut open: Vec<(String, usize)> = Vec::new();
+    let mut paths = Vec::new();
+    for segment in document.segments() {
+        let mut path = None;
+        for event in engine.feed(&segment) {
+            match *event {
+                Event::LoopOpened { id, .. } => {
+                    ordinals[id.index()] += 1;
+                    open.push((spec.loop_name(id).to_string(), ordinals[id.index()]));
+                }
+                Event::LoopClosed { .. } => {
+                    open.pop();
+                }
+                Event::Captured { .. } | Event::Unmatched { .. } | Event::Empty { .. } => {
+                    path.get_or_insert_with(|| open.clone());
+                }
+            }
+        }
+        paths.push(path.unwrap_or_else(|| open.clone()));
+    }
+    paths
+}
+
+/// The loops from the root down to `node`, as `(name, ordinal)`.
+fn chain(view: &View, node: usize) -> Vec<(String, usize)> {
+    let mut chain = Vec::new();
+    let mut at = Some(node);
+    while let Some(index) = at {
+        let node = &view.nodes[index];
+        if let Some(name) = &node.loop_name {
+            chain.push((name.clone(), node.ordinal));
+        }
+        at = node.parent;
+    }
+    chain.reverse();
+    chain
+}
+
+/// Every segment belongs to exactly one node: a segment with content to the
+/// tree node that holds it, every segment to the loops open when it was read.
+fn assert_ownership(label: &str, bytes: &[u8]) -> View {
+    let view = view(bytes).expect("view");
+    let document = Document::parse(bytes).expect("parse");
+    let spec = select(&document);
+    let tree = oxedi_core::LoopTree::build(spec, document.segments());
+    let mut holders: Vec<Vec<usize>> = vec![Vec::new(); view.segments.len()];
+    for (index, node) in tree.nodes().iter().enumerate() {
+        for &segment in node.segments.iter().chain(&node.unmatched) {
+            holders[segment].push(index);
+        }
+    }
+    let paths = engine_paths(spec, &document);
+    assert_eq!(paths.len(), view.segments.len(), "{label}");
+    for (index, segment) in view.segments.iter().enumerate() {
+        assert!(segment.node < view.nodes.len(), "{label} segment {index}");
+        let empty = document.span(index).expect("span").body.is_empty();
+        let expected: Vec<usize> = if empty { vec![] } else { vec![segment.node] };
+        assert_eq!(holders[index], expected, "{label} segment {index}");
+        assert_eq!(
+            chain(&view, segment.node),
+            paths[index],
+            "{label} segment {index}"
+        );
+    }
+    view
+}
+
 #[test]
-fn every_segment_with_content_belongs_to_one_node() {
+fn every_segment_belongs_to_the_loops_open_when_it_was_read() {
     for path in corpus() {
         let Some(bytes) = parsable(&path) else {
             continue;
         };
-        let view = view(&bytes).expect("view");
-        let mut owners = vec![0usize; view.segments.len()];
-        let document = Document::parse(&bytes[..]).expect("parse");
-        let spec = select(&document);
-        let tree = oxedi_core::LoopTree::build(spec, document.segments());
-        for node in tree.nodes() {
-            for &index in node.segments.iter().chain(&node.unmatched) {
-                owners[index] += 1;
-            }
-        }
-        for (index, &count) in owners.iter().enumerate() {
-            // A segment with no content (trailing trivia, `~~`) has no loop;
-            // the view gives it to the root.
-            let empty = document.span(index).expect("span").body.is_empty();
-            assert_eq!(count, usize::from(!empty), "{path:?} segment {index}");
-            if empty {
-                assert_eq!(view.segments[index].node, 0, "{path:?} segment {index}");
-            }
-        }
-        assert!(
-            view.segments.iter().all(|s| s.node < view.nodes.len()),
-            "{path:?}"
+        assert_ownership(&format!("{path:?}"), &bytes);
+    }
+}
+
+#[test]
+fn an_empty_segment_inside_a_loop_belongs_to_the_open_loop() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../oxedi_core/tests/fixtures/balanced_5010_sample.txt");
+    let original = std::fs::read(path).expect("read");
+    let at = original
+        .windows(5)
+        .position(|w| w == b"~\nCLP")
+        .expect("a CLP segment");
+    // `~~` with no trivia, and a terminator alone after the line break.
+    for insert in [&b"~"[..], &b"\n~"[..]] {
+        let mut bytes = original.clone();
+        bytes.splice(at + 1..at + 1, insert.iter().copied());
+        let view = assert_ownership(&format!("{insert:?}"), &bytes);
+        let empty = view
+            .segments
+            .iter()
+            .position(|s| s.id.is_empty())
+            .expect("the empty segment");
+        let open = chain(&view, view.segments[empty].node);
+        assert!(!open.is_empty(), "{insert:?}");
+        assert_eq!(
+            open,
+            chain(&view, view.segments[empty - 1].node),
+            "{insert:?}"
         );
     }
 }

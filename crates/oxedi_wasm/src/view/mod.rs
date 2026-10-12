@@ -4,7 +4,7 @@
 
 use std::sync::OnceLock;
 
-use oxedi_core::{Cell, Diagnostic, Document, LoopTree, NodeId, Processor, Spec, Tables};
+use oxedi_core::{Cell, Diagnostic, Document, Event, LoopTree, NodeId, Processor, Spec, Tables};
 use serde::Serialize;
 
 #[cfg(test)]
@@ -43,24 +43,33 @@ pub struct View {
     pub diagnostics: Vec<DiagnosticView>,
 }
 
-/// The separators of a file.
+/// The separators of a file. Each is one byte written as the `char` with
+/// that code point (Latin-1), so `charCodeAt(0)` in JS gives the byte back;
+/// encoding the string as UTF-8 does not for bytes from 0x80 up.
 #[derive(Debug, Serialize)]
 pub struct Delimiters {
+    /// Separates the elements of a segment.
     pub element: String,
+    /// Separates the components of a composite element.
     pub component: String,
+    /// Ends a segment.
     pub segment: String,
+    /// Separates repeated values of an element; `None` when the file declares none.
     pub repetition: Option<String>,
 }
 
 /// One segment: its id, where its raw bytes live and the loop instance that holds it.
 #[derive(Debug, Serialize)]
 pub struct SegmentView {
+    /// The segment id as text; empty for a segment with no content.
     pub id: String,
     /// First byte of the segment's raw range (trivia, body, terminator).
     pub start: usize,
     /// One past its last byte.
     pub end: usize,
-    /// Index into `View::nodes`.
+    /// Index into `View::nodes` of the innermost loop instance open when
+    /// the segment was read, including a segment with no content; 0 (the
+    /// root) outside every loop.
     pub node: usize,
 }
 
@@ -73,32 +82,46 @@ pub struct NodeView {
     pub ordinal: usize,
     /// `true` when no segment of its own opened it.
     pub implicit: bool,
+    /// Index into `View::nodes` of the enclosing instance; `None` for the root.
     pub parent: Option<usize>,
+    /// Indices into `View::nodes` of the nested instances, in file order.
     pub children: Vec<usize>,
 }
 
 /// One projected table, column by column.
 #[derive(Debug, Serialize)]
 pub struct TableView {
+    /// The table's name in the spec.
     pub name: String,
+    /// Number of rows; every column holds this many values.
     pub rows: usize,
+    /// The columns, in the spec's order.
     pub columns: Vec<ColumnView>,
 }
 
 /// One column: each row as text, `None` for a null.
 #[derive(Debug, Serialize)]
 pub struct ColumnView {
+    /// The column's name in the spec.
     pub name: String,
+    /// Each row as the core renders it: decimals in fixed point, dates as
+    /// `YYYY-MM-DD`, times as `HH:MM:SS`, text with invalid UTF-8 replaced.
     pub values: Vec<Option<String>>,
 }
 
 /// One finding with its full text and where it points.
 #[derive(Debug, Serialize)]
 pub struct DiagnosticView {
+    /// The finding's full text: rule, location and offending datum.
     pub text: String,
+    /// `SNIP 1`, `SNIP 2` or `SNIP 3`.
     pub level: String,
+    /// 0-based index into `View::segments` of the segment at fault; `None`
+    /// at the end of the stream.
     pub segment: Option<usize>,
+    /// 1-based element position, when the finding has one.
     pub element: Option<usize>,
+    /// 1-based component position, when the finding has one.
     pub component: Option<usize>,
     /// Open loops, outermost first, as `(name, ordinal)`.
     pub path: Vec<(String, usize)>,
@@ -109,8 +132,12 @@ pub struct DiagnosticView {
 pub fn view(bytes: &[u8]) -> Result<View, String> {
     let document = Document::parse(bytes).map_err(|err| err.to_string())?;
     let spec = select(&document);
-    let (tables, diagnostics) = Processor::run(spec, &document);
-    let tree = LoopTree::build(spec, document.segments());
+    let Walk {
+        tables,
+        diagnostics,
+        tree,
+        owners,
+    } = walk(spec, &document);
     let delimiters = document.delimiters();
     let text = |byte: u8| char::from(byte).to_string();
     Ok(View {
@@ -124,7 +151,7 @@ pub fn view(bytes: &[u8]) -> Result<View, String> {
             segment: text(delimiters.segment),
             repetition: delimiters.repetition.map(text),
         },
-        segments: segments(&document, &tree),
+        segments: segments(&document, &owners),
         nodes: nodes(spec, &tree),
         tables: tables_view(&tables),
         diagnostics: diagnostics.iter().map(diagnostic).collect(),
@@ -136,18 +163,95 @@ pub fn to_json(bytes: &[u8]) -> Result<String, String> {
     serde_json::to_string(&view(bytes)?).map_err(|err| err.to_string())
 }
 
-fn segments(document: &Document<'_>, tree: &LoopTree) -> Vec<SegmentView> {
-    let mut owner = vec![0usize; document.len()];
-    for (index, node) in tree.nodes().iter().enumerate() {
-        for &segment in node.segments.iter().chain(&node.unmatched) {
-            if let Some(slot) = owner.get_mut(segment) {
-                *slot = index;
+/// What one pass of the processor over a document leaves.
+struct Walk {
+    tables: Tables,
+    diagnostics: Vec<Diagnostic>,
+    tree: LoopTree,
+    /// For each segment, the index of the tree node open when it was read.
+    owners: Vec<usize>,
+}
+
+/// Feeds every segment to one processor, folding its events into the loop
+/// tree and following the open instances, so each segment, a segment with
+/// no content included, gets the innermost instance open when it was read.
+fn walk(spec: &Spec, document: &Document<'_>) -> Walk {
+    let mut processor = Processor::new(spec, document.delimiters());
+    let mut builder = LoopTree::builder();
+    let mut owners = Owners::new(document.len());
+    let mut diagnostics = Vec::new();
+    for segment in document.segments() {
+        let output = processor.feed(&segment);
+        owners.on(output.events());
+        builder.on(output.events());
+        diagnostics.extend_from_slice(output.diagnostics());
+    }
+    let output = processor.finish();
+    owners.on(output.events());
+    builder.on(output.events());
+    diagnostics.extend_from_slice(output.diagnostics());
+    Walk {
+        tables: processor.take_tables(),
+        diagnostics,
+        tree: builder.finish(),
+        owners: owners.finish(),
+    }
+}
+
+/// The stack of open tree nodes, numbered as [`oxedi_core::TreeBuilder`] numbers them
+/// (in the order loops open, the root being 0), and the node each segment
+/// was first reported in.
+struct Owners {
+    open: Vec<usize>,
+    next: usize,
+    owner: Vec<Option<usize>>,
+}
+
+impl Owners {
+    fn new(segments: usize) -> Owners {
+        Owners {
+            open: vec![0],
+            next: 1,
+            owner: vec![None; segments],
+        }
+    }
+
+    fn on(&mut self, events: &[Event]) {
+        for event in events {
+            match *event {
+                Event::LoopOpened { .. } => {
+                    self.open.push(self.next);
+                    self.next = self.next.saturating_add(1);
+                }
+                // The root never closes.
+                Event::LoopClosed { .. } => {
+                    if self.open.len() > 1 {
+                        self.open.pop();
+                    }
+                }
+                Event::Captured { segment, .. }
+                | Event::Unmatched { segment }
+                | Event::Empty { segment } => {
+                    if let Some(slot @ None) = self.owner.get_mut(segment) {
+                        *slot = self.open.last().copied();
+                    }
+                }
             }
         }
     }
+
+    fn finish(self) -> Vec<usize> {
+        self.owner
+            .into_iter()
+            .map(|node| node.unwrap_or(0))
+            .collect()
+    }
+}
+
+fn segments(document: &Document<'_>, owners: &[usize]) -> Vec<SegmentView> {
     document
         .spans()
-        .zip(owner)
+        .zip(owners.iter().copied())
         .enumerate()
         .map(|(index, (span, node))| SegmentView {
             id: String::from_utf8_lossy(document.segment_id(index).unwrap_or_default())

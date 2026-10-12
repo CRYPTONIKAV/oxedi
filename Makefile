@@ -22,7 +22,7 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm wasm-size-check viewer-oracle publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-oracle publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
 	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -187,13 +187,17 @@ docs-test: docs-dev ## run every python and sql block of the docs and README (SQ
 # ---- Browser viewer (crates/oxedi_wasm, viewer/) ----
 # The module is built for the browser with size-first release settings passed as environment
 # variables, so native release builds (wheels, the DuckDB extension) keep the workspace profile.
-# The wasm-bindgen CLI must be the exact version Cargo.lock resolves for the crate.
+# The wasm-bindgen CLI must be the exact version Cargo.lock resolves for the crate; CI reads it
+# from wasm-bindgen-version too. Expanded only by the recipes that use it.
 WASM_TARGET     := wasm32-unknown-unknown
 WASM_BUILT      := target/$(WASM_TARGET)/release/oxedi_wasm.wasm
 VIEWER_PKG      := viewer/pkg
-WASM_BINDGEN_VERSION := $(shell sed -n '/^name = "wasm-bindgen"$$/{n;s/^version = "\(.*\)"$$/\1/p;}' Cargo.lock)
+WASM_BINDGEN_VERSION = $(shell cargo tree -p oxedi_wasm --locked --depth 1 -e normal --prefix none | sed -n 's/^wasm-bindgen v\([^ ]*\).*/\1/p')
 # 250 KB, gzipped.
 WASM_SIZE_LIMIT := 256000
+
+wasm-bindgen-version: ## print the wasm-bindgen version Cargo.lock resolves for oxedi_wasm
+	@echo $(WASM_BINDGEN_VERSION)
 
 wasm: ## build the viewer's WebAssembly module into viewer/pkg
 	@rustup target list --installed | grep -qx '$(WASM_TARGET)' || rustup target add $(WASM_TARGET)
@@ -208,10 +212,12 @@ wasm: ## build the viewer's WebAssembly module into viewer/pkg
 	wasm-opt -Os $(VIEWER_PKG)/oxedi_bg.wasm -o $(VIEWER_PKG)/oxedi_bg.wasm
 	$(PYTHON_BIN) crates/oxedi_wasm/scripts/embed_wasm.py
 
+# The page ships module.js (the module as base64); its gzipped size is printed, not gated.
 wasm-size-check: ## fail if the gzipped module is over 250 KB
-	@test -f $(VIEWER_PKG)/oxedi_bg.wasm || { echo "wasm-size-check: no $(VIEWER_PKG)/oxedi_bg.wasm; run make wasm first"; exit 1; }
+	@for f in oxedi_bg.wasm module.js; do test -f $(VIEWER_PKG)/$$f || { echo "wasm-size-check: no $(VIEWER_PKG)/$$f; run make wasm first"; exit 1; }; done
 	@raw=$$(wc -c < $(VIEWER_PKG)/oxedi_bg.wasm); gz=$$(gzip -9 -c $(VIEWER_PKG)/oxedi_bg.wasm | wc -c); \
-	  echo "wasm-size-check: oxedi_bg.wasm $$raw bytes, $$gz gzipped (limit $(WASM_SIZE_LIMIT))"; \
+	  js=$$(gzip -9 -c $(VIEWER_PKG)/module.js | wc -c); \
+	  echo "wasm-size-check: oxedi_bg.wasm $$raw bytes, $$gz gzipped (limit $(WASM_SIZE_LIMIT)); module.js $$js gzipped (shipped)"; \
 	  test $$gz -le $(WASM_SIZE_LIMIT) || { echo "wasm-size-check: the gzipped module is $$gz bytes, over $(WASM_SIZE_LIMIT)"; exit 1; }
 
 viewer-oracle: docs-dev wasm ## compare the WebAssembly module with oxedi.parse on every sample and fixture

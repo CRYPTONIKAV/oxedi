@@ -11,8 +11,11 @@ Runs in an environment with `oxedi` and `pyarrow` (the docs environment,
 - otherwise `spec_version` (the first version the chosen spec declares),
   `segments` (the document's segment count), `tables` (table name → column
   name → each cell as the core renders it, `null` for a null; columns in
-  order), `diagnostics` (each one's full text) and `paths` (each one's open
-  loops as `Diagnostic.path` writes them).
+  order), `segment_paths` (each segment's open loops as `[name, ordinal]`
+  pairs, outermost first, from `oxedi._core._loop_paths`), `diagnostics`
+  (each one's full text), `paths` (each one's open loops as `Diagnostic.path`
+  writes them) and `locations` (each one's `[level, segment, element,
+  component]`).
 
 A cell type the normalization does not know stops the run.
 """
@@ -28,6 +31,7 @@ import sys
 import pyarrow
 
 import oxedi
+from oxedi._core import _loop_paths
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CORPUS = [ROOT / "crates" / "oxedi_core" / "tests" / name for name in ("fixtures", "samples")]
@@ -77,9 +81,11 @@ def expected(path: pathlib.Path) -> dict[str, object]:
         "file": relative,
         "spec_version": values[0],
         "segments": len(result.document),
+        "segment_paths": _loop_paths(result, list(range(len(result.document)))),
         "tables": tables,
         "diagnostics": [str(d) for d in result.diagnostics],
         "paths": [d.path for d in result.diagnostics],
+        "locations": [[d.level, d.segment, d.element, d.component] for d in result.diagnostics],
     }
 
 
