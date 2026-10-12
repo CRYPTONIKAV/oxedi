@@ -6,7 +6,7 @@ envelope.
 
 ## What the writer accepts
 
-`oxedi.write` takes the spec's table and column names and nothing else.
+`oxedi.write` and `COPY` take the spec's table and column names and nothing else.
 
 Tolerated:
 
@@ -14,6 +14,7 @@ Tolerated:
 - A missing column. It is null.
 - A column of a narrower or compatible type: an integer for a big integer, or a decimal of
   another scale that holds the value.
+- In SQL, `INTEGER` for a `BIGINT` column, and `ENUM` or `BLOB` for a text column.
 
 Refused, naming the table, row and column:
 

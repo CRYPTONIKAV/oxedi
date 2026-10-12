@@ -1,8 +1,8 @@
 # Reading 835 files
 
 Read a file into tables, open them in your data library, and get the file back byte for byte.
-For files too big to read at once, see [Large files](large-files.md). For the problems a parse
-reports, see [Diagnostics](diagnostics.md).
+For files too big to read at once, see [Large files](large-files.md){ #large-files }. For the problems a parse
+reports, see [Diagnostics](diagnostics.md){ #diagnostics }.
 
 ## Parse a file
 

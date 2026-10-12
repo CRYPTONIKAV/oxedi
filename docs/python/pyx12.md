@@ -36,6 +36,8 @@ pyx12 4 SNIP 1 · SE count of 57 for SE02=0001 is wrong. I count 58 (reported by
 pyx12 10 SNIP 2 · Data element "Implementation Convention Reference" (ST03) is marked as Not Used (reported by pyx12, code 10) · segment #2, element 3 · at interchange#1/group#1/transaction#1 · datum "005010X221A1"
 ```
 
+pyx12 also reports `ST03`, which its map marks as not used. It does so on the unedited file too.
+
 - `validate` returns `oxedi.Diagnostic`, the type `parse` returns. The two lists mix, sort by
   `level` and filter by `origin`.
 - `validate` returns its findings in segment order.

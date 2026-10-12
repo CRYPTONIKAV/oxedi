@@ -108,7 +108,8 @@ payee loop `1000B`.
 | `payee_zip` | text | `N403` in loop `1000B` | The payee's postal code. |
 
 !!! note "4010 files"
-    The `payer_technical_contact_*` columns are null on 4010 files.
+    The 4010 spec has no payer technical contact (`PER*BL`), so on 4010 files the
+    `payer_technical_contact_*` columns are usually null.
 
 ## claims
 

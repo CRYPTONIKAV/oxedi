@@ -61,13 +61,15 @@ markdown_extensions:
       auto_append:
         - docs/includes/abbreviations.md
 
+validation:
+  anchors: warn
+
 plugins:
   - search
   - redirects:
       redirect_maps:
         reading.md: python/reading.md
         writing.md: python/writing.md
-        duckdb.md: duckdb/index.md
         spec.md: customize/spec.md
         pyx12.md: python/pyx12.md
         api/diagnostics.md: reference/api/diagnostics.md

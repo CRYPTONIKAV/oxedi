@@ -64,5 +64,5 @@ FROM read_835('remittance.835', table_name := 'services');
 ## Next
 
 - [Reading with SQL](reading.md): parameters, folders, remote files, diagnostics.
-- [Writing with COPY](writing.md): turn tables back into an 835.
+- [Writing with COPY](writing.md){ #writing }: turn tables back into an 835.
 - [Types and limits](limits.md): what `COPY` accepts, and the extension's versions.

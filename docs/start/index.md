@@ -147,7 +147,7 @@ Read it from left to right:
 
 - `SNIP 2`: the level of the rule. Level 2 covers required elements, types, lengths and codes.
 - The rule that failed, with the element (`CLP02`, the claim status).
-- Where: segment number 36 of the file, element 2.
+- Where: the segment at index 36 of the file (counting from 0), element 2.
 - The loops open at that point: the second claim (`2100#2`) of the first transaction.
 - `datum`: the value that broke the rule, `7`.
 

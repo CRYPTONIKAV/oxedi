@@ -7,7 +7,7 @@ core is written in Rust and is available from Python and from DuckDB.
   be written back exactly as it was read.
 - **Ready-made tables.** Payments, claims, service lines and adjustments come out as typed
   tables that open in Polars, pandas, pyarrow or DuckDB.
-- **Problems are reported, not raised.** Questionable data still parses; each issue is a
+- **Problems are reported, not raised.** Questionable data still parses. Each issue is a
   diagnostic that names the rule, the position and the value.
 
 Documentation: **<https://javillegas.dev/oxedi/latest/>**. New here? Start with the

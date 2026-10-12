@@ -104,20 +104,9 @@ table, row and column. Nothing is written. There is no `allow_findings` here yet
 The writer asks for the spec's names and nothing else. Tables built elsewhere work when they
 follow them.
 
-Tolerated:
-
-- A missing table (no rows).
-- A missing column (null).
-- A column of a narrower or compatible type: `INTEGER` for `BIGINT`, a `DECIMAL` of another
-  scale that holds the value, `ENUM` or `BLOB` for text.
-
-Refused, naming the table, row and column:
-
-- A table or column that is not in the spec.
-- A float for money.
-- A value that would change in the conversion: a decimal that does not fit, or a number outside
-  the column's range.
-- A file that does not balance or is missing a required element.
+What the writer tolerates and what it refuses is listed in
+[What the writer accepts](../python/own-tables.md#what-the-writer-accepts). It is the same for
+`COPY`, with `INTEGER` for `BIGINT` and `ENUM` or `BLOB` for text as the SQL types.
 
 To number rows from tables with your own keys, see
 [Writing from your tables](../python/own-tables.md#translate-your-keys) (SQL tab).

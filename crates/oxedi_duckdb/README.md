@@ -43,7 +43,7 @@ COPY (
 ```
 
 Parameters, options, types, limits and writing from your own tables are in the
-[DuckDB guide](../../docs/duckdb.md).
+[DuckDB guide](../../docs/duckdb/index.md).
 
 ## Versions
 

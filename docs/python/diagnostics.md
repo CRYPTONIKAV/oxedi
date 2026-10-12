@@ -117,7 +117,7 @@ A diagnostic describes the file, not a failure of the parse. You decide what to 
   [a Parquet lakehouse](../recipes/lakehouse.md#use-diagnostics-as-a-quality-gate).
 
 When a payer always sends a value the spec does not allow, adapt the spec instead. This patch
-adds `7` to the codes of the claim status:
+adds `7`, the made-up status of the edited example above, to the codes of the claim status:
 
 ```python
 broken = data.replace(b"CLP*CLM1002*2*", b"CLP*CLM1002*7*")

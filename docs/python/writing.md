@@ -66,6 +66,8 @@ The writer uses the spec that parsed the tables, else the built-in 5010 spec.
     The transaction set header carries no implementation convention reference, so a written
     5010 header is `ST*835*0001~`.
 
+<a id="envelope"></a>
+
 ## Fill in the envelope
 
 `oxedi.Envelope` gives what the tables cannot:
@@ -92,5 +94,5 @@ envelope, the bytes equal those of `oxedi.write`. See [Writing with COPY](../duc
 
 ## Next
 
-- [Writing from your own tables](own-tables.md): number your rows the way the writer expects.
-- [When the writer refuses a file](when-write-refuses.md): findings, money and empty text.
+- [Writing from your own tables](own-tables.md){ #from-your-own-tables }: number your rows the way the writer expects.
+- [When the writer refuses a file](when-write-refuses.md){ #findings }: findings, money and empty text.

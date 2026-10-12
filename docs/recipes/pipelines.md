@@ -90,5 +90,5 @@ transaction at a time when a single message is large.
 
 ## Alongside SQL
 
-If the files land in object storage, the same checks run in DuckDB without Python; see
+If the files land in object storage, the same checks run in DuckDB without Python. See
 [a Parquet lakehouse](lakehouse.md).

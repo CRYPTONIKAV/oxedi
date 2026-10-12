@@ -1,6 +1,6 @@
 # Reading large files
 
-Read a file one transaction or one claim at a time, so memory stays bounded.
+Read a file one transaction or one claim at a time, so the tables of each step stay small.
 
 ## Stream one transaction at a time
 

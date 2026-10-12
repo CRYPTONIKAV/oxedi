@@ -6,7 +6,7 @@ which adjustments cost the most, how charges compare with payments.
 ## Load a folder
 
 Tables join across a file by row number, and row numbers restart in each file, so add the file
-name to every frame and join on it. Text columns are bytes in the tables; cast them to
+name to every frame and join on it. Text columns are bytes in the tables. Cast them to
 `String` where you want to read or group by them.
 
 ```python
