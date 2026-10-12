@@ -22,7 +22,7 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs docs-serve publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs docs-serve docs-test publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
 	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -161,7 +161,7 @@ duckdb-version-check: ## fail unless the community descriptor's version equals t
 duckdb-oracle: py-dev ## DuckDB extension: compare read_835 with oxedi.parse_file on every sample and fixture
 	$(MAKE) -C $(EXT_DIR) test_oracle ORACLE_PYTHON=$(abspath $(PYTHON))
 
-# ---- Documentation site (mkdocs.yml, docs/) ----
+# ---- Documentation site (mkdocs.yml, docs/, docs_tests/) ----
 # The docs environment holds the site tools from requirements-docs.txt and the package itself
 # (debug build, editable), so the API reference and the examples run against the current code.
 $(DOCS_VENV)/.ready: requirements-docs.txt $(PY_MANIFEST)
@@ -177,6 +177,9 @@ docs: docs-venv ## build the site into site/ (strict: any warning fails)
 
 docs-serve: docs-venv ## preview the site at http://127.0.0.1:8000
 	NO_MKDOCS_2_WARNING=true $(DOCS_VENV)/bin/mkdocs serve
+
+docs-test: docs-venv ## run every python and sql block of the docs and README (SQL needs `make release` first)
+	$(DOCS_PYTHON) -m pytest docs_tests -q
 
 # ---- Release ----
 # Python releases use release-check and tag (tags v*, which start the PyPI workflow).

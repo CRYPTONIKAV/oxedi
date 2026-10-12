@@ -47,6 +47,7 @@ jobs:
               - '.github/workflows/ci.yml'
             docs:
               - 'docs/**'
+              - 'docs_tests/**'
               - 'mkdocs.yml'
               - 'requirements-docs.txt'
               - 'README.md'
@@ -182,7 +183,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@stable
       - uses: astral-sh/setup-uv@v7
+      - name: Build the DuckDB extension
+        run: |
+          make configure_ci
+          make release
       - name: Site (strict)
         run: make docs
+      - name: Examples
+        run: make docs-test

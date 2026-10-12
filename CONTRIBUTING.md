@@ -62,10 +62,20 @@ The site is built with MkDocs Material from `mkdocs.yml` and `docs/`. Its tools 
 ```bash
 make docs         # strict build into site/: a broken link or a page outside the navigation fails
 make docs-serve   # preview at http://127.0.0.1:8000
+make release      # build the DuckDB extension once; the SQL examples load it
+make docs-test    # run every python and sql block of docs/**/*.md and README.md
 ```
 
 The API reference under `docs/api/` is generated from the installed package and its type stub;
 write a symbol's documentation in its docstring, not in the page.
+
+`make docs-test` runs the blocks of a page in order, in one namespace (Python) or one DuckDB
+connection (SQL), inside a temporary directory that holds `remittance.835`, `big.835`, `a.835`,
+`b.835`, `remits/*.835` and `remittances/*.835` (copies of the files under
+`crates/oxedi_core/tests/fixtures/`). A block that cannot run carries a comment on the line
+right before its fence, with a reason; the run lists every skipped block:
+
+    <!-- docs-test: skip needs the reader's own tables -->
 
 ## Releases
 

@@ -4,9 +4,12 @@
 implementation-guide validation. `parse` never calls it; `validate` does, on demand:
 
 ```python
+from pathlib import Path
+
 import oxedi
 from oxedi.pyx12 import validate
 
+data = Path("remittance.835").read_bytes()
 result = oxedi.parse(data)
 findings = result.diagnostics + validate(data)    # bytes, a path or a binary file object
 for d in sorted(findings, key=lambda d: d.level):

@@ -7,6 +7,7 @@ C API and loads on DuckDB 1.5.6 and later.
 
 ## Install
 
+<!-- docs-test: skip the community build is not published yet; the runner loads the locally built extension instead -->
 ```sql
 INSTALL oxedi FROM community;
 LOAD oxedi;
@@ -79,7 +80,17 @@ build the extension.
 `COPY ... TO ... (FORMAT edi835, ...)` writes an 835 with the same writer as the Python
 package's `oxedi.write`; the file is byte for byte what `oxedi.write` gives for the same
 tables and envelope. The query returns **one `STRUCT` column** whose fields are named after the
-spec's tables, each a list of structs (one struct per row, the table's columns as fields):
+spec's tables, each a list of structs (one struct per row, the table's columns as fields).
+This example reads the tables of a file into temporary tables, then writes them back:
+
+```sql
+CREATE TEMP TABLE payments AS FROM read_835('remittance.835', table_name := 'payments');
+CREATE TEMP TABLE claims AS FROM read_835('remittance.835', table_name := 'claims');
+CREATE TEMP TABLE services AS FROM read_835('remittance.835', table_name := 'services');
+CREATE TEMP TABLE adjustments AS FROM read_835('remittance.835', table_name := 'adjustments');
+CREATE TEMP TABLE provider_adjustments AS
+  FROM read_835('remittance.835', table_name := 'provider_adjustments');
+```
 
 ```sql
 COPY (
@@ -94,9 +105,8 @@ COPY (
                 date DATE '2024-01-10', time TIME '09:00');
 ```
 
-Here `payments`, `claims` and the rest are tables or views with those names, for example
-`CREATE TEMP TABLE claims AS FROM read_835('remittance.835', table_name := 'claims')`, changed
-in SQL before writing. Temporary tables, views and the open transaction are visible. The lists of
+`payments`, `claims` and the rest can be any tables or views with those names, built in SQL
+or read from a file as above and changed before writing. Temporary tables, views and the open transaction are visible. The lists of
 several rows of the query concatenate into one interchange. A table left out has no rows and a
 column left out is null.
 

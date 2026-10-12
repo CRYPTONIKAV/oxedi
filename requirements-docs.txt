@@ -6,6 +6,7 @@ mkdocstrings[python]==1.0.7
 mkdocstrings-python==2.0.9
 mike==2.2.0
 ruff==0.17.0
+mktestdocs==0.2.5
 pytest==9.1.1
 maturin==1.15.0
 # What the examples import.

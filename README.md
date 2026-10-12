@@ -25,6 +25,7 @@ on x86_64), macOS (Intel and Apple silicon) and Windows (x86_64).
 
 For DuckDB:
 
+<!-- docs-test: skip the community build is not published yet; the runner loads the locally built extension instead -->
 ```sql
 INSTALL oxedi FROM community;
 LOAD oxedi;
@@ -125,8 +126,16 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 
 Write tables back with `COPY`. This needs extension 0.2.0 or later; until it reaches the
 community repository, build the extension. `payments`, `claims` and the rest are tables or
-views with those names, for example `CREATE TEMP TABLE claims AS FROM read_835('remittance.835',
-table_name := 'claims')`, changed in SQL before writing:
+views with those names, here read from a file and changed in SQL before writing:
+
+```sql
+CREATE TEMP TABLE payments AS FROM read_835('remittance.835', table_name := 'payments');
+CREATE TEMP TABLE claims AS FROM read_835('remittance.835', table_name := 'claims');
+CREATE TEMP TABLE services AS FROM read_835('remittance.835', table_name := 'services');
+CREATE TEMP TABLE adjustments AS FROM read_835('remittance.835', table_name := 'adjustments');
+CREATE TEMP TABLE provider_adjustments AS
+  FROM read_835('remittance.835', table_name := 'provider_adjustments');
+```
 
 ```sql
 COPY (
