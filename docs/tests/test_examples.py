@@ -71,13 +71,13 @@ def test_api_reference_covers_the_public_api():
     import oxedi.edi_835_parser
     import oxedi.pyx12
 
-    text = "\n".join(path.read_text() for path in sorted((ROOT / "docs" / "api").glob("*.md")))
+    text = "\n".join(path.read_text() for path in sorted((ROOT / "docs" / "reference" / "api").glob("*.md")))
     documented = set(re.findall(r"^::: (\S+)", text, re.MULTILINE))
     expected = {f"oxedi.{name}" for name in oxedi.__all__ if name != "__version__"}
     expected |= {f"oxedi.pyx12.{name}" for name in oxedi.pyx12.__all__}
     expected |= {"oxedi.edi_835_parser"}
     assert not expected - documented, f"not in the API reference: {sorted(expected - documented)}"
     # The edi_835_parser page has no member list: it follows the module's __all__.
-    page = (ROOT / "docs" / "api" / "edi_835_parser.md").read_text()
+    page = (ROOT / "docs" / "reference" / "api" / "edi_835_parser.md").read_text()
     assert "members:" not in page
     assert oxedi.edi_835_parser.__all__

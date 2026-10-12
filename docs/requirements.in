@@ -7,6 +7,7 @@ mkdocs-material==9.7.7
 mkdocstrings[python]==1.0.7
 mkdocstrings-python==2.0.9
 mike==2.2.0
+mkdocs-redirects==1.2.2
 # ruff formats the signatures that mkdocstrings prints.
 ruff==0.17.0
 pytest==9.1.1

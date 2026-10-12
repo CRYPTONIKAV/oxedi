@@ -7,6 +7,7 @@ docs_dir: docs
 # The examples' tests and the site's requirements live next to the pages but are not pages.
 exclude_docs: |
   tests/
+  includes/
   requirements.in
   requirements.txt
 strict: true
@@ -25,10 +26,15 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
+    - navigation.tabs
+    - navigation.indexes
     - navigation.sections
     - navigation.top
+    - navigation.footer
+    - content.tabs.link
     - content.code.copy
     - search.highlight
+    - search.suggest
 
 extra:
   version:
@@ -39,11 +45,39 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+  - attr_list
+  - md_in_html
+  - abbr
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets:
+      auto_append:
+        - docs/includes/abbreviations.md
+
+validation:
+  anchors: warn
 
 plugins:
   - search
+  - redirects:
+      redirect_maps:
+        reading.md: python/reading.md
+        writing.md: python/writing.md
+        spec.md: customize/spec.md
+        pyx12.md: python/pyx12.md
+        api/diagnostics.md: reference/api/diagnostics.md
+        api/edi_835_parser.md: reference/api/edi_835_parser.md
+        api/parsing.md: reference/api/parsing.md
+        api/pyx12.md: reference/api/pyx12.md
+        api/spec.md: reference/api/spec.md
+        api/writing.md: reference/api/writing.md
   - mkdocstrings:
       handlers:
         python:
@@ -61,23 +95,40 @@ plugins:
 
 nav:
   - Home: index.md
-  - Guides:
-      - Reading: reading.md
-      - Writing: writing.md
-      - DuckDB: duckdb.md
-      - The spec: spec.md
-      - Validating with pyx12: pyx12.md
+  - Get started:
+      - start/index.md
+      - Install: start/install.md
+      - The 835 in five minutes: start/the-835.md
+  - Python:
+      - Reading: python/reading.md
+      - Large files: python/large-files.md
+      - Diagnostics: python/diagnostics.md
+      - Writing: python/writing.md
+      - Writing from your tables: python/own-tables.md
+      - When the writer refuses: python/when-write-refuses.md
+      - Validating with pyx12: python/pyx12.md
+      - Customizing the spec: customize/spec.md
+  - DuckDB:
+      - Overview: duckdb/index.md
+      - Reading with SQL: duckdb/reading.md
+      - Writing with COPY: duckdb/writing.md
+      - Types and limits: duckdb/limits.md
   - Recipes:
       - A Parquet lakehouse: recipes/lakehouse.md
       - Analytics with Polars: recipes/polars.md
       - oxedi in a pipeline: recipes/pipelines.md
-  - API reference:
-      - Parsing and results: api/parsing.md
-      - Writing: api/writing.md
-      - Spec: api/spec.md
-      - Diagnostics: api/diagnostics.md
-      - pyx12: api/pyx12.md
-      - edi_835_parser: api/edi_835_parser.md
-  - Migrating from edi-835-parser: migrating-from-edi-835-parser.md
-  - Roadmap: roadmap.md
-  - Contributing: https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md
+  - Reference:
+      - Tables and columns: reference/tables.md
+      - Glossary: reference/glossary.md
+      - Python API:
+          - Parsing and results: reference/api/parsing.md
+          - Writing: reference/api/writing.md
+          - Spec: reference/api/spec.md
+          - Diagnostics: reference/api/diagnostics.md
+          - pyx12: reference/api/pyx12.md
+          - edi_835_parser: reference/api/edi_835_parser.md
+  - About:
+      - Migrating from edi-835-parser: migrating-from-edi-835-parser.md
+      - Roadmap: roadmap.md
+      - Changelog: https://github.com/javillegasna/oxedi/blob/master/CHANGELOG.md
+      - Contributing: https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md

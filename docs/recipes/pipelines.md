@@ -32,7 +32,8 @@ print("clean" if not problems else problems)
 ```
 
 `parse` never raises on questionable data, only on a file that is not an 835. Diagnostics are
-the signal. To triage, filter on `level` (the SNIP level) or `rule`; see [Reading](../reading.md).
+the signal. To triage, filter on `level` (the SNIP level) or `rule`. See
+[Diagnostics](../python/diagnostics.md).
 
 The step has no global state and no I/O of its own beyond what you pass in, so it runs the same
 in a script, a task or a consumer.
@@ -89,5 +90,5 @@ transaction at a time when a single message is large.
 
 ## Alongside SQL
 
-If the files land in object storage, the same checks run in DuckDB without Python; see
+If the files land in object storage, the same checks run in DuckDB without Python. See
 [a Parquet lakehouse](lakehouse.md).

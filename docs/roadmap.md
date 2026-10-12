@@ -8,14 +8,14 @@ what people need. If something matters to you, say so in an
 
 - **Read an 835** from Python into payments, claims, service lines, adjustments and provider
   adjustments, as tables for Polars, pandas, pyarrow or DuckDB. Every byte of the file is kept,
-  and problems come back as diagnostics instead of errors. See [Reading](reading.md).
+  and problems come back as diagnostics instead of errors. See [Reading](python/reading.md).
 - **Write an 835** from those same tables, with control numbers, counts and balancing checked
-  before anything is written. See [Writing](writing.md).
+  before anything is written. See [Writing](python/writing.md).
 - **Use SQL** with the DuckDB extension: read files, folders, globs or cloud storage with
-  `read_835`, and write an 835 with `COPY`. See [DuckDB](duckdb.md).
+  `read_835`, and write an 835 with `COPY`. See [DuckDB](duckdb/index.md).
 - **Validate with pyx12** and get its findings in the same shape as oxedi's own. See
-  [Validating with pyx12](pyx12.md).
-- **Adapt to your payers** by changing the spec, which is plain data. See [The spec](spec.md).
+  [Validating with pyx12](python/pyx12.md).
+- **Adapt to your payers** by changing the spec, which is plain data. See [The spec](customize/spec.md).
 - **Move from edi-835-parser** without rewriting your code. See
   [Migrating from edi-835-parser](migrating-from-edi-835-parser.md).
 

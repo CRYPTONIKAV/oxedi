@@ -1,7 +1,7 @@
 # A Parquet lakehouse with DuckDB
 
 Turn a folder of 835 files into partitioned Parquet that any engine can query. All of it is SQL
-in DuckDB with the `oxedi` extension (see [DuckDB](../duckdb.md) to install it).
+in DuckDB with the `oxedi` extension (see [DuckDB](../duckdb/index.md) to install it).
 
 ## Read a folder
 

@@ -1,6 +1,6 @@
 # Writing
 
-Turn tables back into an 835. See [Writing](../writing.md) for the guide.
+Turn tables back into an 835. See [Writing](../../python/writing.md) for the guide.
 
 ::: oxedi.write
 

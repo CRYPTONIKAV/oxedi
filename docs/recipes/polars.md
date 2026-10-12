@@ -6,7 +6,7 @@ which adjustments cost the most, how charges compare with payments.
 ## Load a folder
 
 Tables join across a file by row number, and row numbers restart in each file, so add the file
-name to every frame and join on it. Text columns are bytes in the tables; cast them to
+name to every frame and join on it. Text columns are bytes in the tables. Cast them to
 `String` where you want to read or group by them.
 
 ```python
@@ -83,6 +83,6 @@ summary = claims.group_by("payer").agg(
 print(summary.with_columns(paid_share=(pl.col("paid").cast(pl.Float64) / pl.col("charged").cast(pl.Float64)).round(3)))
 ```
 
-For large folders, use `oxedi.stream` per file to keep memory bounded; see
-[Reading](../reading.md). When the data already lives in DuckDB or Parquet, see
-[a Parquet lakehouse](lakehouse.md) and read the result with `pl.read_parquet`.
+For large folders, use `oxedi.stream` per file to keep memory bounded. See
+[Reading large files](../python/large-files.md). When the data already lives in DuckDB or
+Parquet, see [a Parquet lakehouse](lakehouse.md) and read the result with `pl.read_parquet`.
