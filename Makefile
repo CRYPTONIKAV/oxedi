@@ -22,7 +22,7 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-oracle publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-oracle publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
 	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -219,6 +219,9 @@ wasm-size-check: ## fail if the gzipped module is over 250 KB
 	  js=$$(gzip -9 -c $(VIEWER_PKG)/module.js | wc -c); \
 	  echo "wasm-size-check: oxedi_bg.wasm $$raw bytes, $$gz gzipped (limit $(WASM_SIZE_LIMIT)); module.js $$js gzipped (shipped)"; \
 	  test $$gz -le $(WASM_SIZE_LIMIT) || { echo "wasm-size-check: the gzipped module is $$gz bytes, over $(WASM_SIZE_LIMIT)"; exit 1; }
+
+viewer-serve: wasm ## serve the viewer at http://127.0.0.1:8001
+	python3 -m http.server 8001 --directory viewer
 
 viewer-oracle: docs-dev wasm ## compare the WebAssembly module with oxedi.parse on every sample and fixture
 	@out=$$(mktemp -d); trap 'rm -rf "$$out"' EXIT; \
