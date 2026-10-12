@@ -213,6 +213,9 @@ carga su prueba de costura con la capa inferior (N7).
   llamador. Opciones a decidir cuando exista el caso: segmentos con datos propios solo en
   este modo, o buffer interno con préstamo ligado al tokenizer (patrón *lending iterator*,
   no expresable con `Iterator` estándar). El framing (T3) se reutiliza tal cual.
+  Nota (2026-10-12): pasar a `stream()` un objeto de archivo de S3 o un mensaje de Kafka no
+  justifica el nivel 2 todavía: un 835 pesa pocos MB, un mensaje ya es el archivo entero y S3,
+  carpetas y globs ya se leen por la extensión de DuckDB.
 - **D8 · `Cow` + spans frente a `Arc<[u8]>` + spans** → resuelta por T24 (Stage 5): en el stage siguiente al que
   tenga un consumidor que comparta el documento (previsiblemente Stage 5, Python), medir
   las dos representaciones en tiempo y en memoria sobre las mismas fixtures y los samples
@@ -302,6 +305,16 @@ carga su prueba de costura con la capa inferior (N7).
   columnas con disposición Arrow), sin fragmentos de código ni referencias a líneas, para
   que no exija mantenimiento continuo; más guías de uso de la librería Python y de la extensión de DuckDB.
   Lo que sí cambia con el código (firmas, ejemplos) se queda en rustdoc y en los planes.
+  Publicación (dueño, 2026-10-12; adelanta el Stage 8): sitio MkDocs Material en GitHub Pages
+  construido desde `docs/`, con versiones por release (`mike`: `/0.5/`, `latest` apunta a la
+  última release, de modo que el sitio no describe lo que aún no salió), la referencia de la API
+  de Python generada desde los stubs `.pyi` (`mkdocstrings`), los ejemplos de código ejecutados
+  en CI y el README como portada que enlaza al sitio. Secciones: guías, recetas, referencia de
+  la API y el libro. Recetas pocas y ejecutables: DuckDB a Parquet/lakehouse y dbt (fuentes con
+  `read_835` sobre carpetas o buckets), Polars, PySpark o Ray para miles de archivos y, con el
+  Stage 9, la conciliación 837 ↔ 835 (CLM01 = CLP01). Orquestadores y streaming (Airflow,
+  Dagster, Prefect, Kafka) caben en una sola página «oxedi dentro de un pipeline». La página
+  de DuckDB en la comunidad sigue saliendo de `description.yml`.
 - **D15 · Toolkit para la familia X12** (835 primero, 837 después): el motor, el formato
   de spec, la proyección no saben nada del 835 más allá de la spec built-in, así
   que otro conjunto de transacciones con la misma lógica de loops y otras definiciones de
@@ -426,6 +439,10 @@ carga su prueba de costura con la capa inferior (N7).
   extensión. Escritura: el formato de `COPY` funciona completo y ve tablas temporales y objetos
   del cliente; una función que lee tablas por nombre solo ve tablas persistentes confirmadas. Vía
   recomendada: plantilla de Rust con ABI estable; riesgos y esquema de §7 en el documento.
+  Nota (2026-10-12): un crate de API en C (`cbindgen`) sigue fuera mientras ningún consumidor
+  lo pida que DuckDB no cubra: añade ABI, gestión de memoria y versiones que mantener. Tampoco
+  van al núcleo escritores de Parquet o Arrow IPC (rompería sans-IO y la regla de dependencias):
+  `COPY … TO 'x.parquet'` en DuckDB y `pyarrow` sobre las tablas ya lo cubren.
 - **D18 · Acceso para IA** (anotada 2026-10-06, abierta). Que un asistente de IA obtenga
   información de un RMT con herramientas precisas en vez de leer el archivo crudo. Opciones
   discutidas, de menos a más trabajo: (1) un servidor MCP en Python detrás de un extra
@@ -448,6 +465,13 @@ carga su prueba de costura con la capa inferior (N7).
   variables, secretos de DuckDB), nunca como parámetro de la IA; solo lectura; la fuente se fija
   al configurar el servidor. Depende de que la extensión 0.2.0 esté publicada en la comunidad.
   Se cierra en el §7 de su stage.
+- **D19 · Modo sin PHI** (anotada 2026-10-12, abierta). Una opción de proyección que reemplaza
+  en las tablas los campos que identifican al paciente (nombres, ids de miembro, fechas que lo
+  identifiquen) antes de entregarlas. Solo en la proyección: el `Document` conserva los bytes
+  originales (sin pérdida). Un hash sin clave no anonimiza (se revierte con un diccionario), así
+  que se usa un hash con clave que da quien llama, o tokens; qué campos se tocan lo declara la
+  spec, no el código. Sirve al servidor MCP de D18 (enmascarado por defecto) y a quien exporta
+  tablas fuera de un entorno con PHI. Se cierra en el §7 de su stage (antes o junto al 10).
 - **D7 · Stage 7, Escritor** → programado el 2026-10-03, tras 5b y Stage 6, con un caso real:
   generar un 835 (`.RMT`) a partir de datos en bases relacionales. Contrato acordado: la
   entrada es nuestro esquema de tablas (`Tables` del core o Arrow por el mismo protocolo
