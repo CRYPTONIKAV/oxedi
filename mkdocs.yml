@@ -74,4 +74,5 @@ nav:
       - pyx12: api/pyx12.md
       - edi_835_parser: api/edi_835_parser.md
   - Migrating from edi-835-parser: migrating-from-edi-835-parser.md
+  - Roadmap: roadmap.md
   - Contributing: https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md

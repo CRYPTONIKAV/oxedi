@@ -3,8 +3,9 @@
 __pycache__/
 .superpowers/
 
-# Human-oriented analyses (text + mermaid): personal study notes, not part of the repo.
-.doc/analysis/
+# Maintainers' working notes (design contract, plans, spikes, state, study notes): kept locally,
+# not part of the repo. The public roadmap is docs/roadmap.md.
+.doc/
 
 # Python: local environments, the editable-install extension, test caches.
 .venv/
