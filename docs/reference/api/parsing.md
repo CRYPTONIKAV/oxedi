@@ -1,7 +1,7 @@
 # Parsing and results
 
 Read a file into a `Result`: the document, the tables and the diagnostics. See
-[Reading](../reading.md) for the guide.
+[Reading](../../python/reading.md) for the guide.
 
 ::: oxedi.parse
 

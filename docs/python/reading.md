@@ -1,7 +1,7 @@
 # Reading 835 files
 
-How to read a file into tables, handle large files, use the diagnostics and write the file
-back byte for byte. The [home page](index.md) lists the other guides.
+How to read a file into tables and get the document back byte for byte. For large files see
+[Large files](large-files.md), for findings see [Diagnostics](diagnostics.md).
 
 ## Parse
 
@@ -23,7 +23,7 @@ segment) raises `oxedi.ParseError`. Anything else that parses is returned, with 
 as diagnostics.
 
 `parse`, `parse_file` and `stream` read the version a file declares and use the matching
-built-in spec. See [Spec](spec.md) to choose another one or to extend it.
+built-in spec. See [Spec](../customize/spec.md) to choose another one or to extend it.
 
 ## Tables
 
@@ -59,50 +59,14 @@ pl.DataFrame(result.tables["services"])
 `row` counts the rows of a table from 0. `payment`, `claim` and `service` hold the `row` of
 the parent, so a service joins to its claim on `services.claim = claims.row`.
 
-## Large files
-
-```python
-from pathlib import Path
-
-for batch in oxedi.stream(Path("big.835").read_bytes()):
-    services = batch.tables["services"].to_polars()
-```
-
-Each batch holds the tables and diagnostics of one transaction. Pass `by="2100"` (or any
-other loop id) to get one batch per claim instead. Parsing releases the GIL, so several files
-can be parsed in parallel from threads. `stream` accepts `spec=` like `parse`.
-
-## Diagnostics
-
-A file that is valid EDI but has questionable data still parses. Each issue is returned in
-`result.diagnostics` (and in each batch of `stream`) instead of being raised:
-
-```python
-for diagnostic in result.diagnostics:
-    print(diagnostic)
-```
-
-A diagnostic names the rule that failed, where it failed and the offending value. Its fields:
-
-- `level`: the SNIP level of the rule, 1, 2 or 3; sort by it to read the lowest first.
-- `kind`: the name of the rule that failed, for example `RequiredElementMissing`.
-- `rule`: the rule as a sentence with its values.
-- `segment`: the index of the segment at fault, or `None` at the end of the file.
-- `element` and `component`: the 1-based position inside the segment, when the finding has one.
-- `path`: the loops open at that segment, outermost first, joined by `/`; empty at the root.
-- `datum`: the offending value as it appears in the file (bytes).
-- `origin` and `code`: who reported it (`"oxedi"`, or `"pyx12"` with pyx12's own code; see
-  [Validating with pyx12](pyx12.md)).
-
-To find the bytes of the segment a diagnostic points at, use the document (next section):
-`result.document[d.segment].span` is the segment's byte range in your file.
-
 ## The document and writing the file back
 
 Nothing is dropped: every byte of the file belongs to exactly one segment. The document keeps
 them, so it returns the file exactly as it was read:
 
 ```python
+from pathlib import Path
+
 data = Path("remittance.835").read_bytes()
 assert oxedi.parse(data).document.write() == data
 ```

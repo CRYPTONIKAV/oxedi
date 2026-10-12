@@ -1,111 +1,7 @@
-# Writing 835 files
+# Writing from your own tables
 
-`oxedi.write` turns tables back into an 835: the tables of a parse, or your own Arrow, Polars
-or pandas tables with the spec's columns. To reproduce a parsed file byte for byte, use
-`result.document.write()` instead (see [Reading](reading.md#the-document-and-writing-the-file-back)).
-
-## Parse, change, write
-
-```python
-import datetime
-import polars as pl
-import oxedi
-
-result = oxedi.parse_file("remittance.835")
-frames = {name: result.tables[name].to_polars() for name in result.tables.keys()}
-frames["payments"] = frames["payments"].with_columns(trace_number=pl.lit("CHK100235"))
-
-envelope = oxedi.Envelope(
-    sender_id="ACMEPAYER",
-    receiver_id="SUNRISECLINIC",
-    date=datetime.date(2024, 1, 10),
-    time=datetime.time(9, 0),
-    usage_indicator="T",  # "P" (production) is the default
-)
-data = oxedi.write(frames, envelope, spec=result.spec)  # bytes, one interchange
-```
-
-## Which spec writes
-
-The spec is the one that parsed the tables, else the built-in 5010 spec. A dictionary of
-frames, as above, does not carry the parse's spec, so pass it: `spec=result.spec`
-(`result.tables.spec` is the same one). For a 4010 file you can also pass
-`oxedi.Spec.builtin("4010")`. Without it a 4010 file is written as 5010 and refused.
-
-## What is written
-
-A table left out has no rows and a column left out is null. Rows nest by their `payment`,
-`claim` and `service` columns, the row number of their parent.
-
-Only what the tables hold is written: segments no column reads (for example the payer's
-`PER*CX` or the bank details of `BPR`) are left out. The transaction set header carries no
-implementation convention reference, so a written 5010 header is `ST*835*0001~`.
-
-## Envelope
-
-`oxedi.Envelope` gives what the tables cannot:
-
-- `sender_id` and `receiver_id`, with their qualifiers `sender_qualifier` and
-  `receiver_qualifier` (default `"ZZ"`).
-- `date` and `time`.
-- `usage_indicator` (`"P"` by default).
-- `control_number`, the first one (default 1).
-- `application_sender` and `application_receiver`, optional, for the group header.
-- `delimiters`: default `*`, `:`, `~` and repetition `^`.
-- `line_break`: a line break after each segment.
-
-The writer works out the rest: the fixed-width `ISA`, the control numbers that must match
-(`ISA13`/`IEA02`, `GS06`/`GE02`, `ST02`/`SE02`) and the counts (`SE01`, `GE01`, `IEA01`).
-
-## Findings
-
-The writer is strict by default. The written file is read back with the spec, and every
-diagnostic of that read is a finding, as is anything the writer cannot place: for example a
-required element or occurrence without a value, a value outside its code list or length, a row
-whose parent does not exist or that comes out of order, a value holding a delimiter, or money
-that does not balance. A value holding a delimiter is reported first: the file then splits
-where the data does not, so it is not read back, and the other findings show once that value is
-fixed.
-
-Any finding raises `oxedi.WriteError`, a `ValueError` whose message lists every finding and
-whose `findings` holds them as `oxedi.WriteFinding` (each names the table, row and column, or
-the envelope field, with the diagnostic behind it). Nothing is written. With
-`allow_findings=True` the call returns `(data, findings)` instead, for example to produce
-invalid files for tests:
-
-```python
-try:
-    data = oxedi.write(frames, envelope, spec=result.spec)
-except oxedi.WriteError as error:
-    for finding in error.findings:
-        print(finding.table, finding.row, finding.column, finding)
-
-data, findings = oxedi.write(frames, envelope, spec=result.spec, allow_findings=True)
-```
-
-## Money
-
-The writer never changes money. The balancing rules are checked, never used to fill a total:
-
-- `BPR02` against the claims' payments and the `PLB` adjustments.
-- Each claim's and each service's charge minus payment against their `CAS` adjustments.
-
-The claim rule does not model interest (`AMT*I`): a claim whose payment includes interest does
-not balance and is refused unless `allow_findings` is set.
-
-## Null and empty text
-
-In text columns, `null` is an element the segment does not have and `""` one it has but leaves
-empty. A null cell in the middle of a segment is still written as an empty element, so it
-reads back as `""`; only trailing nulls read back as `null`. The tables of a parse write back
-to the same tables.
-
-## From DuckDB
-
-The `oxedi` extension writes the same file from SQL, byte for byte equal to `oxedi.write` with
-the same envelope. See [DuckDB](duckdb.md#writing).
-
-## From your own tables
+How to number your tables the way the writer expects, with Polars or with SQL in DuckDB.
+Start with [Writing 835 files](writing.md) for the envelope.
 
 `oxedi.write` takes the spec's table and column names and nothing else.
 
@@ -130,7 +26,7 @@ any parsed file, or in the extension
 `DESCRIBE SELECT * FROM read_835('remittance.835', table_name := 'claims')`. A schema that
 does not need a file is tracked in [#138](https://github.com/javillegasna/oxedi/issues/138).
 
-### With Polars
+## With Polars
 
 Use `with_row_index("row")` to number the rows.
 
@@ -180,7 +76,7 @@ frames = {
 data = oxedi.write(frames, envelope)
 ```
 
-### With SQL (DuckDB)
+## With SQL (DuckDB)
 
 Give each table a `row` with `row_number()`, put the parents' `row` in its parent columns with a
 join, and drop your helper columns with `EXCLUDE`. Number each child table ordered by the

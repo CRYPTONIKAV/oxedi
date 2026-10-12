@@ -66,7 +66,7 @@ make release      # build the DuckDB extension once; the SQL examples load it
 make docs-test    # run every python and sql block of docs/**/*.md and README.md
 ```
 
-The API reference under `docs/api/` is generated from the installed package and its type stub;
+The API reference under `docs/reference/api/` is generated from the installed package and its type stub;
 write a symbol's documentation in its docstring, not in the page.
 
 `make docs-test` runs the blocks of a page in order, in one namespace (Python) or one DuckDB

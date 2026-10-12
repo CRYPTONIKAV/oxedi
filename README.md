@@ -84,13 +84,13 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 
 | Page | What is in it |
 |---|---|
-| [Reading](https://javillegas.dev/oxedi/latest/reading/) | Tables in depth, large files, diagnostics, the document |
-| [Writing](https://javillegas.dev/oxedi/latest/writing/) | The envelope, findings, balancing rules, your own tables |
+| [Reading](https://javillegas.dev/oxedi/latest/python/reading/) | Tables in depth, large files, diagnostics, the document |
+| [Writing](https://javillegas.dev/oxedi/latest/python/writing/) | The envelope, findings, balancing rules, your own tables |
 | [DuckDB](https://javillegas.dev/oxedi/latest/duckdb/) | `read_835` parameters, `COPY` options, limits |
-| [The spec](https://javillegas.dev/oxedi/latest/spec/) | Spec versions (5010, 4010) and patches |
-| [Validating with pyx12](https://javillegas.dev/oxedi/latest/pyx12/) | What `validate` reports and where |
+| [The spec](https://javillegas.dev/oxedi/latest/customize/spec/) | Spec versions (5010, 4010) and patches |
+| [Validating with pyx12](https://javillegas.dev/oxedi/latest/python/pyx12/) | What `validate` reports and where |
 | [Recipes](https://javillegas.dev/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
-| [API reference](https://javillegas.dev/oxedi/latest/api/parsing/) | Every public function and class |
+| [API reference](https://javillegas.dev/oxedi/latest/reference/api/parsing/) | Every public function and class |
 | [Migrating from edi-835-parser](https://javillegas.dev/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
 | [Roadmap](https://javillegas.dev/oxedi/latest/roadmap/) | What is available, what comes next, what is being considered |
 

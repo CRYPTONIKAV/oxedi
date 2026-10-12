@@ -84,5 +84,5 @@ print(summary.with_columns(paid_share=(pl.col("paid").cast(pl.Float64) / pl.col(
 ```
 
 For large folders, use `oxedi.stream` per file to keep memory bounded; see
-[Reading](../reading.md). When the data already lives in DuckDB or Parquet, see
+[Reading](../python/reading.md). When the data already lives in DuckDB or Parquet, see
 [a Parquet lakehouse](lakehouse.md) and read the result with `pl.read_parquet`.

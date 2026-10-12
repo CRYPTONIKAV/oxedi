@@ -69,4 +69,4 @@ the anchor offers the segments its enclosing instance read before the row's inst
 ## Writing with a custom spec
 
 A patched spec also writes: pass it to `oxedi.write(frames, envelope, spec=spec)`. See
-[Writing](writing.md).
+[Writing](../python/writing.md).
