@@ -1,0 +1,19 @@
+name: Docs environment
+description: >-
+  Creates .venv-docs with the site tools locked in docs/requirements.txt (make docs-venv). With
+  dev, also builds the package into it (make docs-dev). Needs uv, and Rust for dev.
+inputs:
+  dev:
+    description: "'true' also runs make docs-dev"
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Site tools
+      shell: bash
+      run: make docs-venv
+    - name: Package into the docs environment
+      if: inputs.dev == 'true'
+      shell: bash
+      run: make docs-dev
