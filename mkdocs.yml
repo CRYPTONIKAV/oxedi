@@ -62,7 +62,10 @@ nav:
       - DuckDB: duckdb.md
       - The spec: spec.md
       - Validating with pyx12: pyx12.md
-  - Recipes: []
+  - Recipes:
+      - A Parquet lakehouse: recipes/lakehouse.md
+      - Analytics with Polars: recipes/polars.md
+      - oxedi in a pipeline: recipes/pipelines.md
   - API reference:
       - Parsing and results: api/parsing.md
       - Writing: api/writing.md
