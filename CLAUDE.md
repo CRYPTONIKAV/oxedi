@@ -6,6 +6,9 @@ Spanish; code, commits, PRs and issues are in English.
 
 ## Where the truth lives
 
+`.doc/` is local and git-ignored: the maintainers' working notes, never committed. The only
+public planning page is `docs/roadmap.md` on the site.
+
 - `.doc/architectural-commitment.md`: the contract. §2 invariants (N1–N7), §3 principles
   (P1–P10), §4 processing model, §5 stage map, §6 decisions (taken T*, open D*), §7 one
   approved section per stage. A stage starts only after its §7 section is approved by the
@@ -13,9 +16,12 @@ Spanish; code, commits, PRs and issues are in English.
 - `.doc/roadmap.md`: stage status, what each unlocks, open decisions by stage.
 - `.doc/plans/stage-N-*.md`: executable plans with full code, TDD steps and an exit gate.
 - `.doc/state.md`: current snapshot and next steps (update it when a stage changes state).
-- `.doc/analysis/` (git-ignored): the owner's study notes with Mermaid diagrams about the
+- `.doc/analysis/`: the owner's study notes with Mermaid diagrams about the
   code (structure, flow, tests and their reasons, Rust concepts, patterns). Update them per
   stage from the real code, not from plans; classDef colours need `color:#111`.
+- `docs/roadmap.md` (public, on the site): a short, user-facing summary in English: available
+  now, next, being considered; no stage codes, decision ids or internal detail. Update it with
+  one line when a stage ships or the next item changes.
 - GitHub Project #8 "oxedi835 — Roadmap & Deuda Técnica": deferred review findings as
   issues (Context / Problem / Recommendation, no solutions), Backlog + priority.
 
@@ -63,8 +69,8 @@ Spanish; code, commits, PRs and issues are in English.
    is deleted.
 4. PR against `master`, body in English with two sections, **Intent** and **Verification**;
    never list the diff content; no attribution lines. The owner merges.
-5. Deferred minors become issues on Project #8. Then update `.doc/roadmap.md` and
-   `.doc/state.md`.
+5. Deferred minors become issues on Project #8. Then update `.doc/roadmap.md`,
+   `.doc/state.md` and, when what users can do changed, `docs/roadmap.md`.
 
 ## Commands
 

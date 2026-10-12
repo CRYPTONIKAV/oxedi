@@ -92,6 +92,7 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 | [Recipes](https://javillegas.dev/oxedi/latest/recipes/lakehouse/) | A Parquet lakehouse, Polars analytics, pipelines |
 | [API reference](https://javillegas.dev/oxedi/latest/api/parsing/) | Every public function and class |
 | [Migrating from edi-835-parser](https://javillegas.dev/oxedi/latest/migrating-from-edi-835-parser/) | Change the import, or move to the native API |
+| [Roadmap](https://javillegas.dev/oxedi/latest/roadmap/) | What is available, what comes next, what is being considered |
 
 ## Versioning, contributing, license
 
