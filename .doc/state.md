@@ -1,16 +1,17 @@
-# State — 2026-10-12 (0.5.0 released; Stage 8 in PR; extension 0.1.2 in the community)
+# State — 2026-10-12 (0.5.0 released; docs site live; extension 0.1.2 in the community)
 
 Snapshot for picking the project up cold. Update when a stage changes state.
 
 ## Pick up here (2026-10-12)
 
-- **Stage 8 in PR** (branch `stage-8-docs-site`): MkDocs Material site from `docs/` with the
-  Python API reference, three recipes (lakehouse, Polars, pipelines), every `python` and `sql`
-  block run by `make docs-test`, the README as front page (the PyPI one generated from it), and
+- **Stage 8 done, site live** at <https://javillegas.dev/oxedi/> (the account's custom domain;
+  `javillegasna.github.io/oxedi/` redirects there): MkDocs Material from `docs/` with the Python
+  API reference, three recipes (lakehouse, Polars, pipelines), every `python` and `sql` block run
+  by `make docs-test`, the README as front page (the PyPI one generated from it), and
   `.github/workflows/docs.yml` (`mike`: `dev` from master, `X.Y` + `latest` from final `v*`
-  tags, or a manual run with `version`). After merge: run "Docs deploy" from master once with
-  version `0.5` (until then `/latest/` is 404), and enable Pages (Settings, Pages, source:
-  branch `gh-pages`). Plan `plans/stage-8-docs-site.md`.
+  tags, or a manual run with `version`). Merged PR #157; the first deploy failed (mike could not
+  find mkdocs, fixed in PR #158); 0.5 published by a manual run; Pages enabled on `gh-pages`.
+  Links moved to javillegas.dev in PR #159. Deferred: #160–#164. Plan `plans/stage-8-docs-site.md`.
 - **Released:** 0.5.0 (tag `v0.5.0`, on PyPI): `Result.spec`, the pyx12 adapter (#146), no ST03
   on write, faster `Segment.raw`/`id`, the new PyPI metadata and the reorganized documentation.
   Follow-ups: extension 0.2.0 (copy format) is submitted as duckdb/community-extensions#3041
