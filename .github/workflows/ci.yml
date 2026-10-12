@@ -25,7 +25,7 @@ jobs:
             python:
               - 'crates/oxedi_core/**'
               - 'crates/oxedi_py/**'
-              - 'scripts/**'
+              - 'crates/oxedi_py/scripts/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'Makefile'
@@ -47,9 +47,7 @@ jobs:
               - '.github/workflows/ci.yml'
             docs:
               - 'docs/**'
-              - 'docs_tests/**'
               - 'mkdocs.yml'
-              - 'requirements-docs.txt'
               - 'README.md'
               - 'crates/oxedi_core/**'
               - 'crates/oxedi_duckdb/**'
@@ -118,8 +116,8 @@ jobs:
         run: maturin develop --uv --release --manifest-path crates/oxedi_py/Cargo.toml
       - name: Spec against pyx12's maps
         run: |
-          python scripts/spec_vs_pyx12.py --check
-          python scripts/spec_vs_pyx12.py --check --version 4010
+          python crates/oxedi_core/scripts/spec_vs_pyx12.py --check
+          python crates/oxedi_core/scripts/spec_vs_pyx12.py --check --version 4010
       - name: Stub against the runtime
         run: python -m mypy.stubtest oxedi._core $(test -f crates/oxedi_py/stubtest-allowlist.txt && echo --allowlist crates/oxedi_py/stubtest-allowlist.txt)
       - name: Public API under mypy --strict, package under mypy
@@ -129,7 +127,7 @@ jobs:
       - name: Test
         run: pytest crates/oxedi_py/tests
       - name: Wheel in a clean environment
-        run: scripts/smoke_wheel.sh
+        run: crates/oxedi_py/scripts/smoke_wheel.sh
 
   duckdb:
     name: DuckDB extension (${{ matrix.duckdb.name }})

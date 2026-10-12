@@ -8,7 +8,7 @@ set -euo pipefail
 
 native() { (cd "$1" && { pwd -W 2>/dev/null || pwd; }); }
 
-repo="$(native "$(dirname "$0")/..")"
+repo="$(native "$(dirname "$0")/../../..")"
 dist="$(native "$1")"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -17,7 +17,7 @@ work="$(native "$work")"
 wheel="$(ls "$dist"/oxedi-*.whl)"
 version="$(basename "$wheel" | cut -d- -f2)"
 
-python "$repo/scripts/check_wheel.py" "$wheel" "$repo"
+python "$repo/crates/oxedi_py/scripts/check_wheel.py" "$wheel" "$repo"
 
 python -m venv "$work/venv"
 py="$work/venv/bin/python"

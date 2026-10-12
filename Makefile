@@ -72,7 +72,7 @@ stubtest: py-dev ## check the stub against the built module, the public API with
 
 compat-oracle: ## compare with edi-835-parser on DIR (outside the repo); prints counts and verdicts only
 	@test -n "$(DIR)" || (echo "usage: make compat-oracle DIR=/path/outside/the/repo [OUT=report.txt]" && exit 1)
-	$(PYTHON) scripts/compat_oracle.py "$(DIR)" $(if $(OUT),--out "$(OUT)")
+	$(PYTHON) crates/oxedi_py/scripts/compat_oracle.py "$(DIR)" $(if $(OUT),--out "$(OUT)")
 
 dist: clean-dist ## build the sdist and the release wheel into target/wheels
 	$(MATURIN) sdist --manifest-path $(PY_MANIFEST) -o $(WHEELS)
@@ -84,11 +84,12 @@ dist: clean-dist ## build the sdist and the release wheel into target/wheels
 # Paths are matched exactly against the archive's listing, under its single top directory.
 SDIST_REQUIRED := crates/oxedi_core/src/lib.rs crates/oxedi_core/specs/835.json crates/oxedi_core/specs/835.4010.json crates/oxedi_core/specs/edi_835_parser.json crates/oxedi_core/Cargo.toml crates/oxedi_py/src/lib.rs pyproject.toml LICENSE THIRD_PARTY_NOTICES
 
-sdist-check: ## fail if the sdist holds the core's test trees or lacks what the build needs
+sdist-check: ## fail if the sdist holds the core's test trees or the maintainers' scripts, or lacks what the build needs
 	@sdist=$$(ls $(WHEELS)/oxedi-*.tar.gz 2>/dev/null | head -n 1); \
 	  test -n "$$sdist" || { echo "sdist-check: no oxedi-*.tar.gz in $(WHEELS); run make dist first"; exit 1; }; \
 	  listing=$$(tar tzf "$$sdist" | sed 's|^[^/]*/||') || exit 1; \
 	  if echo "$$listing" | grep -E '(^|/)oxedi_core/tests/'; then echo "sdist-check: $$sdist holds the core's tests/ tree (samples, golden, fixtures)"; exit 1; fi; \
+	  if echo "$$listing" | grep -E '(^|/)oxedi_(core|py)/scripts/'; then echo "sdist-check: $$sdist holds the maintainers' scripts"; exit 1; fi; \
 	  if echo "$$listing" | grep -E '(^|/)__pycache__(/|$$)|\.pyc$$'; then echo "sdist-check: $$sdist holds compiled bytecode"; exit 1; fi; \
 	  for need in $(SDIST_REQUIRED); do \
 	    echo "$$listing" | grep -qxF "$$need" || { echo "sdist-check: $$sdist lacks $$need"; exit 1; }; \
@@ -101,7 +102,7 @@ sdist-check: ## fail if the sdist holds the core's test trees or lacks what the 
 wheel-check: ## fail if the built wheel lacks the type stub, py.typed or the licenses, or holds bytecode
 	@wheel=$$(ls $(WHEELS)/oxedi-*.whl 2>/dev/null | head -n 1); \
 	  test -n "$$wheel" || { echo "wheel-check: no oxedi-*.whl in $(WHEELS); run make dist first"; exit 1; }; \
-	  $(PYTHON) scripts/check_wheel.py "$$wheel" .
+	  $(PYTHON) crates/oxedi_py/scripts/check_wheel.py "$$wheel" .
 
 readme-py: ## regenerate the PyPI README from README.md (relative links become absolute)
 	sed -E 's#\]\(([^):\#][^):]*)\)#](https://github.com/javillegasna/oxedi/blob/master/\1)#g' README.md > crates/oxedi_py/README.md
@@ -112,7 +113,7 @@ readme-py-check: ## fail if crates/oxedi_py/README.md is not what make readme-py
 	  || { echo "readme-py-check: crates/oxedi_py/README.md is stale; run make readme-py"; exit 1; }
 
 smoke: ## install the built wheel in a clean venv outside the repo and run the suite
-	scripts/smoke_wheel.sh
+	crates/oxedi_py/scripts/smoke_wheel.sh
 
 clean-dist:
 	rm -rf $(WHEELS)
@@ -161,15 +162,15 @@ duckdb-version-check: ## fail unless the community descriptor's version equals t
 duckdb-oracle: py-dev ## DuckDB extension: compare read_835 with oxedi.parse_file on every sample and fixture
 	$(MAKE) -C $(EXT_DIR) test_oracle ORACLE_PYTHON=$(abspath $(PYTHON))
 
-# ---- Documentation site (mkdocs.yml, docs/, docs_tests/) ----
-# The docs environment holds the site tools from requirements-docs.txt and the package itself
+# ---- Documentation site (mkdocs.yml, docs/, docs/tests/) ----
+# The docs environment holds the site tools from docs/requirements.txt and the package itself
 # (debug build, editable), so the API reference and the examples run against the current code.
-$(DOCS_VENV)/.ready: requirements-docs.txt
+$(DOCS_VENV)/.ready: docs/requirements.txt
 	uv venv --clear $(DOCS_VENV) --python 3.13
-	uv pip install --python $(DOCS_PYTHON) -r requirements-docs.txt
+	uv pip install --python $(DOCS_PYTHON) -r docs/requirements.txt
 	touch $@
 
-docs-venv: $(DOCS_VENV)/.ready ## create .venv-docs with the site tools (locked in requirements-docs.txt)
+docs-venv: $(DOCS_VENV)/.ready ## create .venv-docs with the site tools (locked in docs/requirements.txt)
 
 docs-dev: docs-venv ## build the package into .venv-docs (debug), so the site and examples see current code
 	VIRTUAL_ENV=$(abspath $(DOCS_VENV)) $(DOCS_VENV)/bin/maturin develop --uv --manifest-path $(PY_MANIFEST)
@@ -181,7 +182,7 @@ docs-serve: docs-dev ## preview the site at http://127.0.0.1:8000
 	NO_MKDOCS_2_WARNING=true $(DOCS_VENV)/bin/mkdocs serve
 
 docs-test: docs-dev ## run every python and sql block of the docs and README (SQL needs `make release` first)
-	$(DOCS_PYTHON) -m pytest docs_tests -q
+	$(DOCS_PYTHON) -m pytest docs/tests -q
 
 # ---- Release ----
 # Python releases use release-check and tag (tags v*, which start the PyPI workflow).

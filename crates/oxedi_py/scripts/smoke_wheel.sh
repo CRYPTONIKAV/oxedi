@@ -4,12 +4,12 @@
 # against it.
 set -euo pipefail
 
-repo="$(cd "$(dirname "$0")/.." && pwd)"
+repo="$(cd "$(dirname "$0")/../../.." && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 maturin build --release --manifest-path "$repo/crates/oxedi_py/Cargo.toml" --out "$work/dist"
-python "$repo/scripts/check_wheel.py" "$(ls "$work"/dist/oxedi-*.whl)" "$repo"
+python "$repo/crates/oxedi_py/scripts/check_wheel.py" "$(ls "$work"/dist/oxedi-*.whl)" "$repo"
 uv venv --quiet --python "$(command -v python)" "$work/venv"
 VIRTUAL_ENV="$work/venv" uv pip install --quiet "$work"/dist/oxedi-*.whl pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
 cp -r "$repo/crates/oxedi_py/tests" "$work/tests"

@@ -16,7 +16,7 @@ import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LANGS = ("python", "sql")
 ALIASES = {"python": "python", "py": "python", "python3": "python", "sql": "sql"}
 

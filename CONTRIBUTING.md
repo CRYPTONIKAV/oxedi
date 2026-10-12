@@ -57,7 +57,7 @@ run `make readme-py-check`, which fails when the two differ.
 ## Documentation site
 
 The site is built with MkDocs Material from `mkdocs.yml` and `docs/`. Its tools live in
-`requirements-docs.txt`, in their own environment (`.venv-docs`), never in the package.
+`docs/requirements.txt`, in their own environment (`.venv-docs`), never in the package.
 
 ```bash
 make docs         # strict build into site/: a broken link or a page outside the navigation fails

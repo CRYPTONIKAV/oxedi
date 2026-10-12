@@ -46,6 +46,8 @@ module-name = "oxedi._core"
 python-source = "python"
 exclude = [
     { path = "**/oxedi_core/tests/**", format = "sdist" },
+    { path = "**/oxedi_core/scripts/**", format = "sdist" },
+    { path = "**/oxedi_py/scripts/**", format = "sdist" },
     { path = "**/__pycache__/**", format = "sdist" },
     { path = "**/*.pyc", format = "sdist" },
     { path = "**/__pycache__/**", format = "wheel" },
