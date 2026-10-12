@@ -22,7 +22,7 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm wasm-size-check publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
 	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -183,6 +183,36 @@ docs-serve: docs-dev ## preview the site at http://127.0.0.1:8000
 
 docs-test: docs-dev ## run every python and sql block of the docs and README (SQL needs `make release` first)
 	$(DOCS_PYTHON) -m pytest docs/tests -q
+
+# ---- Browser viewer (crates/oxedi_wasm, viewer/) ----
+# The module is built for the browser with size-first release settings passed as environment
+# variables, so native release builds (wheels, the DuckDB extension) keep the workspace profile.
+# The wasm-bindgen CLI must be the exact version Cargo.lock resolves for the crate.
+WASM_TARGET     := wasm32-unknown-unknown
+WASM_BUILT      := target/$(WASM_TARGET)/release/oxedi_wasm.wasm
+VIEWER_PKG      := viewer/pkg
+WASM_BINDGEN_VERSION := $(shell sed -n '/^name = "wasm-bindgen"$$/{n;s/^version = "\(.*\)"$$/\1/p;}' Cargo.lock)
+# 250 KB, gzipped.
+WASM_SIZE_LIMIT := 256000
+
+wasm: ## build the viewer's WebAssembly module into viewer/pkg
+	@rustup target list --installed | grep -qx '$(WASM_TARGET)' || rustup target add $(WASM_TARGET)
+	@v=$$(wasm-bindgen --version 2>/dev/null | cut -d' ' -f2); \
+	  test "$$v" = "$(WASM_BINDGEN_VERSION)" || { echo "wasm: wasm-bindgen $(WASM_BINDGEN_VERSION) is required (Cargo.lock) but found '$${v:-none}'; install it with: cargo install wasm-bindgen-cli --version $(WASM_BINDGEN_VERSION) --locked"; exit 1; }
+	@command -v wasm-opt >/dev/null || { echo "wasm: wasm-opt not found; install binaryen (https://github.com/WebAssembly/binaryen/releases) and put wasm-opt on PATH"; exit 1; }
+	CARGO_PROFILE_RELEASE_OPT_LEVEL=s CARGO_PROFILE_RELEASE_LTO=true \
+	  CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 CARGO_PROFILE_RELEASE_PANIC=abort \
+	  cargo build -p oxedi_wasm --release --locked --target $(WASM_TARGET)
+	rm -rf $(VIEWER_PKG)
+	wasm-bindgen --target web --out-dir $(VIEWER_PKG) --out-name oxedi --no-typescript $(WASM_BUILT)
+	wasm-opt -Os $(VIEWER_PKG)/oxedi_bg.wasm -o $(VIEWER_PKG)/oxedi_bg.wasm
+	$(PYTHON_BIN) crates/oxedi_wasm/scripts/embed_wasm.py
+
+wasm-size-check: ## fail if the gzipped module is over 250 KB
+	@test -f $(VIEWER_PKG)/oxedi_bg.wasm || { echo "wasm-size-check: no $(VIEWER_PKG)/oxedi_bg.wasm; run make wasm first"; exit 1; }
+	@raw=$$(wc -c < $(VIEWER_PKG)/oxedi_bg.wasm); gz=$$(gzip -9 -c $(VIEWER_PKG)/oxedi_bg.wasm | wc -c); \
+	  echo "wasm-size-check: oxedi_bg.wasm $$raw bytes, $$gz gzipped (limit $(WASM_SIZE_LIMIT))"; \
+	  test $$gz -le $(WASM_SIZE_LIMIT) || { echo "wasm-size-check: the gzipped module is $$gz bytes, over $(WASM_SIZE_LIMIT)"; exit 1; }
 
 # ---- Release ----
 # Python releases use release-check and tag (tags v*, which start the PyPI workflow).
