@@ -58,3 +58,41 @@ Both hold the same remittance; the 5010 file adds `ST03` and the payer technical
 - Claim columns: patient and rendering provider (person and organization), statement dates,
   `AMT*AU`, `REF*1L`; service columns: `DTM*472`, `REF*6R`, `AMT*B6`, units paid and original
   units.
+
+## Edge-case fixtures for money
+
+Two more hand-written files, valid end to end like the balanced ones, for the cases where money
+moves in ways the balanced fixtures do not show. Same rule: **never edit them**, and every name,
+identifier and amount is invented. Both hold the same remittance; the 5010 file adds the payer
+technical contact (`PER*BL`) and, unlike the balanced 5010 fixture, carries no `ST03`.
+
+| File | Bytes | Segments | Version | Repetition | Line endings | Claims | Services | CAS rows | PLB groups |
+|------|-------|----------|---------|------------|--------------|--------|----------|----------|------------|
+| `edge_cases_5010_sample.txt` | 1 493 | 50 | 00501 / 005010X221A1 | `^` | LF after every `~` | 4 | 2 | 5 | 8 |
+| `edge_cases_4010_sample.txt` | 1 408 | 49 | 00401 / 004010X091A1 | — | none | 4 | 2 | 5 | 8 |
+
+What they cover:
+
+- **Interest.** A claim paid on time (`MRC1001`) and one paid late (`MRC1002`, received
+  2023-11-20, `DTM*050`) that carries `AMT*I*7.25` in loop 2100. The interest is not in the
+  claim's payment or its `CAS`: the claim balances on its own (400 − 300 = 100 `CO` 45), and the
+  money goes through `PLB` as `L6:MRC1002*-7.25`, negative, so it adds to the payment.
+- **Reversal and correction.** An earlier payment of claim `MRC0950` reversed (`CLP02` 22,
+  charge −300, payment −240, `CAS*CO*45*-60`, the original payer claim control number
+  `BHP23950`), then the corrected claim (`CLP02` 1, charge 300, payment 270, `CAS*CO*45*30`, a new
+  payer control number and `REF*F8` pointing at the original). Both balance: −300 − (−240) = −60
+  and 300 − 270 = 30.
+- **A `PLB` over two segments.** Eight adjustments, more than the six one `PLB` holds: six in the
+  first segment, two in the second, same provider and fiscal period. Codes `L6`, `WO` (twice),
+  `FB`, `CS` (twice, one negative), `72` and `J1`; total 65.50.
+- **Bank details.** `BPR` paid by `ACH` in `CCP` format with every bank field filled: sender DFI
+  qualifier and number, account qualifier and number, originating company identifier (equal to
+  `TRN03`), receiver DFI qualifier and number, account qualifier and number. No built-in table
+  reads them, so a written file leaves them out and still reads to the same tables.
+- **Transaction balance.** `BPR02` (444.50) equals the claims' payments (180 + 300 − 240 + 270
+  = 510) minus the `PLB` amounts (−7.25 + 35 + 12.50 − 4 + 8 + 3 − 1.75 + 20 = 65.50).
+
+`pyx12` finds nothing in the 4010 file and one thing in the 5010 file: the second `PLB` segment.
+Its 5010 map wraps `PLB` in a loop that may occur once, and pyx12 counts a second `PLB` as a
+second occurrence of that loop, although the map lets `PLB` itself repeat; the 4010 map has no
+such loop.

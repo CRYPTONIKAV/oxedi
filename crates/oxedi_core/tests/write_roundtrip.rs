@@ -20,6 +20,8 @@ const CLEAN: &[&str] = &[
     "united_healthcare_legacy_sample.txt",
     "balanced_5010_sample.txt",
     "balanced_4010_sample.txt",
+    "edge_cases_5010_sample.txt",
+    "edge_cases_4010_sample.txt",
 ];
 
 /// 2024-01-01 at 12:30.
