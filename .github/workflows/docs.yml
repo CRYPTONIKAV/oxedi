@@ -1,9 +1,11 @@
 name: Docs deploy
 
-# Publishes the site to the gh-pages branch with mike: `dev` from every push to master, and
-# `X.Y` plus the `latest` alias from every final v* tag (pre-releases and duckdb-v* tags do not
-# publish). A manual run with a `version` (X.Y) publishes that version and moves `latest`, for a
-# release made before this workflow existed. Pull requests only build the site, in the Documentation job of ci.yml.
+# Publishes the site to the gh-pages branch with mike: `dev` from every push to master that
+# changes what the site or the viewer is built from (the paths below), and `X.Y` plus the
+# `latest` alias from every final v* tag (pre-releases and duckdb-v* tags do not publish; path
+# filters do not apply to tags). A manual run with a `version` (X.Y) publishes that version and
+# moves `latest`, for a release made before this workflow existed. Pull requests only build the
+# site, in the Docs job that ci.yml calls (_docs.yml).
 #
 # The browser viewer is published next to the versions, in `viewer/` of gh-pages (the latest
 # release) and `viewer/dev/` (master), outside the folders mike manages.
@@ -11,6 +13,18 @@ on:
   push:
     branches: [master]
     tags: ["v*"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "crates/**"
+      - "viewer/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "Makefile"
+      - "rust-toolchain.toml"
+      - ".github/workflows/docs.yml"
+      - ".github/actions/**"
   workflow_dispatch:
     inputs:
       version:
@@ -36,13 +50,19 @@ jobs:
     permissions:
       contents: write # push to gh-pages
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # mike needs the gh-pages history
-      - uses: dtolnay/rust-toolchain@stable
+      # The Viewer job's compile cache holds the same builds (the package and the module); this
+      # job reads it and never writes it.
+      - uses: ./.github/actions/setup-rust
         with:
           targets: wasm32-unknown-unknown
-      - uses: astral-sh/setup-uv@v7
+          cache-key: viewer
+          save: "false"
+      - uses: ./.github/actions/setup-uv
+        with:
+          cache-suffix: viewer
       - name: Version to publish
         id: target
         env:
@@ -70,7 +90,9 @@ jobs:
           fi
       - name: Docs environment
         if: steps.target.outputs.kind != 'skip'
-        run: make docs-dev
+        uses: ./.github/actions/docs-venv
+        with:
+          dev: "true"
       - name: Docs tools on PATH
         if: steps.target.outputs.kind != 'skip'
         # mike runs mkdocs by name, so the venv's bin must be on PATH.
@@ -94,7 +116,7 @@ jobs:
           done
       - name: wasm-bindgen CLI and wasm-opt
         if: steps.target.outputs.kind != 'skip'
-        run: crates/oxedi_wasm/scripts/install_tools.sh
+        uses: ./.github/actions/wasm-tools
       - name: Build the viewer's module
         if: steps.target.outputs.kind != 'skip'
         run: make wasm

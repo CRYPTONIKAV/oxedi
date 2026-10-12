@@ -112,14 +112,32 @@ page outside the navigation.
 ### Deploy
 
 `.github/workflows/docs.yml` publishes with `mike` to the `gh-pages` branch. A push to `master`
-publishes `dev` (titled "dev (unreleased)"). A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
+that changes what the site or the viewer is built from (the `paths` of the workflow) publishes
+`dev` (titled "dev (unreleased)"). A final tag `vX.Y.Z` publishes version `X.Y` and moves the `latest` alias, which
 the site root redirects to. Pre-release tags and `duckdb-v*` tags publish nothing. Pull requests
-only build the site (the Documentation job in `ci.yml`). To publish a release that was tagged before the workflow existed, run "Docs deploy" manually
+only build the site (the Docs job in `ci.yml`). To publish a release that was tagged before the workflow existed, run "Docs deploy" manually
 from `master` with the `version` input (`X.Y`, for example `0.5`); it also moves `latest`.
 The same workflow publishes the viewer next to the versions: a push to `master` puts it in
 `viewer/dev/`, and a final tag (or the manual run) puts it in `viewer/`, which keeps `viewer/dev/`.
 It then checks that `versions.json`, every version directory and the viewer are still on
 `gh-pages`. Never commit to `gh-pages` by hand.
+
+## CI
+
+`ci.yml` runs five areas, each a reusable workflow (`_rust.yml`, `_python.yml`, `_duckdb.yml`,
+`_docs.yml`, `_viewer.yml`), only when files that area depends on changed: a pull request is
+compared with its base, a push to `master` with the previous commit. The `Changes` job holds the
+path filters; a change under `.github/` runs Rust, and a change to the composite actions in
+`.github/actions/` runs every area. A draft pull request runs Rust only; the other areas start
+when it is marked ready for review. A new push to a pull request cancels its running checks.
+
+`nightly.yml` runs every area on `master` each night, whatever changed, plus the DuckDB
+pre-release leg (`next`), which reports and does not block. Run it by hand from the Actions tab
+when a change needs the full set before merging.
+
+`CI result` is the one check to require: it fails when an area failed or was cancelled and
+passes when each one passed or was not needed. Compile caches are written only from `master`;
+pull requests read them.
 
 ## Releases
 
