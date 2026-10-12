@@ -7,7 +7,7 @@ value read from a file. A file is compared when the compat layer reads it as
 an 835: it starts with the spec's interchange segment, optionally after a
 UTF-8 byte order mark and ASCII whitespace. The N104 shim of the test suite
 is applied so the library reads alphanumeric payer ids.
-Usage: python scripts/compat_oracle.py DIR [--out REPORT]
+Usage: python crates/oxedi_py/scripts/compat_oracle.py DIR [--out REPORT]
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import sys
 import warnings
 from pathlib import Path
 
-TESTS = Path(__file__).resolve().parents[1] / "crates" / "oxedi_py" / "tests"
+TESTS = Path(__file__).resolve().parents[1] / "tests"
 COUNTS = ("count_claims", "count_patients", "sum_payments")
 
 

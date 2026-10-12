@@ -783,7 +783,7 @@ def test_repeated_groups_strip_trailing_blanks_as_the_strict_columns_do():
 def oracle():
     import importlib.util
 
-    script = CORE_TESTS.parents[2] / "scripts" / "compat_oracle.py"
+    script = CORE_TESTS.parents[1] / "oxedi_py" / "scripts" / "compat_oracle.py"
     if not script.exists():
         pytest.skip("the compat oracle script is not next to the tests")
     spec = importlib.util.spec_from_file_location("compat_oracle", script)

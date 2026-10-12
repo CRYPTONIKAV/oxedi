@@ -40,13 +40,13 @@ never by name, so a renamed occurrence still matches.
 
 ``--check`` compares only what the spec already defines and exits 1 when any
 of it disagrees with the map, naming loop, segment, element and both values.
-Findings listed in ``scripts/spec_vs_pyx12.ignore.json`` (each with its
+Findings listed in ``crates/oxedi_core/scripts/spec_vs_pyx12.ignore.json`` (each with its
 reason) are skipped.
 
 Usage:
-    python scripts/spec_vs_pyx12.py [--version 5010|4010] [--report PATH] [--patch PATH]
+    python crates/oxedi_core/scripts/spec_vs_pyx12.py [--version 5010|4010] [--report PATH] [--patch PATH]
         [--fresh-names]
-    python scripts/spec_vs_pyx12.py --check [--version 5010|4010]
+    python crates/oxedi_core/scripts/spec_vs_pyx12.py --check [--version 5010|4010]
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[3]
 SPECS = REPO / "crates" / "oxedi_core" / "specs"
 IGNORE = Path(__file__).resolve().with_name("spec_vs_pyx12.ignore.json")
 OUT = REPO / ".superpowers" / "spec_vs_pyx12"

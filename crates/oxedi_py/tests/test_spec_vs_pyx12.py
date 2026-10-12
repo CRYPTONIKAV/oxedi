@@ -9,8 +9,7 @@ import pytest
 
 from conftest import CORE_TESTS
 
-REPO = CORE_TESTS.parents[2]
-SCRIPT = REPO / "scripts" / "spec_vs_pyx12.py"
+SCRIPT = CORE_TESTS.parent / "scripts" / "spec_vs_pyx12.py"
 
 
 def load_script():

@@ -34,7 +34,7 @@ def _organization_init(self, segment: str):
 
 organization.Organization.__init__ = _organization_init
 
-tests = Path(__file__).resolve().parents[1] / "crates" / "oxedi_core" / "tests"
+tests = Path(__file__).resolve().parents[2] / "oxedi_core" / "tests"
 
 
 def files():

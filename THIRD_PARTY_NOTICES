@@ -42,7 +42,7 @@ https://github.com/azoner/pyx12
 Used in: crates/oxedi_core/specs/835.json and crates/oxedi_core/specs/835.4010.json
 (element usage, lengths and code lists derived from its 835 transaction maps,
 dataele.xml and codes.xml). The maps themselves are read from the installed
-package by scripts/spec_vs_pyx12.py and are not copied into the repository.
+package by crates/oxedi_core/scripts/spec_vs_pyx12.py and are not copied into the repository.
 
 BSD 3-Clause License
 

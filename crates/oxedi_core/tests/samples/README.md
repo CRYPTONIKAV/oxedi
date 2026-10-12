@@ -1,6 +1,6 @@
 # Samples
 
-Real payer 835 files, **anonymized** with `scripts/anonymize_835.py` before entering the
+Real payer 835 files, **anonymized** with `crates/oxedi_core/scripts/anonymize_835.py` before entering the
 repository. Every direct identifier (names, member and account ids, NPIs, tax ids, bank
 routing and account numbers, addresses, phones, trace numbers) was replaced by a
 deterministic fake value; amounts, codes, dates, structure, delimiters, line endings and

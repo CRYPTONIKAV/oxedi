@@ -121,7 +121,7 @@ jobs:
           path: dist
       - name: Install the wheel and run the suite
         shell: bash
-        run: scripts/verify_wheel.sh dist
+        run: crates/oxedi_py/scripts/verify_wheel.sh dist
 
   # The musl wheel runs inside an Alpine container with the matching Python. DuckDB publishes no
   # musllinux wheel and building it needs a C++ toolchain, so its tests skip there.
@@ -142,7 +142,7 @@ jobs:
       - name: Install the wheel and run the suite in Alpine
         run: |
           docker run --rm -e VERIFY_EXCLUDE=duckdb -v "$PWD:/work" -w /work "python:${{ matrix.python }}-alpine" \
-            sh -c "apk add --no-cache bash && scripts/verify_wheel.sh dist"
+            sh -c "apk add --no-cache bash && crates/oxedi_py/scripts/verify_wheel.sh dist"
 
   publish-testpypi:
     name: Publish to TestPyPI

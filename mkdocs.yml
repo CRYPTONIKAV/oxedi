@@ -4,6 +4,11 @@ site_url: https://javillegas.dev/oxedi/
 repo_url: https://github.com/javillegasna/oxedi
 repo_name: javillegasna/oxedi
 docs_dir: docs
+# The examples' tests and the site's requirements live next to the pages but are not pages.
+exclude_docs: |
+  tests/
+  requirements.in
+  requirements.txt
 strict: true
 
 theme:
