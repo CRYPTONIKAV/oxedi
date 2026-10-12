@@ -5,19 +5,7 @@
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/duckdb/</loc>
-         <lastmod>2026-10-12</lastmod>
-    </url>
-    <url>
          <loc>https://javillegas.dev/oxedi/dev/migrating-from-edi-835-parser/</loc>
-         <lastmod>2026-10-12</lastmod>
-    </url>
-    <url>
-         <loc>https://javillegas.dev/oxedi/dev/pyx12/</loc>
-         <lastmod>2026-10-12</lastmod>
-    </url>
-    <url>
-         <loc>https://javillegas.dev/oxedi/dev/reading/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
@@ -25,35 +13,51 @@
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/spec/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/customize/spec/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/writing/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/duckdb/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/diagnostics/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/duckdb/limits/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/edi_835_parser/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/duckdb/reading/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/parsing/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/duckdb/writing/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/pyx12/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/python/diagnostics/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/spec/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/python/large-files/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
-         <loc>https://javillegas.dev/oxedi/dev/api/writing/</loc>
+         <loc>https://javillegas.dev/oxedi/dev/python/own-tables/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/python/pyx12/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/python/reading/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/python/when-write-refuses/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/python/writing/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
@@ -66,6 +70,50 @@
     </url>
     <url>
          <loc>https://javillegas.dev/oxedi/dev/recipes/polars/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/glossary/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/tables/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/diagnostics/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/edi_835_parser/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/parsing/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/pyx12/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/spec/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/reference/api/writing/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/start/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/start/install/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://javillegas.dev/oxedi/dev/start/the-835/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
 </urlset>
