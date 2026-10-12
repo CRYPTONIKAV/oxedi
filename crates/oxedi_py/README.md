@@ -11,7 +11,9 @@ core is written in Rust and is available from Python and from DuckDB.
   diagnostic that names the rule, the position and the value.
 
 Documentation: **<https://javillegas.dev/oxedi/latest/>**. New here? Start with the
-[five-minute tutorial](https://javillegas.dev/oxedi/latest/start/).
+[five-minute tutorial](https://javillegas.dev/oxedi/latest/start/), or
+**[try it in your browser](https://javillegas.dev/oxedi/viewer/)**: drop a file on the page and
+see its tables and problems. Nothing is uploaded.
 
 ## Install
 

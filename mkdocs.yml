@@ -99,6 +99,7 @@ nav:
       - start/index.md
       - Install: start/install.md
       - The 835 in five minutes: start/the-835.md
+      - Try it in your browser: start/viewer.md
   - Python:
       - Reading: python/reading.md
       - Large files: python/large-files.md

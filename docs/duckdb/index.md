@@ -6,6 +6,9 @@ uses the same parser, writer and tables as the Python package.
 - Every DuckDB client gets it: Python, R, Java, Node, Go, .NET, Rust and the CLI.
 - It is built on DuckDB's stable C API and loads on DuckDB 1.5.6 and later.
 
+To look at a file first, without installing anything, use the
+[viewer in your browser](../start/viewer.md).
+
 ## Install
 
 <!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
