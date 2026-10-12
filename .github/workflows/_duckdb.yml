@@ -1,0 +1,76 @@
+name: DuckDB
+
+# The DuckDB extension: descriptor version, build, SQLLogicTest and the oracle against
+# oxedi.parse_file, once per DuckDB leg. Called by ci.yml (stable, latest) and nightly.yml (all).
+on:
+  workflow_call:
+    inputs:
+      legs:
+        description: 'JSON array of legs to run, from "stable", "latest" and "next"'
+        required: false
+        type: string
+        default: '["stable", "latest"]'
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    name: DuckDB (${{ matrix.leg }})
+    runs-on: ubuntu-latest
+    # `next` is a moving pre-release of DuckDB: it reports, it does not block.
+    continue-on-error: ${{ matrix.leg == 'next' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(inputs.legs) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+      # stable: the extension's minimum DuckDB (TARGET_DUCKDB_VERSION in its Makefile).
+      # latest: the newest release on PyPI. next: the newest pre-release on PyPI.
+      - name: Leg
+        id: leg
+        env:
+          LEG: ${{ matrix.leg }}
+        run: |
+          case "$LEG" in
+            stable) test_version="1.5.6"; pip="duckdb==1.5.6" ;;
+            latest) test_version=""; pip="duckdb" ;;
+            next) test_version="main"; pip="--pre duckdb" ;;
+            *) echo "unknown DuckDB leg '$LEG'; expected stable, latest or next" >&2; exit 1 ;;
+          esac
+          echo "test_version=$test_version" >> "$GITHUB_OUTPUT"
+          echo "pip=$pip" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: duckdb-${{ matrix.leg }}
+          # The extension builds into its own target directory (its Makefile sets CARGO_TARGET_DIR).
+          workspaces: |
+            . -> target
+            crates/oxedi_duckdb -> crates/oxedi_duckdb/target
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: "3.13"
+          cache-suffix: duckdb-${{ matrix.leg }}
+      - name: Tools
+        env:
+          PIP: ${{ steps.leg.outputs.pip }}
+        run: |
+          read -r -a duckdb <<< "$PIP"
+          uv pip install "maturin>=1.9.4,<2" pytest pyarrow "${duckdb[@]}"
+      - name: Descriptor version
+        run: make duckdb-version-check
+      - name: Configure
+        env:
+          TEST_VERSION: ${{ steps.leg.outputs.test_version }}
+        run: make configure_ci DUCKDB_TEST_VERSION="$TEST_VERSION"
+      - name: Build the extension
+        run: make release
+      - name: SQLLogicTest
+        env:
+          TEST_VERSION: ${{ steps.leg.outputs.test_version }}
+        run: make test_release DUCKDB_TEST_VERSION="$TEST_VERSION"
+      - name: Oracle against oxedi.parse_file
+        run: make duckdb-oracle
