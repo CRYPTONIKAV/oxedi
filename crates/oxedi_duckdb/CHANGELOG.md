@@ -7,6 +7,11 @@ and the extension has its own version.
 
 ## [Unreleased]
 
+### Changed
+- `read_835` fills only the table it reads instead of every table of the spec and then keeping
+  one, so reading a table takes about a fifth less time (900 files, 127 MB, one thread:
+  `table_name := 'claims'` from 4.6 s to 3.6 s). The rows and the diagnostics are unchanged.
+
 ### Fixed
 - A table macro that forwards its parameter to `table_name` or `version` with `:=` while the
   path is fixed now fails with an error that says the value must be a constant string and to write
