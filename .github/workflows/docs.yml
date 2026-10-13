@@ -38,9 +38,11 @@ on:
         required: true
         type: string
 
-# One release deploy at a time and one dev deploy at a time, in separate groups. A queued dev
-# deploy is replaced by a newer one (the newest master wins); a queued release deploy is only
-# ever replaced by another release, never by a master push. Nothing is cancelled once running.
+# Two groups. Master pushes queue in the dev group: a newer push replaces one that is waiting.
+# Tag and manual runs queue in the release group, where GitHub keeps one pending run, so a
+# second tag or manual run started while a release deploy waits replaces it; re-run "Docs
+# deploy" by hand for that version if that happens. Nothing is cancelled once running. Pushes
+# to gh-pages from the two groups are retried when rejected.
 concurrency:
   group: ${{ (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && 'docs-deploy-release' || 'docs-deploy-dev' }}
   cancel-in-progress: false

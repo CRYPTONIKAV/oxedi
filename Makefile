@@ -54,9 +54,10 @@ doc: ## rustdoc with warnings as errors
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 
 # ---- Python binding ----
+PY_TOOLS := maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
 venv: ## create .venv with uv and the dev tools
 	uv venv $(VENV) --python 3.13
-	uv pip install --python $(PYTHON) maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb mypy pandas-stubs
+	uv pip install --python $(PYTHON) $(PY_TOOLS) mypy pandas-stubs
 
 py-dev: ## build the extension into .venv (debug)
 	$(MATURIN) develop --uv --manifest-path $(PY_MANIFEST)
@@ -66,7 +67,7 @@ py-test: py-dev ## build and run the Python suite
 
 py-test-nopyx12: ## build into a venv without pyx12 and run the Python suite (pyx12 tests skip)
 	uv venv --clear $(NOPYX12_VENV) --python 3.13
-	uv pip install --python $(NOPYX12_VENV)/bin/python maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
+	uv pip install --python $(NOPYX12_VENV)/bin/python $(PY_TOOLS)
 	VIRTUAL_ENV=$(CURDIR)/$(NOPYX12_VENV) $(NOPYX12_VENV)/bin/maturin develop --uv --manifest-path $(PY_MANIFEST)
 	$(NOPYX12_VENV)/bin/python -c "import importlib.util, sys; sys.exit(1 if importlib.util.find_spec('pyx12') else 0)"
 	$(NOPYX12_VENV)/bin/python -m pytest -q -rs $(PY_TESTS)
