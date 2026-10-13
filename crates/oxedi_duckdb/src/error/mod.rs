@@ -4,7 +4,7 @@
 
 use std::fmt;
 
-use oxedi_core::{ColumnType, DocumentError};
+use oxedi_core::{ColumnType, DocumentError, MaskError};
 
 /// The name every message starts with, as DuckDB shows it to the user.
 pub const FUNCTION: &str = "read_835";
@@ -38,6 +38,19 @@ pub enum ReadError {
         parameter: String,
         /// The text DuckDB passed.
         value: String,
+    },
+    /// `mask_key` or `mask_dates` does not build a mask.
+    Mask {
+        /// The `read_835` parameter at fault.
+        name: &'static str,
+        /// The core's error.
+        source: MaskError,
+    },
+    /// `mask_dates` was given without `mask_key`, so there is nothing to
+    /// choose the date mode of.
+    MaskDatesWithoutKey {
+        /// The mode given.
+        dates: String,
     },
     /// `table_name` names no table of the spec.
     UnknownTable {
@@ -261,6 +274,11 @@ impl fmt::Display for ReadError {
             ReadError::EmptyPathList => {
                 write!(f, "{FUNCTION}: the list of paths must not be empty")
             }
+            ReadError::NullOption { name: "mask_key" } => write!(
+                f,
+                "{FUNCTION}: mask_key must not be NULL; leave it out to read without masking, \
+                 or give a key of at least 16 bytes (a NULL often means a variable is not set)"
+            ),
             ReadError::NullOption { name } => write!(
                 f,
                 "{FUNCTION}: {name} must not be NULL; leave it out to use its default"
@@ -275,6 +293,12 @@ impl fmt::Display for ReadError {
                  parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
                  parameter given with := or =>, so write {name} = {}",
                 identifier(parameter)
+            ),
+            ReadError::Mask { name, source } => write!(f, "{FUNCTION}: {name}: {source}"),
+            ReadError::MaskDatesWithoutKey { dates } => write!(
+                f,
+                "{FUNCTION}: mask_dates {dates:?} was given without mask_key; mask_dates only \
+                 chooses how a mask treats dates, so give mask_key as well"
             ),
             ReadError::UnknownTable { table, known } => write!(
                 f,
@@ -356,8 +380,8 @@ impl fmt::Display for ReadError {
 
 impl std::error::Error for ReadError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // `Parse` prints the core error in full, so the chain stops here
-        // instead of printing it a second time.
+        // `Parse` and `Mask` print the core error in full, so the chain
+        // stops here instead of printing it a second time.
         None
     }
 }

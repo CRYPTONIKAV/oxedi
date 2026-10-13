@@ -11,7 +11,7 @@ mod write;
 use std::sync::Arc;
 
 use libduckdb_sys as ffi;
-use oxedi_core::{ColumnType, Document, Processor, Table};
+use oxedi_core::{ColumnType, Document, Mask, Processor, Table};
 
 use crate::builtins::{Builtin, Builtins};
 use crate::diagnostics;
@@ -53,6 +53,8 @@ pub struct Bound {
     pub ignore_errors: bool,
     /// Whether text columns are BLOB instead of VARCHAR.
     pub binary: bool,
+    /// The mask that hides patient data, when one was asked for.
+    pub mask: Option<Mask>,
 }
 
 /// The bound table of the file being emitted.
@@ -176,7 +178,10 @@ fn load(bound: &Bound, file: &str) -> Result<Table, ReadError> {
     if bound.diagnostics {
         // Every table is filled: a text value too large to store is a
         // finding of the table that would hold it.
-        let (_tables, findings) = Processor::run(&builtin.spec, &document);
+        let (_tables, findings) = match &bound.mask {
+            Some(mask) => Processor::run_masked(&builtin.spec, &document, mask),
+            None => Processor::run(&builtin.spec, &document),
+        };
         return diagnostics::of_findings(&findings);
     }
     let same = builtin
@@ -190,7 +195,7 @@ fn load(bound: &Bound, file: &str) -> Result<Table, ReadError> {
             bound: bound.bound_version,
         });
     }
-    project(builtin, &document, &bound.table, file)
+    project(builtin, &document, &bound.table, file, bound.mask.as_ref())
 }
 
 /// Fills the table `name` alone from the document, with the rows a run that
@@ -200,15 +205,19 @@ fn project(
     document: &Document<'_>,
     name: &str,
     file: &str,
+    mask: Option<&Mask>,
 ) -> Result<Table, ReadError> {
-    Processor::run_tables(&builtin.spec, document, &[name])
-        .map_err(|error| ReadError::Internal {
-            message: format!("{file:?}: {error}"),
-        })?
-        .remove(name)
-        .ok_or_else(|| ReadError::Internal {
-            message: format!("{file:?}: the parsed file has no table {name:?}"),
-        })
+    match mask {
+        Some(mask) => Processor::run_tables_masked(&builtin.spec, document, &[name], mask),
+        None => Processor::run_tables(&builtin.spec, document, &[name]),
+    }
+    .map_err(|error| ReadError::Internal {
+        message: format!("{file:?}: {error}"),
+    })?
+    .remove(name)
+    .ok_or_else(|| ReadError::Internal {
+        message: format!("{file:?}: the parsed file has no table {name:?}"),
+    })
 }
 
 #[cfg(test)]

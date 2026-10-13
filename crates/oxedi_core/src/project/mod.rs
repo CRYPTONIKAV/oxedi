@@ -48,17 +48,23 @@
 //! and the byte total. Draining the tables per transaction keeps columns far
 //! below the limit.
 //!
+//! A projector given a [`Mask`] with [`Projector::with_mask`] masks the
+//! columns the spec flags as patient data in every row it appends, and the
+//! datums of its diagnostics that come from a place such a column reads; the
+//! module notes of `mask.rs` say how.
+//!
 //! The module is split by responsibility: `plan` holds the per-table plans
 //! built from the spec; `schema` the columns of each table, known from the
 //! spec alone; `check` the element check and the parsed values it
 //! hands to the columns; `fill` the row filling, the diagnostic helpers and
 //! the text read of an element; `carry` the values read from loops above a
-//! table's anchor. This file holds the projector, its event
-//! handlers and the row and slot state.
+//! table's anchor; `mask` the masking of rows and datums. This file holds the
+//! projector, its event handlers and the row and slot state.
 
 mod carry;
 mod check;
 mod fill;
+mod mask;
 mod plan;
 mod schema;
 #[cfg(test)]
@@ -75,6 +81,7 @@ use crate::column::{Cell, ColumnType, Table, Tables};
 use crate::delimiters::Delimiters;
 use crate::diagnostic::Diagnostic;
 use crate::engine::Event;
+use crate::mask::Mask;
 use crate::segment::Segment;
 use crate::spec::{LoopId, OccurrenceDef, Spec};
 
@@ -130,6 +137,11 @@ struct TableState {
     /// numbered, so the tables below it keep their parent references, but
     /// no column is read and no row is stored.
     kept: bool,
+    /// Whether the open row's columns are read: a kept table, or one left
+    /// out whose seed column the rows below it shift their dates by.
+    collect: bool,
+    /// Whether the table has columns to mask before a row is appended.
+    masked: bool,
     table: Table,
 }
 
@@ -164,6 +176,10 @@ pub struct Projector<'s> {
     cells: Vec<Cell<'static>>,
     joined: Vec<u8>,
     diagnostics: Vec<Diagnostic>,
+    /// The mask of the flagged columns, when one is given.
+    mask: Option<&'s Mask>,
+    /// The places flagged columns read, for masking diagnostic datums.
+    datums: Option<mask::DatumMask<'s>>,
 }
 
 impl<'s> Projector<'s> {
@@ -221,6 +237,8 @@ impl<'s> Projector<'s> {
                 row: Row::default(),
                 carried,
                 kept: true,
+                collect: true,
+                masked: false,
                 table: Table::new(def.name.clone(), columns),
             });
         }
@@ -240,6 +258,8 @@ impl<'s> Projector<'s> {
             cells: Vec::new(),
             joined: Vec::new(),
             diagnostics: Vec::new(),
+            mask: None,
+            datums: None,
         }
     }
 
@@ -264,6 +284,7 @@ impl<'s> Projector<'s> {
         let mut projector = Self::new(spec, delimiters);
         for (state, def) in projector.tables.iter_mut().zip(spec.tables()) {
             state.kept = names.contains(&def.name.as_str());
+            state.collect = state.kept;
         }
         Ok(projector)
     }
@@ -285,6 +306,9 @@ impl<'s> Projector<'s> {
                 Event::Unmatched { .. } | Event::Empty { .. } => {}
             }
         }
+        if let Some(datums) = &self.datums {
+            datums.apply(&mut self.diagnostics, Some(segment));
+        }
         &self.diagnostics
     }
 
@@ -301,6 +325,9 @@ impl<'s> Projector<'s> {
         for state in &mut self.tables {
             state.next = 0;
             state.carried.iter_mut().for_each(Carried::clear);
+        }
+        if let Some(datums) = &self.datums {
+            datums.apply(&mut self.diagnostics, None);
         }
         &self.diagnostics
     }
@@ -329,7 +356,7 @@ impl<'s> Projector<'s> {
             return;
         };
         let state = &mut self.tables[index];
-        if !state.kept {
+        if !state.collect {
             // Only the number is needed, for the rows below that refer to it.
             state.row.ordinal = state.next;
             state.next = state.next.saturating_add(1);
@@ -367,6 +394,12 @@ impl<'s> Projector<'s> {
             let append_row = state.open && state.kept;
             state.open = false;
             if append_row {
+                if state.masked {
+                    let mut row = std::mem::take(&mut state.row);
+                    self.mask_row(index, &mut row);
+                    self.tables[index].row = row;
+                }
+                let state = &mut self.tables[index];
                 let dropped = append(&mut state.table, &state.row, &mut self.cells);
                 let segment = state.row.segment;
                 self.report_dropped(dropped, index, segment);

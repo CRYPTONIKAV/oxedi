@@ -4,7 +4,10 @@
 //! it returns to the envelope checker and to the projector, so the loop
 //! structure, the structural and element diagnostics and the table rows all
 //! come from the same walk. [`Processor::run`] does the same over a whole
-//! document and is the same code path.
+//! document and is the same code path. A processor given a [`Mask`] masks
+//! the columns the spec flags as patient data and the datums of every
+//! diagnostic, the checker's included, read from a place such a column reads
+//! (see [`Projector::with_mask`]).
 
 use crate::check::EnvelopeChecker;
 use crate::column::Tables;
@@ -12,6 +15,7 @@ use crate::delimiters::Delimiters;
 use crate::diagnostic::Diagnostic;
 use crate::document::Document;
 use crate::engine::{Event, LoopEngine};
+use crate::mask::Mask;
 use crate::project::{Projector, UnknownTable};
 use crate::segment::Segment;
 use crate::spec::Spec;
@@ -74,6 +78,13 @@ impl<'s> Processor<'s> {
         })
     }
 
+    /// The same processor, masking the columns the spec flags as patient
+    /// data and the datums read from them; see [`Projector::with_mask`].
+    pub fn with_mask(mut self, mask: &'s Mask) -> Self {
+        self.projector = self.projector.with_mask(mask);
+        self
+    }
+
     /// Consumes one segment. The output is valid until the next call.
     pub fn feed(&mut self, segment: &Segment<'_>) -> &Output {
         self.output.events.clear();
@@ -88,6 +99,8 @@ impl<'s> Processor<'s> {
         self.output
             .diagnostics
             .extend_from_slice(self.checker.on_matched(segment, events, matched));
+        self.projector
+            .mask_datums(&mut self.output.diagnostics, Some(segment));
         self.output
             .diagnostics
             .extend_from_slice(self.projector.diagnostics());
@@ -104,6 +117,8 @@ impl<'s> Processor<'s> {
         self.output
             .diagnostics
             .extend_from_slice(self.checker.finish());
+        self.projector
+            .mask_datums(&mut self.output.diagnostics, None);
         self.output
             .diagnostics
             .extend_from_slice(self.projector.finish());
@@ -127,18 +142,19 @@ impl<'s> Processor<'s> {
     /// Processes a whole document: every segment, then `finish`. Returns
     /// the tables and every diagnostic in stream order.
     pub fn run(spec: &Spec, document: &Document<'_>) -> (Tables, Vec<Diagnostic>) {
-        let mut processor = Processor::new(spec, document.delimiters());
-        let mut diagnostics = Vec::new();
-        // One segment buffer for the whole pass: each segment is parsed into
-        // the previous one's element and composite vectors.
-        let mut segment = Segment::empty();
-        let mut index = 0;
-        while document.segment_into(index, &mut segment) {
-            diagnostics.extend_from_slice(processor.feed(&segment).diagnostics());
-            index += 1;
-        }
-        diagnostics.extend_from_slice(processor.finish().diagnostics());
-        (processor.take_tables(), diagnostics)
+        Processor::new(spec, document.delimiters()).run_document(document)
+    }
+
+    /// Processes a whole document as [`Processor::run`] does, masking the
+    /// columns the spec flags as patient data and the datums read from them.
+    pub fn run_masked(
+        spec: &Spec,
+        document: &Document<'_>,
+        mask: &Mask,
+    ) -> (Tables, Vec<Diagnostic>) {
+        Processor::new(spec, document.delimiters())
+            .with_mask(mask)
+            .run_document(document)
     }
 
     /// Processes a whole document as [`Processor::run`] does, filling only
@@ -150,17 +166,53 @@ impl<'s> Processor<'s> {
         document: &Document<'_>,
         names: &[&str],
     ) -> Result<Tables, UnknownTable> {
-        let mut processor = Processor::with_tables(spec, document.delimiters(), names)?;
+        let processor = Processor::with_tables(spec, document.delimiters(), names)?;
+        Ok(processor.run_document_tables(document))
+    }
+
+    /// [`Processor::run_tables`] with the masking of [`Processor::run_masked`]:
+    /// each table it returns holds the rows `run_masked` gives that table.
+    pub fn run_tables_masked(
+        spec: &Spec,
+        document: &Document<'_>,
+        names: &[&str],
+        mask: &Mask,
+    ) -> Result<Tables, UnknownTable> {
+        let processor = Processor::with_tables(spec, document.delimiters(), names)?;
+        Ok(processor.with_mask(mask).run_document_tables(document))
+    }
+
+    /// Feeds every segment of `document`, then finishes, collecting the
+    /// diagnostics.
+    fn run_document(mut self, document: &Document<'_>) -> (Tables, Vec<Diagnostic>) {
+        let mut diagnostics = Vec::new();
+        // One segment buffer for the whole pass: each segment is parsed into
+        // the previous one's element and composite vectors.
         let mut segment = Segment::empty();
         let mut index = 0;
         while document.segment_into(index, &mut segment) {
-            processor.feed(&segment);
+            diagnostics.extend_from_slice(self.feed(&segment).diagnostics());
             index += 1;
         }
-        processor.finish();
-        Ok(processor.take_tables())
+        diagnostics.extend_from_slice(self.finish().diagnostics());
+        (self.take_tables(), diagnostics)
+    }
+
+    /// Feeds every segment of `document`, then finishes, keeping only the
+    /// tables.
+    fn run_document_tables(mut self, document: &Document<'_>) -> Tables {
+        let mut segment = Segment::empty();
+        let mut index = 0;
+        while document.segment_into(index, &mut segment) {
+            self.feed(&segment);
+            index += 1;
+        }
+        self.finish();
+        self.take_tables()
     }
 }
 
+#[cfg(test)]
+mod mask_tests;
 #[cfg(test)]
 mod tests;

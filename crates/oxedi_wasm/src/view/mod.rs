@@ -4,7 +4,9 @@
 
 use std::sync::OnceLock;
 
-use oxedi_core::{Cell, Diagnostic, Document, Event, LoopTree, NodeId, Processor, Spec, Tables};
+use oxedi_core::{
+    Cell, DateMode, Diagnostic, Document, Event, LoopTree, Mask, NodeId, Processor, Spec, Tables,
+};
 use serde::Serialize;
 
 #[cfg(test)]
@@ -130,6 +132,20 @@ pub struct DiagnosticView {
 /// Parses `bytes` with the built-in spec of their declared version; the
 /// error is the core's message for bytes that are not an X12 interchange.
 pub fn view(bytes: &[u8]) -> Result<View, String> {
+    view_with(bytes, None)
+}
+
+/// [`view`] with the columns the spec flags as patient data masked by
+/// `mask_key` (dates reduced to the year) when a key is given; a key the
+/// core refuses is returned as its message.
+pub fn view_masked(bytes: &[u8], mask_key: Option<&[u8]>) -> Result<View, String> {
+    let mask = mask_key
+        .map(|key| Mask::new(key, DateMode::Year).map_err(|err| err.to_string()))
+        .transpose()?;
+    view_with(bytes, mask.as_ref())
+}
+
+fn view_with(bytes: &[u8], mask: Option<&Mask>) -> Result<View, String> {
     let document = Document::parse(bytes).map_err(|err| err.to_string())?;
     let spec = select(&document);
     let Walk {
@@ -137,7 +153,7 @@ pub fn view(bytes: &[u8]) -> Result<View, String> {
         diagnostics,
         tree,
         owners,
-    } = walk(spec, &document);
+    } = walk(spec, &document, mask);
     let delimiters = document.delimiters();
     let text = |byte: u8| char::from(byte).to_string();
     Ok(View {
@@ -158,9 +174,9 @@ pub fn view(bytes: &[u8]) -> Result<View, String> {
     })
 }
 
-/// [`view`] as the JSON the page reads.
-pub fn to_json(bytes: &[u8]) -> Result<String, String> {
-    serde_json::to_string(&view(bytes)?).map_err(|err| err.to_string())
+/// [`view_masked`] as the JSON the page reads.
+pub fn to_json(bytes: &[u8], mask_key: Option<&[u8]>) -> Result<String, String> {
+    serde_json::to_string(&view_masked(bytes, mask_key)?).map_err(|err| err.to_string())
 }
 
 /// What one pass of the processor over a document leaves.
@@ -175,8 +191,11 @@ struct Walk {
 /// Feeds every segment to one processor, folding its events into the loop
 /// tree and following the open instances, so each segment, a segment with
 /// no content included, gets the innermost instance open when it was read.
-fn walk(spec: &Spec, document: &Document<'_>) -> Walk {
+fn walk(spec: &Spec, document: &Document<'_>, mask: Option<&Mask>) -> Walk {
     let mut processor = Processor::new(spec, document.delimiters());
+    if let Some(mask) = mask {
+        processor = processor.with_mask(mask);
+    }
     let mut builder = LoopTree::builder();
     let mut owners = Owners::new(document.len());
     let mut diagnostics = Vec::new();

@@ -97,6 +97,40 @@ print(services.select("row", pl.col("claim_id", "procedure_code").cast(pl.String
     is open. A loop above the anchor offers the segments its enclosing instance read before the
     row's instance opened.
 
+## Flag patient data
+
+Which columns [hide patient data](../python/without-patient-data.md) when you pass a mask is
+part of the spec. A column carries a `phi` key with one of three words:
+
+- `"name"` and `"id"` become a keyed token. They need a text column (`AN` or `ID` element, or
+  one the spec does not type).
+- `"date"` shifts or reduces a date. It needs a date (`DT`) column.
+
+A table can also carry `phi_seed`, the name of one `id` column. With `dates="shift"` its value
+decides how many days the row and the rows under it move; the built-in `claims` table uses
+`patient_id`.
+
+```python
+spec = oxedi.Spec.builtin().patch({
+    "tables": {"claims": {"columns": {
+        "contract_class": {"segment": "REF", "where": {"1": "CE"}, "element": 2, "phi": "id"}
+    }}}
+})
+mask = oxedi.Mask("a-secret-of-at-least-16-bytes")
+result = oxedi.parse(Path("remittance.835").read_bytes(), spec=spec, mask=mask)
+print("contract_class" in spec.schema()["claims"].names)
+```
+
+```text
+True
+```
+
+A patch that flags a numeric column, uses another word, flags a column that is not a date with
+`"date"`, names a `phi_seed` column the table lacks, or names one that is not flagged `"id"`
+raises `oxedi.SpecError` with the table, the column and the reason. A patch that removes or
+unflags `claims.patient_id` must also set `"phi_seed": null` on `claims` (or name another `id`
+column).
+
 ## Add or change a segment
 
 A loop's segments are named occurrences. A patch adds one by its name, or changes it, or

@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 
 use super::carry::Carried;
 use crate::column::ColumnType;
-use crate::spec::{ColumnSource, ElementDef, OccurrenceDef, Pick, Qualifier, Spec, TableDef};
+use crate::spec::{
+    ColumnKind, ColumnSource, ElementDef, OccurrenceDef, Pick, Qualifier, Spec, TableDef,
+};
 
 /// One defined element, with what checking it needs worked out once.
 #[derive(Debug, Clone)]
@@ -138,45 +140,59 @@ impl<'s> Plans<'s> {
     }
 
     /// Marks every element and component some column of `table` can read.
-    /// A column of a table anchored on a segment reads that segment too, and
-    /// a group column reads its offset in every group the segment can hold.
     pub(super) fn mark_columns(&mut self, table: &TableDef) {
         for (_, source) in &table.columns {
-            match source {
-                ColumnSource::Element {
-                    segment,
-                    element,
-                    component,
-                    ..
-                } => {
-                    self.mark_read(segment, *element, *component);
-                    if let Some(anchor) = &table.segment {
-                        self.mark_read(anchor, *element, *component);
-                    }
-                }
-                ColumnSource::GroupElement { offset, component } => {
-                    let (Some(anchor), Some(repeat)) = (&table.segment, table.repeat) else {
-                        continue;
-                    };
-                    let Some(first) = repeat.from.checked_add(*offset) else {
-                        continue;
-                    };
-                    let positions: Vec<usize> = self
-                        .get(anchor)
-                        .map(|plan| plan.elements.iter().map(|e| e.position).collect())
-                        .unwrap_or_default();
-                    for position in positions {
-                        let in_group = position
-                            .checked_sub(first)
-                            .is_some_and(|gap| gap.checked_rem(repeat.step).unwrap_or(gap) == 0);
-                        if in_group {
-                            self.mark_read(anchor, position, *component);
-                        }
-                    }
-                }
-                ColumnSource::SegmentIndex { .. } => {}
+            for (id, element, component) in self.positions(table, source) {
+                self.mark_read(id, element, component);
             }
         }
+    }
+
+    /// The segment id, element and component of every place `source`, a
+    /// column of `table`, can read. A column of a table anchored on a
+    /// segment reads that segment too, and a group column reads its offset
+    /// in every group of the defined elements the segment can hold.
+    pub(super) fn positions<'t>(
+        &self,
+        table: &'t TableDef,
+        source: &'t ColumnSource,
+    ) -> Vec<(&'t [u8], usize, Option<usize>)> {
+        let mut positions = Vec::new();
+        match source {
+            ColumnSource::Element {
+                segment,
+                element,
+                component,
+                ..
+            } => {
+                positions.push((segment.as_slice(), *element, *component));
+                if let Some(anchor) = &table.segment {
+                    positions.push((anchor.as_slice(), *element, *component));
+                }
+            }
+            ColumnSource::GroupElement { offset, component } => {
+                let (Some(anchor), Some(repeat)) = (&table.segment, table.repeat) else {
+                    return positions;
+                };
+                let Some(first) = repeat.from.checked_add(*offset) else {
+                    return positions;
+                };
+                let defined = self
+                    .get(anchor)
+                    .into_iter()
+                    .flat_map(|plan| plan.elements.iter().map(|e| e.position));
+                for position in defined {
+                    let in_group = position
+                        .checked_sub(first)
+                        .is_some_and(|gap| gap.checked_rem(repeat.step).unwrap_or(gap) == 0);
+                    if in_group {
+                        positions.push((anchor.as_slice(), position, *component));
+                    }
+                }
+            }
+            ColumnSource::SegmentIndex { .. } => {}
+        }
+        positions
     }
 
     /// Makes every column of table `index` (one without `segment`) watch the
@@ -270,21 +286,8 @@ impl<'s> Plans<'s> {
 /// The column type of a declared column: its element's type, `Int64` for a
 /// segment index, `Binary` for an element the spec does not define.
 pub(super) fn column_type(spec: &Spec, table: &TableDef, source: &ColumnSource) -> ColumnType {
-    let def = match source {
-        ColumnSource::Element {
-            segment,
-            element,
-            component,
-            ..
-        } => spec.element_def(segment, *element, *component),
-        ColumnSource::SegmentIndex { .. } => return ColumnType::Int64 { scale: 0 },
-        ColumnSource::GroupElement { offset, component } => match (&table.segment, table.repeat) {
-            (Some(segment), Some(repeat)) => repeat
-                .from
-                .checked_add(*offset)
-                .and_then(|position| spec.element_def(segment, position, *component)),
-            _ => None,
-        },
-    };
-    ColumnType::of(def.map(|def| def.kind))
+    match spec.column_kind(table, source) {
+        ColumnKind::SegmentIndex => ColumnType::Int64 { scale: 0 },
+        ColumnKind::Element(kind) => ColumnType::of(kind),
+    }
 }

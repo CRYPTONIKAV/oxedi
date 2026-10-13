@@ -17,6 +17,7 @@ __all__ = [
     "Document",
     "EDI_835_PARSER_PATCH",
     "Envelope",
+    "Mask",
     "ParseError",
     "Result",
     "Segment",
@@ -247,6 +248,18 @@ class Envelope:
         `line_break` adds a line break after each segment.
         """
     def __repr__(self) -> builtins.str: ...
+
+@typing.final
+class Mask:
+    r"""
+    Hides the patient data of a parse: the columns the spec flags as
+    patient data are replaced by keyed tokens or shifted dates, and the
+    diagnostics that quote them are masked the same way. The same key always
+    gives the same token, so rows still join on it; without the key the
+    originals cannot be recovered.
+    """
+    def __repr__(self) -> builtins.str: ...
+    def __new__(cls, key: builtins.bytes | builtins.str, dates: builtins.str = 'year') -> Mask: ...
 
 class ParseError(builtins.ValueError):
     r"""
@@ -546,19 +559,20 @@ def _write(tables: Tables | collections.abc.Mapping[builtins.str, typing.Any], e
     the bytes and the findings, which are empty unless `allow_findings`.
     """
 
-def parse(data: typing_extensions.Buffer, spec: typing.Optional[Spec] = None, delimiters: typing.Optional[Delimiters] = None) -> Result:
+def parse(data: typing_extensions.Buffer, spec: typing.Optional[Spec] = None, delimiters: typing.Optional[Delimiters] = None, mask: typing.Optional[Mask] = None) -> Result:
     r"""
     Parses a whole file: indexes every segment, runs the loop engine, the
     envelope checker and the projector, and returns the document, the
     tables and every diagnostic. Without `spec`, the built-in spec of the
-    version the file declares is used, else the default one.
+    version the file declares is used, else the default one. With `mask`, the
+    patient data of the tables and diagnostics is hidden.
     """
 
-def stream(data: typing_extensions.Buffer, spec: typing.Optional[Spec] = None, by: builtins.str = "transaction", delimiters: typing.Optional[Delimiters] = None) -> Stream:
+def stream(data: typing_extensions.Buffer, spec: typing.Optional[Spec] = None, by: builtins.str = "transaction", delimiters: typing.Optional[Delimiters] = None, mask: typing.Optional[Mask] = None) -> Stream:
     r"""
     Walks a file and yields a batch each time an instance of loop `by`
     closes, and one more at the end when anything is left. Without `spec`,
     the built-in spec of the version the file declares is used, else the
-    default one.
+    default one. With `mask`, the patient data of every batch is hidden.
     """
 

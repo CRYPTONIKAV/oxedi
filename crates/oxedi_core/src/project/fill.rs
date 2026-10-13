@@ -25,7 +25,7 @@ impl<'s> Projector<'s> {
         let spec = self.spec;
         for watcher in watchers {
             let state = &mut self.tables[watcher.table];
-            if !state.kept {
+            if !state.collect {
                 continue;
             }
             let (slot, seen, bytes) = match watcher.carried {
@@ -174,9 +174,12 @@ impl<'s> Projector<'s> {
             };
             row.cells.push(slot);
         }
+        row.segment = segment.index;
+        if self.tables[index].masked {
+            self.mask_row(index, &mut row);
+        }
         let state = &mut self.tables[index];
         row.ordinal = state.next;
-        row.segment = segment.index;
         state.next = state.next.saturating_add(1);
         let dropped = append(&mut state.table, &row, &mut self.cells);
         state.row = row;

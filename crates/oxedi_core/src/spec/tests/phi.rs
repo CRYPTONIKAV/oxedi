@@ -1,0 +1,227 @@
+//! The `phi` and `phi_seed` keys: which columns hold patient data.
+
+use crate::spec::*;
+use crate::{Phi, SpecError};
+
+fn spec_with(tables: &str) -> Result<Spec, SpecError> {
+    Spec::from_json(&format!(
+        r#"{{"name":"t","loops":{{"A":{{"trigger":{{"segment":"AA"}}}}}},
+            "segments":{{"AA":{{"elements":{{
+                "1":{{"name":"text","type":"AN"}},
+                "2":{{"name":"day","type":"DT"}},
+                "3":{{"name":"count","type":"N0"}}}}}}}},
+            "tables":{tables}}}"#
+    ))
+}
+
+fn reason(tables: &str) -> (Option<String>, TableDefError) {
+    match spec_with(tables).unwrap_err() {
+        SpecError::BadTable { column, reason, .. } => (column, reason),
+        other => panic!("expected a table error, got {other}"),
+    }
+}
+
+#[test]
+fn flags_and_the_seed_are_read() {
+    let spec = spec_with(
+        r#"{"t":{"loops":["A"],"phi_seed":"id","columns":{
+            "day":{"segment":"AA","element":2,"phi":"date"},
+            "id":{"segment":"AA","element":1,"phi":"id"},
+            "name":{"segment":"AA","element":1,"phi":"name"},
+            "plain":{"segment":"AA","element":1}}}}"#,
+    )
+    .unwrap();
+    let table = spec.table("t").unwrap();
+    let names: Vec<&str> = table.columns.iter().map(|(n, _)| n.as_str()).collect();
+    assert_eq!(names, ["day", "id", "name", "plain"]);
+    let flags: Vec<Option<Phi>> = (0..4).map(|i| table.phi(i)).collect();
+    assert_eq!(
+        flags,
+        [Some(Phi::Date), Some(Phi::Id), Some(Phi::Name), None]
+    );
+    assert_eq!(table.phi(9), None);
+    assert_eq!(table.phi_seed(), Some(1));
+    assert!(spec.masks_anything());
+}
+
+#[test]
+fn a_spec_without_flags_masks_nothing() {
+    let spec =
+        spec_with(r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1}}}}"#).unwrap();
+    assert!(!spec.masks_anything());
+    assert_eq!(spec.table("t").unwrap().phi_seed(), None);
+}
+
+#[test]
+fn bad_phi_declarations_are_refused() {
+    let cases = [
+        (
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1,"phi":"ssn"}}}}"#,
+            Some("c"),
+            TableDefError::UnknownPhi {
+                given: "ssn".into(),
+            },
+        ),
+        (
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":3,"phi":"name"}}}}"#,
+            Some("c"),
+            TableDefError::PhiNeedsText {
+                kind: "name",
+                found: ColumnKind::Element(Some(ElementType::N(0))),
+            },
+        ),
+        (
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":2,"phi":"id"}}}}"#,
+            Some("c"),
+            TableDefError::PhiNeedsText {
+                kind: "id",
+                found: ColumnKind::Element(Some(ElementType::Dt)),
+            },
+        ),
+        (
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1,"phi":"date"}}}}"#,
+            Some("c"),
+            TableDefError::PhiNeedsDate {
+                found: ColumnKind::Element(Some(ElementType::An)),
+            },
+        ),
+        (
+            r#"{"t":{"loops":["A"],"phi_seed":"nope","columns":{"c":{"segment":"AA","element":1,"phi":"id"}}}}"#,
+            None,
+            TableDefError::UnknownPhiSeed {
+                name: "nope".into(),
+            },
+        ),
+        (
+            r#"{"t":{"loops":["A"],"phi_seed":"c","columns":{"c":{"segment":"AA","element":1,"phi":"name"}}}}"#,
+            Some("c"),
+            TableDefError::PhiSeedNotId { name: "c".into() },
+        ),
+    ];
+    for (tables, column, expected) in cases {
+        assert_eq!(
+            reason(tables),
+            (column.map(str::to_string), expected),
+            "{tables}"
+        );
+    }
+}
+
+#[test]
+fn phi_errors_display_the_rule_and_the_datum() {
+    let cases = [
+        (
+            TableDefError::UnknownPhi {
+                given: "ssn".into(),
+            },
+            "\"phi\" must be \"name\", \"id\" or \"date\"; got \"ssn\"",
+        ),
+        (
+            TableDefError::PhiNeedsText {
+                kind: "name",
+                found: ColumnKind::Element(Some(ElementType::Dt)),
+            },
+            "\"phi\": \"name\" applies to a text column; this column is DT (date CCYYMMDD or YYMMDD)",
+        ),
+        (
+            TableDefError::PhiNeedsDate {
+                found: ColumnKind::Element(Some(ElementType::An)),
+            },
+            "\"phi\": \"date\" applies to a date column; this column is AN (string)",
+        ),
+        (
+            TableDefError::UnknownPhiSeed {
+                name: "nope".into(),
+            },
+            "\"phi_seed\" names column \"nope\", which the table does not have; name an existing column flagged \"phi\": \"id\", or set \"phi_seed\": null",
+        ),
+        (
+            TableDefError::PhiSeedNotId { name: "c".into() },
+            "\"phi_seed\" names column \"c\", which is not flagged \"phi\": \"id\"; flag it \"id\", name another \"id\" column, or set \"phi_seed\": null",
+        ),
+    ];
+    for (error, expected) in cases {
+        assert_eq!(error.to_string(), expected);
+    }
+}
+
+#[test]
+fn a_segment_index_and_an_undefined_element_are_judged_by_the_spec() {
+    let (column, error) = reason(
+        r#"{"t":{"loops":["A"],"segment":"AA","columns":{"c":{"segment_index":true,"phi":"id"}}}}"#,
+    );
+    assert_eq!(column.as_deref(), Some("c"));
+    assert_eq!(
+        error,
+        TableDefError::PhiNeedsText {
+            kind: "id",
+            found: ColumnKind::SegmentIndex
+        }
+    );
+    assert_eq!(
+        error.to_string(),
+        "\"phi\": \"id\" applies to a text column; this column is a segment index"
+    );
+    assert!(
+        spec_with(
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":9,"phi":"name"}}}}"#
+        )
+        .is_ok()
+    );
+    let (_, error) = reason(
+        r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":9,"phi":"date"}}}}"#,
+    );
+    assert_eq!(
+        error.to_string(),
+        "\"phi\": \"date\" applies to a date column; this column is an element the spec does not define"
+    );
+}
+
+fn flagged(spec: &Spec) -> Vec<String> {
+    let mut found = Vec::new();
+    for table in spec.tables() {
+        for (index, (column, _)) in table.columns.iter().enumerate() {
+            if let Some(kind) = table.phi(index) {
+                found.push(format!("{}.{column}={}", table.name, kind.word()));
+            }
+        }
+    }
+    found.sort();
+    found
+}
+
+#[test]
+fn the_built_in_specs_flag_the_eleven_patient_columns() {
+    let expected = [
+        "claims.claim_id=id",
+        "claims.group_number=id",
+        "claims.patient_first_name=name",
+        "claims.patient_id=id",
+        "claims.patient_last_name=name",
+        "claims.payer_control_number=id",
+        "claims.statement_from=date",
+        "claims.statement_to=date",
+        "provider_adjustments.reference_id=id",
+        "services.line_item_control_number=id",
+        "services.service_date=date",
+    ];
+    for spec in [Spec::builtin_835(), Spec::builtin_835_4010()] {
+        assert_eq!(flagged(&spec), expected);
+        let claims = spec.table("claims").unwrap();
+        let seed = claims.phi_seed().unwrap();
+        assert_eq!(claims.columns[seed].0, "patient_id");
+        assert_eq!(spec.table("services").unwrap().phi_seed(), None);
+        assert!(spec.masks_anything());
+    }
+}
+
+#[test]
+fn the_flags_survive_a_json_round_trip() {
+    let spec = Spec::builtin_835();
+    let again = Spec::from_json(&spec.to_json()).unwrap();
+    assert_eq!(flagged(&again), flagged(&spec));
+    assert_eq!(
+        again.table("claims").unwrap().phi_seed(),
+        spec.table("claims").unwrap().phi_seed()
+    );
+}

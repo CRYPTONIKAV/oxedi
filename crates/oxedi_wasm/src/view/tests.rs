@@ -230,7 +230,7 @@ fn bytes_that_are_not_an_835_give_the_core_error() {
 fn the_view_serializes_with_the_documented_keys() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../oxedi_core/tests/fixtures/balanced_5010_sample.txt");
-    let json = to_json(&std::fs::read(path).expect("read")).expect("json");
+    let json = to_json(&std::fs::read(path).expect("read"), None).expect("json");
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
     for key in [
         "spec_version",
@@ -244,4 +244,100 @@ fn the_view_serializes_with_the_documented_keys() {
     }
     assert_eq!(value["nodes"][0]["loop_name"], serde_json::Value::Null);
     assert_eq!(value["delimiters"]["element"], "*");
+}
+
+const KEY: &[u8] = b"oxedi-test-key-0";
+
+/// Every cell of a view, as `(table, column, row, value)`.
+fn cells(view: &View) -> Vec<(String, String, usize, Option<String>)> {
+    let mut all = Vec::new();
+    for table in &view.tables {
+        for column in &table.columns {
+            for (row, value) in column.values.iter().enumerate() {
+                all.push((table.name.clone(), column.name.clone(), row, value.clone()));
+            }
+        }
+    }
+    all
+}
+
+#[test]
+fn a_masked_view_differs_from_the_plain_one_only_in_flagged_cells() {
+    let spec = Spec::builtin_835();
+    let flagged: Vec<(String, String)> = spec
+        .tables()
+        .iter()
+        .flat_map(|table| {
+            (0..table.columns.len())
+                .filter(|&column| table.phi(column).is_some())
+                .map(|column| (table.name.clone(), table.columns[column].0.clone()))
+        })
+        .collect();
+    assert!(!flagged.is_empty());
+    let mut changed = 0;
+    for path in corpus() {
+        let Some(bytes) = parsable(&path) else {
+            continue;
+        };
+        let plain = view(&bytes).expect("view");
+        let masked = view_masked(&bytes, Some(KEY)).expect("masked");
+        assert_eq!(plain.segments.len(), masked.segments.len(), "{path:?}");
+        assert_eq!(
+            plain.diagnostics.len(),
+            masked.diagnostics.len(),
+            "{path:?}"
+        );
+        for (a, b) in cells(&plain).into_iter().zip(cells(&masked)) {
+            if a != b {
+                assert!(
+                    flagged.contains(&(a.0.clone(), a.1.clone())),
+                    "{path:?}: {a:?} vs {b:?}"
+                );
+                changed += 1;
+            }
+        }
+    }
+    assert!(changed > 0);
+}
+
+#[test]
+fn a_masked_name_is_sixteen_hex_characters() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../oxedi_core/tests/fixtures/balanced_5010_sample.txt");
+    let view = view_masked(&std::fs::read(path).expect("read"), Some(KEY)).expect("masked");
+    let claims = view
+        .tables
+        .iter()
+        .find(|t| t.name == "claims")
+        .expect("claims");
+    let last = claims
+        .columns
+        .iter()
+        .find(|c| c.name == "patient_last_name")
+        .expect("col");
+    let value = last.values[0].as_deref().expect("name");
+    assert_eq!(value.len(), 16);
+    assert!(
+        value
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    );
+    assert!(
+        !to_json(
+            &std::fs::read(
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../oxedi_core/tests/fixtures/balanced_5010_sample.txt")
+            )
+            .expect("read"),
+            Some(KEY)
+        )
+        .expect("json")
+        .contains("\"DOE\"")
+    );
+}
+
+#[test]
+fn a_short_key_gives_the_core_message() {
+    let err = view_masked(b"ISA", Some(b"short")).expect_err("short key");
+    assert!(err.contains("at least 16 bytes"), "{err}");
 }

@@ -10,6 +10,12 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 ## [Unreleased]
 
 ### Added
+- `oxedi.Mask(key, dates="year")` and the `mask=` argument of `parse`, `parse_file` and `stream`:
+  the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
+  reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
+  quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
+  never masked. A key under 16 bytes raises `ValueError`.
+- A "Hide patient data" switch in the browser viewer.
 - A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.
 - The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
@@ -22,6 +28,13 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   mapping of table name to `pyarrow.Schema` with the Arrow types `parse` gives each table. The
   field metadata of a reference column (`payment`, `claim`, `service`) names the table it points
   at under `oxedi.parent`. It needs pyarrow.
+
+### Changed
+- A spec patch that removes or unflags `claims.patient_id` now needs `"phi_seed"` cleared
+  (`"phi_seed": null`) or pointed at another `id` column in the same patch; otherwise it raises
+  `SpecError`, with or without a mask.
+- `provider_adjustments.reference_id` is flagged as an `id`, so a `PLB` reference that equals a
+  claim number gets the same token as `claims.claim_id`.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in

@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use super::phi::ColumnKind;
 use super::render::{render_chain, render_names};
 use super::tables::Pick;
 
@@ -215,6 +216,33 @@ pub enum TableDefError {
     },
     /// `component` is given with `segment_index`.
     ComponentOnIndex,
+    /// A column's `phi` is not `name`, `id` or `date`.
+    UnknownPhi {
+        /// The text given.
+        given: String,
+    },
+    /// `phi` is `name` or `id` on a column that is not text.
+    PhiNeedsText {
+        /// The kind given: `name` or `id`.
+        kind: &'static str,
+        /// The column's type.
+        found: ColumnKind,
+    },
+    /// `phi` is `date` on a column that is not a date.
+    PhiNeedsDate {
+        /// The column's type.
+        found: ColumnKind,
+    },
+    /// `phi_seed` names a column the table does not have.
+    UnknownPhiSeed {
+        /// The column named.
+        name: String,
+    },
+    /// `phi_seed` names a column that is not flagged `id`.
+    PhiSeedNotId {
+        /// The column named.
+        name: String,
+    },
 }
 
 impl fmt::Display for TableDefError {
@@ -360,6 +388,36 @@ impl fmt::Display for TableDefError {
             ),
             TableDefError::ComponentOnIndex => {
                 write!(f, "\"component\" does not apply to \"segment_index\"")
+            }
+            TableDefError::UnknownPhi { given } => {
+                write!(
+                    f,
+                    "\"phi\" must be \"name\", \"id\" or \"date\"; got {given:?}"
+                )
+            }
+            TableDefError::PhiNeedsText { kind, found } => {
+                write!(
+                    f,
+                    "\"phi\": {kind:?} applies to a text column; this column is {found}"
+                )
+            }
+            TableDefError::PhiNeedsDate { found } => {
+                write!(
+                    f,
+                    "\"phi\": \"date\" applies to a date column; this column is {found}"
+                )
+            }
+            TableDefError::UnknownPhiSeed { name } => {
+                write!(
+                    f,
+                    "\"phi_seed\" names column {name:?}, which the table does not have; name an existing column flagged \"phi\": \"id\", or set \"phi_seed\": null"
+                )
+            }
+            TableDefError::PhiSeedNotId { name } => {
+                write!(
+                    f,
+                    "\"phi_seed\" names column {name:?}, which is not flagged \"phi\": \"id\"; flag it \"id\", name another \"id\" column, or set \"phi_seed\": null"
+                )
             }
         }
     }

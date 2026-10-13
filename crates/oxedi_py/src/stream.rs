@@ -7,7 +7,7 @@
 
 use std::sync::{Arc, Mutex, TryLockError};
 
-use oxedi_core::{Delimiters, Diagnostic, Event, LoopId, Processor, Spec, Tables, Tokenizer};
+use oxedi_core::{Delimiters, Diagnostic, Event, LoopId, Mask, Processor, Spec, Tables, Tokenizer};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyList;
@@ -16,6 +16,7 @@ use self_cell::self_cell;
 
 use crate::diagnostic;
 use crate::document::{ParseError, PyDelimiters};
+use crate::mask::PyMask;
 use crate::parse::copy_input;
 use crate::spec::{self, PySpec};
 use crate::tables::PyTables;
@@ -25,6 +26,7 @@ struct Source {
     spec: Arc<Spec>,
     bytes: Vec<u8>,
     delimiters: Delimiters,
+    mask: Option<Mask>,
 }
 
 /// The tokenizer over the input and the processor over the spec.
@@ -168,10 +170,10 @@ fn loop_of(spec: &Spec, by: &str) -> PyResult<LoopId> {
 /// Walks a file and yields a batch each time an instance of loop `by`
 /// closes, and one more at the end when anything is left. Without `spec`,
 /// the built-in spec of the version the file declares is used, else the
-/// default one.
+/// default one. With `mask`, the patient data of every batch is hidden.
 #[gen_stub_pyfunction]
 #[pyfunction]
-#[pyo3(signature = (data, spec = None, by = "transaction", delimiters = None))]
+#[pyo3(signature = (data, spec = None, by = "transaction", delimiters = None, mask = None))]
 pub fn stream(
     py: Python<'_>,
     #[gen_stub(override_type(type_repr = "typing_extensions.Buffer", imports = ("typing_extensions",)))]
@@ -180,6 +182,7 @@ pub fn stream(
     // Described as written so the stub carries the default value.
     #[gen_stub(override_type(type_repr = "builtins.str", imports = ("builtins",)))] by: &str,
     delimiters: Option<&Bound<'_, PyDelimiters>>,
+    mask: Option<&Bound<'_, PyMask>>,
 ) -> PyResult<PyStream> {
     let bytes = copy_input("stream", data)?;
     let given = spec::given(spec);
@@ -198,11 +201,18 @@ pub fn stream(
         spec,
         bytes,
         delimiters,
+        mask: mask.map(|mask| mask.get().inner.clone()),
     };
     let walk = py.detach(|| {
         Walk::new(source, |source| Pass {
             segments: Tokenizer::with_delimiters(&source.bytes, source.delimiters),
-            processor: Processor::new(&source.spec, &source.delimiters),
+            processor: {
+                let processor = Processor::new(&source.spec, &source.delimiters);
+                match &source.mask {
+                    Some(mask) => processor.with_mask(mask),
+                    None => processor,
+                }
+            },
         })
     });
     Ok(PyStream {

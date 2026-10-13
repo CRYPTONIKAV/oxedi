@@ -47,6 +47,7 @@ mod arrow;
 mod diagnostic;
 mod document;
 mod import;
+mod mask;
 mod native;
 mod parse;
 mod spec;
@@ -70,6 +71,7 @@ fn core_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<document::PyDelimiters>()?;
     m.add_class::<document::PyDocument>()?;
     m.add_class::<document::PySegment>()?;
+    m.add_class::<mask::PyMask>()?;
     m.add_class::<parse::PyParseResult>()?;
     m.add_class::<spec::PySpec>()?;
     m.add_class::<stream::PyBatch>()?;

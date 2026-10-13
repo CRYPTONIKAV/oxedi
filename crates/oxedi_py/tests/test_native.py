@@ -92,7 +92,9 @@ def test_a_missing_table_is_named():
 
 
 def test_a_missing_column_is_named():
-    spec = Spec.builtin().patch({"tables": {"claims": {"columns": {"patient_id": None}}}})
+    spec = Spec.builtin().patch(
+        {"tables": {"claims": {"columns": {"patient_id": None}, "phi_seed": None}}}
+    )
     result = oxedi.parse(read("edi835_test_file.RMT"), spec=spec)
     with pytest.raises(KeyError) as info:
         result.count_patients()

@@ -1,0 +1,33 @@
+## adjustments (rows: 4)
+row: int64 | segment: int64 | payment: int64 | claim: int64 | service: int64 | amount: decimal128(38, 2) | group_code: binary | quantity: decimal128(38, 2) | reason_code: binary
+0 | 41 | 0 | 1 | 4 | 12.00 | CO | ∅ | 29
+1 | 44 | 0 | 1 | 5 | 22.00 | CO | ∅ | 29
+2 | 60 | 0 | 2 | 8 | 2.75 | CO | ∅ | 251
+3 | 64 | 0 | 2 | 9 | 20.00 | CO | ∅ | 251
+
+## claims (rows: 3)
+row: int64 | segment: int64 | payment: int64 | charge_amount: decimal128(38, 2) | claim_id: binary | claim_status: binary | coverage_amount: decimal128(38, 2) | discharge_fraction: decimal128(38, 4) | drg_code: binary | drg_weight: decimal128(38, 4) | facility_type: binary | filing_indicator: binary | frequency_code: binary | group_number: binary | header_number: int64 | patient_first_name: binary | patient_id: binary | patient_id_qualifier: binary | patient_last_name: binary | patient_responsibility: decimal128(38, 2) | payer_control_number: binary | payment_amount: decimal128(38, 2) | rendering_provider_entity_type: binary | rendering_provider_id: binary | rendering_provider_id_qualifier: binary | rendering_provider_name: binary | statement_from: date32 | statement_to: date32
+0 | 14 | 0 | 34.25 | 083f380f77c6627e | 1 | 34.25 | ∅ | ∅ | ∅ | 11 | MC | ∅ | ∅ | 1 | 2b92bf0e2984a4ff | 89dae548034e27a6 | MI | 8745034fcd6033aa | ∅ | c60df7c5328bd2d8 | 34.25 | ∅ | ∅ | ∅ | ∅ | 2010-01-01 | 2010-01-01
+1 | 33 | 0 | 34.00 | 083f380f77c6627e | 2 | ∅ | ∅ | ∅ | ∅ | 11 | MC | ∅ | ∅ | 1 | 2b92bf0e2984a4ff | 62d02985f2d61950 | MI | 8745034fcd6033aa | ∅ | 045bf1b77156e416 | 0.00 | ∅ | ∅ | ∅ | ∅ | 2010-01-01 | 2010-01-01
+2 | 45 | 0 | 34.25 | 083f380f77c6627e | 2 | 11.50 | ∅ | ∅ | ∅ | 11 | MC | ∅ | ∅ | 1 | 2b92bf0e2984a4ff | 0867c26a944ace6f | MI | 8745034fcd6033aa | ∅ | 2e3678ab9261407d | 11.50 | ∅ | ∅ | ∅ | ∅ | 2010-01-01 | 2010-01-01
+
+## payments (rows: 1)
+row: int64 | segment: int64 | credit_debit_flag: binary | handling_code: binary | payee_address: binary | payee_city: binary | payee_id: binary | payee_id_qualifier: binary | payee_name: binary | payee_state: binary | payee_zip: binary | payer_address: binary | payer_city: binary | payer_id: binary | payer_id_qualifier: binary | payer_identifier: binary | payer_name: binary | payer_state: binary | payer_technical_contact_name: binary | payer_technical_contact_number: binary | payer_technical_contact_qualifier: binary | payer_zip: binary | payment_date: date32 | payment_format: binary | payment_method: binary | production_date: date32 | receiver_id: binary | total_payment_amount: decimal128(38, 2) | trace_number: binary
+0 | 2 | C | I | ∅ | ∅ | 9999999995 | XX | MAJOR MEDICAL PROVIDER | ∅ | ∅ | OFFICE OF HEALTH INSURANCE PROGRAMS | ALBANY | ∅ | ∅ | 1000000000 | NYSDOH | NY | PROVIDER SERVICES | 8003439000 | TE | 122370080 | 2010-01-01 | CCP | ACH | 2010-01-01 | ETIN | 45.75 | 10100000000
+
+## provider_adjustments (rows: 0)
+row: int64 | segment: int64 | payment: int64 | amount: decimal128(38, 2) | fiscal_period_date: date32 | provider_id: binary | reason_code: binary | reference_id: binary
+
+## services (rows: 10)
+row: int64 | segment: int64 | payment: int64 | claim: int64 | allowed_amount: decimal128(38, 2) | charge_amount: decimal128(38, 2) | line_item_control_number: binary | original_units: decimal128(38, 2) | payment_amount: decimal128(38, 2) | procedure_code: binary | procedure_qualifier: binary | service_date: date32 | units_paid: decimal128(38, 2)
+0 | 21 | 0 | 0 | 6.00 | 6.00 | ∅ | ∅ | 6.00 | V2020 | HC | 2010-01-01 | 1.00
+1 | 24 | 0 | 0 | 2.75 | 2.75 | ∅ | ∅ | 2.75 | V2700 | HC | 2010-01-01 | 1.00
+2 | 27 | 0 | 0 | 5.50 | 5.50 | ∅ | ∅ | 5.50 | V2103 | HC | 2010-01-01 | 1.00
+3 | 30 | 0 | 0 | 20.00 | 20.00 | ∅ | ∅ | 20.00 | S0580 | HC | 2010-01-01 | 2.00
+4 | 39 | 0 | 1 | ∅ | 12.00 | ∅ | ∅ | 0.00 | V2020 | HC | 2010-01-01 | 0.00
+5 | 42 | 0 | 1 | ∅ | 22.00 | ∅ | ∅ | 0.00 | V2103 | HC | 2010-01-01 | 0.00
+6 | 52 | 0 | 2 | 6.00 | 6.00 | ∅ | ∅ | 6.00 | V2020 | HC | 2010-01-01 | 1.00
+7 | 55 | 0 | 2 | 5.50 | 5.50 | ∅ | ∅ | 5.50 | V2103 | HC | 2013-01-01 | 1.00
+8 | 58 | 0 | 2 | ∅ | 2.75 | ∅ | ∅ | 0.00 | V2700 | HC | 2010-01-01 | 0.00
+9 | 62 | 0 | 2 | ∅ | 20.00 | ∅ | ∅ | 0.00 | S0580 | HC | 2010-01-01 | 0.00
+

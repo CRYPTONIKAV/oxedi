@@ -501,32 +501,32 @@
       "receiver_id": {"occurrence": "receiver_identification", "element": 2},
       "production_date": {"segment": "DTM", "where": {"1": "405"}, "element": 2}
     } },
-    "claims": { "loops": ["2100"], "ref": "claim", "columns": {
-      "claim_id": {"segment": "CLP", "element": 1},
+    "claims": { "loops": ["2100"], "ref": "claim", "phi_seed": "patient_id", "columns": {
+      "claim_id": {"segment": "CLP", "element": 1, "phi": "id"},
       "claim_status": {"segment": "CLP", "element": 2},
       "charge_amount": {"segment": "CLP", "element": 3},
       "payment_amount": {"segment": "CLP", "element": 4},
       "patient_responsibility": {"segment": "CLP", "element": 5},
       "filing_indicator": {"segment": "CLP", "element": 6},
-      "payer_control_number": {"segment": "CLP", "element": 7},
+      "payer_control_number": {"segment": "CLP", "element": 7, "phi": "id"},
       "facility_type": {"segment": "CLP", "element": 8},
       "frequency_code": {"segment": "CLP", "element": 9},
       "drg_code": {"segment": "CLP", "element": 11},
       "drg_weight": {"segment": "CLP", "element": 12},
       "discharge_fraction": {"segment": "CLP", "element": 13},
-      "patient_last_name": {"occurrence": "patient_name", "element": 3},
-      "patient_first_name": {"occurrence": "patient_name", "element": 4},
-      "patient_id": {"occurrence": "patient_name", "element": 9},
+      "patient_last_name": {"occurrence": "patient_name", "element": 3, "phi": "name"},
+      "patient_first_name": {"occurrence": "patient_name", "element": 4, "phi": "name"},
+      "patient_id": {"occurrence": "patient_name", "element": 9, "phi": "id"},
       "patient_id_qualifier": {"occurrence": "patient_name", "element": 8},
       "header_number": {"loop": "2000", "occurrence": "header_number", "element": 1},
       "rendering_provider_entity_type": {"occurrence": "service_provider_name", "element": 2},
       "rendering_provider_id_qualifier": {"occurrence": "service_provider_name", "element": 8},
       "rendering_provider_name": {"occurrence": "service_provider_name", "element": 3},
       "rendering_provider_id": {"occurrence": "service_provider_name", "element": 9},
-      "statement_from": {"segment": "DTM", "where": {"1": "232"}, "element": 2},
-      "statement_to": {"segment": "DTM", "where": {"1": "233"}, "element": 2},
+      "statement_from": {"segment": "DTM", "where": {"1": "232"}, "element": 2, "phi": "date"},
+      "statement_to": {"segment": "DTM", "where": {"1": "233"}, "element": 2, "phi": "date"},
       "coverage_amount": {"segment": "AMT", "where": {"1": "AU"}, "element": 2},
-      "group_number": {"segment": "REF", "where": {"1": "1L"}, "element": 2}
+      "group_number": {"segment": "REF", "where": {"1": "1L"}, "element": 2, "phi": "id"}
     } },
     "services": { "loops": ["2110"], "ref": "service", "columns": {
       "procedure_qualifier": {"segment": "SVC", "element": 1, "component": 1},
@@ -535,8 +535,8 @@
       "payment_amount": {"segment": "SVC", "element": 3},
       "units_paid": {"segment": "SVC", "element": 5},
       "original_units": {"segment": "SVC", "element": 7},
-      "service_date": {"segment": "DTM", "where": {"1": "472"}, "element": 2},
-      "line_item_control_number": {"segment": "REF", "where": {"1": "6R"}, "element": 2},
+      "service_date": {"segment": "DTM", "where": {"1": "472"}, "element": 2, "phi": "date"},
+      "line_item_control_number": {"segment": "REF", "where": {"1": "6R"}, "element": 2, "phi": "id"},
       "allowed_amount": {"segment": "AMT", "where": {"1": "B6"}, "element": 2}
     } },
     "adjustments": { "loops": ["2100", "2110"], "segment": "CAS", "repeat": {"from": 2, "step": 3}, "columns": {
@@ -549,7 +549,7 @@
       "provider_id": {"element": 1},
       "fiscal_period_date": {"element": 2},
       "reason_code": {"group_element": 0, "component": 1},
-      "reference_id": {"group_element": 0, "component": 2},
+      "reference_id": {"group_element": 0, "component": 2, "phi": "id"},
       "amount": {"group_element": 1}
     } }
   },

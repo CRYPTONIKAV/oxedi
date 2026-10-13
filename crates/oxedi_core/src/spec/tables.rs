@@ -5,6 +5,7 @@ use std::fmt;
 #[cfg(doc)]
 use super::Spec;
 use super::loops::LoopId;
+use crate::mask::Phi;
 
 /// How a table's segment repeats a group of elements: one row per group.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -124,4 +125,24 @@ pub struct TableDef {
     /// Every table above this one, outermost first; the last is `parent`.
     /// Each one gets an automatic column named after its `reference`.
     pub ancestors: Vec<usize>,
+    /// The kind of patient data each column of `columns` holds, parallel to
+    /// it; read through [`TableDef::phi`].
+    pub(super) phi: Vec<Option<Phi>>,
+    /// The index in `columns` of the column whose value seeds the row's date
+    /// shift; read through [`TableDef::phi_seed`].
+    pub(super) phi_seed: Option<usize>,
+}
+
+impl TableDef {
+    /// The kind of patient data column `column_index` of [`Self::columns`]
+    /// holds, or `None` when it holds none.
+    pub fn phi(&self, column_index: usize) -> Option<Phi> {
+        self.phi.get(column_index).copied().flatten()
+    }
+
+    /// The index in [`Self::columns`] of the column whose value seeds the
+    /// date shift of the table's rows.
+    pub fn phi_seed(&self) -> Option<usize> {
+        self.phi_seed
+    }
 }

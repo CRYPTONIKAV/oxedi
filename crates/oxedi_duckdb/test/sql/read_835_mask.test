@@ -1,0 +1,125 @@
+# name: test/sql/read_835_mask.test
+# description: mask_key and mask_dates hide patient data in every table and in diagnostics
+# group: [oxedi]
+
+require oxedi
+
+# A masked patient id is a 16-character lowercase hex token.
+
+query I
+SELECT bool_and(regexp_matches(patient_id, '^[0-9a-f]{16}$'))
+FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0');
+----
+true
+
+# The same key gives the same token; another key gives another one.
+
+query II
+SELECT
+  (SELECT list(patient_id ORDER BY "row") FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0'))
+  = (SELECT list(patient_id ORDER BY "row") FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0')),
+  (SELECT list(patient_id ORDER BY "row") FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0'))
+  = (SELECT list(patient_id ORDER BY "row") FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-1'));
+----
+true	false
+
+# The unmasked read keeps the original ids.
+
+query I
+SELECT bool_or(NOT regexp_matches(patient_id, '^[0-9a-f]{16}$')) FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt');
+----
+true
+
+# The default hides a date down to its year; shift keeps the span of a row.
+
+query I
+SELECT bool_and(month(statement_from) = 1 AND day(statement_from) = 1)
+FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0') WHERE statement_from IS NOT NULL;
+----
+true
+
+query I
+SELECT bool_and(a.statement_to - a.statement_from = b.statement_to - b.statement_from)
+FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt') a
+JOIN read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := 'shift') b USING ("row")
+WHERE a.statement_from IS NOT NULL AND a.statement_to IS NOT NULL;
+----
+true
+
+query I
+SELECT bool_and(a.statement_from = b.statement_from)
+FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt') a
+JOIN read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := 'keep') b USING ("row")
+WHERE a.statement_from IS NOT NULL;
+----
+true
+
+# The schema does not change with the mask.
+
+query TT
+SELECT column_name, column_type FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt'))
+EXCEPT
+SELECT column_name, column_type FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0'));
+----
+
+query TT
+SELECT column_name, column_type FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0'))
+EXCEPT
+SELECT column_name, column_type FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt'));
+----
+
+# Every table reads under a mask, with the rows it has without one.
+
+query II
+SELECT
+  (SELECT count(*) FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'services', mask_key := 'oxedi-test-key-0')),
+  (SELECT count(*) FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'services'));
+----
+4	4
+
+query II
+SELECT
+  (SELECT count(*) FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'diagnostics', mask_key := 'oxedi-test-key-0')),
+  (SELECT count(*) FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'diagnostics'));
+----
+0	0
+
+# binary := true works with a mask.
+
+query I
+SELECT bool_and(regexp_matches(patient_id::VARCHAR, '^[0-9a-f]{16}$'))
+FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', binary := true);
+----
+true
+
+# The key and the mode are refused with the rule, the parameter and the datum.
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'short');
+----
+read_835: mask_key: the mask key must be at least 16 bytes long; got 5
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := '');
+----
+read_835: mask_key: the mask key must be at least 16 bytes long; got 0
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := 'month');
+----
+read_835: mask_dates: the mask date mode must be "year", "shift" or "keep"; got "month"
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_dates := 'year');
+----
+read_835: mask_dates "year" was given without mask_key; mask_dates only chooses how a mask treats dates, so give mask_key as well
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := NULL);
+----
+read_835: mask_key must not be NULL; leave it out to read without masking, or give a key of at least 16 bytes (a NULL often means a variable is not set)
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := NULL);
+----
+read_835: mask_dates must not be NULL; leave it out to use its default

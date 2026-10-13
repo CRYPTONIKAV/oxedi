@@ -9,6 +9,8 @@ Read a file into a `Result`: the document, the tables and the diagnostics. See
 
 ::: oxedi.stream
 
+::: oxedi.Mask
+
 ::: oxedi.Stream
 
 ::: oxedi.Batch

@@ -8,6 +8,7 @@ mod display;
 mod loading;
 mod occurrences;
 mod patch;
+mod phi;
 mod segments;
 mod shape;
 mod tables;

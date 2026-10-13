@@ -8,7 +8,8 @@
 // the chosen spec version, the segment count, each segment's chain of loop
 // instances (its node up to the root) against the loops open when the library
 // read it, every table cell by cell, and every diagnostic's text, loop path,
-// level, segment, element and component. Prints one line per file and stops at
+// level, segment, element and component; then, with a fixed key, the masked cells and
+// diagnostic texts against oxedi.parse(..., mask=). Prints one line per file and stops at
 // the first mismatch, naming where it is and both values.
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -17,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "../pkg/index.js";
 
+const MASK_KEY = new TextEncoder().encode("oxedi-test-key-0");
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 class Mismatch extends Error {}
@@ -113,6 +115,21 @@ function check(expected) {
       fail(file, `[level, segment, element, component] of diagnostic ${at}`, location, expected.locations[at]);
     }
   });
+
+  const masked = JSON.parse(parse(bytes, MASK_KEY));
+  const maskedMine = new Map(masked.tables.map((table) => [table.name, table]));
+  for (const name of theirs) {
+    for (const column of maskedMine.get(name).columns) {
+      const values = expected.masked_tables[name][column.name];
+      if (JSON.stringify(column.values) !== JSON.stringify(values)) {
+        fail(file, `masked table ${name}, column ${column.name}`, column.values, values);
+      }
+    }
+  }
+  const maskedTexts = masked.diagnostics.map((diagnostic) => diagnostic.text);
+  if (JSON.stringify(maskedTexts) !== JSON.stringify(expected.masked_diagnostics)) {
+    fail(file, "masked diagnostics", maskedTexts, expected.masked_diagnostics);
+  }
   return `ok ${file} segments=${view.segments.length} tables=${theirs.length} cells=${cells} diagnostics=${texts.length}`;
 }
 

@@ -32,8 +32,9 @@ public planning page is `docs/roadmap.md` on the site.
 - No `unwrap`/`expect`/`panic!` or fallible indexing on input in `src/` (documented
   exception: `Spec::builtin_835`). Indexing with ids the owner created (`LoopId`, `NodeId`)
   is fine.
-- Core is sans-IO: `[dependencies]` holds only `serde` and `serde_json`; nothing that does
-  I/O, threads or a runtime. The Python binding (`crates/oxedi_py`) delegates everything to
+- Core is sans-IO: `[dependencies]` holds `serde`, `serde_json`, `hmac` and `sha2`; nothing
+  that does I/O, uses threads or a runtime, and each new dependency is approved in a §7
+  section. The Python binding (`crates/oxedi_py`) delegates everything to
   the core, holds the only `arrow-*`/`pyo3` dependencies, and names no 835 segment.
 - Comments and doc comments describe implementation only: no stage numbers, principle
   codes (N1, P3), history or links to planning docs.

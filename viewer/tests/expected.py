@@ -11,7 +11,8 @@ Runs in an environment with `oxedi` and `pyarrow` (the docs environment,
 - otherwise `spec_version` (the first version the chosen spec declares),
   `segments` (the document's segment count), `tables` (table name → column
   name → each cell as the core renders it, `null` for a null; columns in
-  order), `segment_paths` (each segment's open loops as `[name, ordinal]`
+  order), `masked_tables` and `masked_diagnostics` (the same read with
+  `oxedi.Mask(b"oxedi-test-key-0")`), `segment_paths` (each segment's open loops as `[name, ordinal]`
   pairs, outermost first, from `oxedi._core._loop_paths`), `diagnostics`
   (each one's full text), `paths` (each one's open loops as `Diagnostic.path`
   writes them) and `locations` (each one's `[level, segment, element,
@@ -33,6 +34,7 @@ import pyarrow
 import oxedi
 from oxedi._core import _loop_paths
 
+MASK_KEY = b"oxedi-test-key-0"
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CORPUS = [ROOT / "crates" / "oxedi_core" / "tests" / name for name in ("fixtures", "samples")]
 
@@ -59,12 +61,7 @@ def cell_text(value: object, where: str) -> str | None:
     raise TypeError(f"{where}: unknown cell type {type(value).__name__} ({value!r})")
 
 
-def expected(path: pathlib.Path) -> dict[str, object]:
-    relative = path.relative_to(ROOT).as_posix()
-    try:
-        result = oxedi.parse(path.read_bytes())
-    except ValueError as err:
-        return {"file": relative, "error": str(err)}
+def tables_of(result: oxedi.Result, relative: str) -> dict[str, dict[str, list[str | None]]]:
     tables: dict[str, dict[str, list[str | None]]] = {}
     for name in result.tables.keys():
         arrow = pyarrow.table(result.tables[name])
@@ -75,6 +72,16 @@ def expected(path: pathlib.Path) -> dict[str, object]:
             ]
             for column in arrow.column_names
         }
+    return tables
+
+
+def expected(path: pathlib.Path) -> dict[str, object]:
+    relative = path.relative_to(ROOT).as_posix()
+    try:
+        result = oxedi.parse(path.read_bytes())
+    except ValueError as err:
+        return {"file": relative, "error": str(err)}
+    masked = oxedi.parse(path.read_bytes(), mask=oxedi.Mask(MASK_KEY))
     declared = json.loads(result.spec.to_json()).get("version") or {}
     values = declared.get("values") or [None]
     return {
@@ -82,7 +89,9 @@ def expected(path: pathlib.Path) -> dict[str, object]:
         "spec_version": values[0],
         "segments": len(result.document),
         "segment_paths": _loop_paths(result, list(range(len(result.document)))),
-        "tables": tables,
+        "tables": tables_of(result, relative),
+        "masked_tables": tables_of(masked, relative),
+        "masked_diagnostics": [str(d) for d in masked.diagnostics],
         "diagnostics": [str(d) for d in result.diagnostics],
         "paths": [d.path for d in result.diagnostics],
         "locations": [[d.level, d.segment, d.element, d.component] for d in result.diagnostics],

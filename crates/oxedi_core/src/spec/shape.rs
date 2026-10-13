@@ -260,12 +260,13 @@ pub(super) fn check_shape(source: &Value) -> Result<(), SpecError> {
             check_keys(
                 def,
                 &at,
-                &["loops", "ref", "segment", "repeat", "columns"],
+                &["loops", "ref", "segment", "repeat", "columns", "phi_seed"],
                 &["loops"],
             )?;
             check_member_texts(def, &at, "loops")?;
             check_member(def, &at, "ref", Leaf::Text, true)?;
             check_member(def, &at, "segment", Leaf::Text, true)?;
+            check_member(def, &at, "phi_seed", Leaf::Text, true)?;
             if let Some(repeat) = def.get("repeat") {
                 let at = child(&at, "repeat");
                 let repeat = object_at(repeat, &at)?;
@@ -291,6 +292,7 @@ pub(super) fn check_shape(source: &Value) -> Result<(), SpecError> {
                             "component",
                             "group_element",
                             "segment_index",
+                            "phi",
                         ],
                         &[],
                     )?;
@@ -303,6 +305,7 @@ pub(super) fn check_shape(source: &Value) -> Result<(), SpecError> {
                         check_member(def, &at, key, Leaf::Count, true)?;
                     }
                     check_member(def, &at, "segment_index", Leaf::Flag, false)?;
+                    check_member(def, &at, "phi", Leaf::Text, true)?;
                 }
             }
         }

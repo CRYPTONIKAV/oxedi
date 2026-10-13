@@ -6,6 +6,7 @@ import re
 
 import oxedi
 import pytest
+from playwright.sync_api import expect
 from conftest import CSP, FIXTURES, SAMPLES
 
 SAMPLE_FIXTURE = FIXTURES / "balanced_5010_sample.txt"
@@ -247,3 +248,48 @@ def test_unterminated_last_segment_is_visible_in_text(viewer):
         "document.querySelector('#panel-text .textview').scrollTop = 1e9"
     )
     viewer.page.wait_for_selector("#panel-text .line .raw:text-is('ZZ*TAIL')")
+
+
+def test_hide_patient_data_masks_cells_and_csv_and_restores(viewer, tmp_path):
+    data = SAMPLE_FIXTURE.read_bytes()
+    name = b"DOE"
+    assert b"NM1*QC*1*DOE*" in data
+    viewer.open()
+    viewer.load("masked.835", data)
+    viewer.wait_loaded()
+    viewer.tab("tables")
+    assert name.decode() in text_of(viewer, "#panel-tables")
+
+    viewer.page.check("#mask")
+    viewer.page.wait_for_selector("#panel-tables:not([hidden])", state="attached")
+    # The re-parse is asynchronous: wait for a token before reading the grid. (The page's
+    # CSP forbids eval, so this uses an expectation, not wait_for_function.)
+    panel = viewer.page.locator("#panel-tables")
+    expect(panel).not_to_contain_text("DOE")
+    expect(panel).to_contain_text(re.compile(r"[0-9a-f]{16}"))
+    viewer.tab("tables")
+    grid = text_of(viewer, "#panel-tables")
+    assert "DOE" not in grid
+    assert re.search(r"\b[0-9a-f]{16}\b", grid)
+
+    with viewer.page.expect_download() as download:
+        viewer.page.click("text=Download CSV")
+    path = tmp_path / "claims.csv"
+    download.value.save_as(path)
+    csv = path.read_bytes().decode("utf-8")
+    assert "DOE" not in csv
+    assert re.search(r"(^|,)[0-9a-f]{16}(,|\r)", csv)
+
+    viewer.page.uncheck("#mask")
+    expect(viewer.page.locator("#panel-tables")).to_contain_text("DOE")
+    viewer.tab("tables")
+    assert "DOE" in text_of(viewer, "#panel-tables")
+
+
+def test_the_toggle_warns_that_the_text_view_is_not_masked(viewer):
+    viewer.open()
+    assert viewer.page.is_hidden("#mask-note")
+    viewer.page.check("#mask")
+    assert "original file" in text_of(viewer, "#mask-note")
+    viewer.page.uncheck("#mask")
+    assert viewer.page.is_hidden("#mask-note")
