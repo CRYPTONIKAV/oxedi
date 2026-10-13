@@ -9,8 +9,8 @@ and the extension has its own version.
 
 ### Fixed
 - A table macro that forwards its parameter to `table_name` or `version` with `:=` while the
-  path is fixed now fails with an error that says the value must be a constant string and how to
-  write the macro (`tbl::VARCHAR`, or the path as a macro parameter too), instead of naming
+  path is fixed now fails with an error that says the value must be a constant string and to write
+  the argument with `=` (`table_name = tbl`), which forwards the parameter, instead of naming
   DuckDB's internal identifier as an unknown table or version.
 
 ## [0.2.0] - 2026-10-12

@@ -176,9 +176,8 @@ impl fmt::Display for ReadError {
             } => write!(
                 f,
                 "{FUNCTION}: {name} must be a constant string; a table macro passed its \
-                 parameter {parameter:?} as {value:?}; write {name} := {parameter}::VARCHAR, \
-                 or make the path a macro parameter too, as in \
-                 {FUNCTION}(path, {name} := {parameter})"
+                 parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
+                 parameter given with := or =>, so write {name} = {parameter}"
             ),
             ReadError::UnknownTable { table, known } => write!(
                 f,

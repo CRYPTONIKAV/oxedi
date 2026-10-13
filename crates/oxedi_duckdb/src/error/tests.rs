@@ -51,8 +51,8 @@ fn macro_parameter() {
             value: "0_macro_parametersone.tbl".to_owned(),
         }),
         "read_835: table_name must be a constant string; a table macro passed its parameter \
-         \"tbl\" as \"0_macro_parametersone.tbl\"; write table_name := tbl::VARCHAR, or make \
-         the path a macro parameter too, as in read_835(path, table_name := tbl)"
+         \"tbl\" as \"0_macro_parametersone.tbl\"; DuckDB does not substitute a macro \
+         parameter given with := or =>, so write table_name = tbl"
     );
 }
 
