@@ -85,9 +85,13 @@ patient in another run.
 ## Validate with pyx12
 
 `oxedi.pyx12.validate` takes `mask=` too. A finding about a place the masked columns read gets
-its value masked as `parse` masks its own diagnostics, and that value is replaced in pyx12's
-message as well. The findings, their order and where they point stay the same as without the
-mask. This example writes an invalid claim date into the example file:
+its value masked as `parse` masks its own diagnostics. In pyx12's message, that value and every
+masked value of the segment the finding points at are replaced by their masked forms, also when
+the finding names no element (pyx12's "Segment CLP*... not found" quotes the claim id). The
+findings, their order and where they point stay the same as without the mask. `validate` takes no
+spec: it masks the places the built-in spec of the file's version flags, so a column only a patched
+spec flags is masked by `parse(..., spec=patched, mask=)` but not by `validate`. This example
+writes an invalid claim date into the example file:
 
 ```python
 from pathlib import Path
