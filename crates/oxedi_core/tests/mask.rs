@@ -257,9 +257,9 @@ fn a_finding_on_a_flagged_place_has_its_datum_replaced() {
     let (five, four) = common::builtins();
     for dates in [DateMode::Year, DateMode::Shift] {
         let mask = Mask::new(KEY, dates).unwrap();
-        for name in [
-            "masked_findings_5010_sample.txt",
-            "masked_findings_4010_sample.txt",
+        for (name, date) in [
+            ("masked_findings_5010_sample.txt", "20241341"),
+            ("masked_findings_4010_sample.txt", "241341"),
         ] {
             let bytes = common::load_fixture(name);
             let delims = oxedi_core::Delimiters::from_isa(&bytes).unwrap();
@@ -277,7 +277,7 @@ fn a_finding_on_a_flagged_place_has_its_datum_replaced() {
             let masked = datums(&masked);
             assert_eq!(plain.len(), 5, "{name}: {plain:?}");
             assert_eq!(masked.len(), plain.len(), "{name}");
-            assert!(plain.iter().any(|d| d == "20241341"), "{name}");
+            assert!(plain.iter().any(|d| d == date), "{name}");
             for (was, now) in plain.iter().zip(&masked) {
                 assert_ne!(was, now, "{name} {dates:?}");
                 assert!(is_token(now), "{name} {dates:?}: {now:?}");

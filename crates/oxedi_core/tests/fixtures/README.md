@@ -102,19 +102,21 @@ loop may repeat.
 Two synthetic files for the patient-data mask: copies of the balanced fixtures with one
 finding at each place a mask flags, so a masked parse has diagnostics whose datum would
 otherwise quote patient data. Same rule as above: **never edit them**. Every name, identifier
-and amount is invented. `pyx12` is not run on them.
+and amount is invented. `pyx12` finds the same five in both files, and in the 5010 file also
+its `ST03`, which its 5010 map marks Not Used.
 
 | File | Bytes | Version | Line endings | Diagnostics |
 |------|-------|---------|--------------|-------------|
 | `masked_findings_5010_sample.txt` | 1 855 | 00501 / 005010X221A1 | LF after every `~` | 5 |
-| `masked_findings_4010_sample.txt` | 1 728 | 00401 / 004010X091A1 | none | 5 |
+| `masked_findings_4010_sample.txt` | 1 726 | 00401 / 004010X091A1 | none | 5 |
 
 Each finding is a length or format rule, the same five in both files, all in the first claim:
 
 - `CLP01` of `CLM1001` is 69 characters (the spec allows 1 to 38).
 - `NM109` of the `NM1*QC` patient segment is a 91-character member identifier (2 to 80).
 - `REF02` of `REF*1L` is a 66-character group number (1 to 50).
-- `DTM02` of the claim's `DTM*232` reads `20241341`, which is not a valid date.
+- `DTM02` of the claim's `DTM*232` is not a valid date: `20241341` in the 5010 file and the
+  six-digit `241341` in the 4010 file.
 - `REF02` of the service's `REF*6R` is a 59-character line item control number (1 to 50).
 
 A masked parse replaces each of the five datums with a 16-character token.
