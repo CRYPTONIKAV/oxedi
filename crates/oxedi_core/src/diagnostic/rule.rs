@@ -288,6 +288,22 @@ impl Rule {
         }
     }
 
+    /// The id of the segment the rule names, for a rule about one segment's
+    /// elements.
+    pub(crate) fn segment_id(&self) -> Option<&[u8]> {
+        match self {
+            Rule::ControlCountMismatch { segment_id, .. }
+            | Rule::ControlElementMissing { segment_id, .. }
+            | Rule::RequiredElementMissing { segment_id, .. }
+            | Rule::TypeMismatch { segment_id, .. }
+            | Rule::LengthOutOfRange { segment_id, .. }
+            | Rule::CompositeShape { segment_id, .. }
+            | Rule::CodeNotInList { segment_id, .. }
+            | Rule::UnknownOccurrence { segment_id, .. } => Some(segment_id),
+            _ => None,
+        }
+    }
+
     /// The name of the rule's variant, e.g. `RequiredElementMissing`, so a
     /// caller can filter findings without parsing messages.
     pub fn kind(&self) -> &'static str {

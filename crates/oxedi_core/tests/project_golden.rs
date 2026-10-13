@@ -6,13 +6,16 @@
 //! `UPDATE_GOLDEN=1 cargo test --test project_golden`, inspect the diff,
 //! commit. The tables of the `edi_835_parser.json` patch have their own
 //! goldens in `tests/golden/project/edi_835_parser/`, in the same two formats.
+//! The masked tables and diagnostics of every file, under a fixed key with
+//! dates reduced to their year, have theirs in `tests/golden/project/masked/`,
+//! with one run of `balanced_5010_sample.txt` with dates shifted.
 
 mod common;
 
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
-use oxedi_core::{Diagnostic, Document, Processor, Spec, Tables};
+use oxedi_core::{DateMode, Diagnostic, Document, Mask, Processor, Spec, Tables};
 
 fn golden_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/golden/project")
@@ -60,7 +63,7 @@ fn tables_and_diagnostics_match_the_golden_files() {
             diagnostic_lines(&diagnostics),
         ));
     }
-    let failures = common::compare_goldens(&golden_dir(), &outputs, &["edi_835_parser"]);
+    let failures = common::compare_goldens(&golden_dir(), &outputs, &["edi_835_parser", "masked"]);
     assert!(failures.is_empty(), "{failures:#?}");
 }
 
@@ -84,6 +87,44 @@ fn edi_835_parser_tables_match_the_golden_files() {
         } else {
             (dir.join(format!("{name}.tables.txt")), tables.to_string())
         });
+    }
+    let failures = common::compare_goldens(&dir, &outputs, &[]);
+    assert!(failures.is_empty(), "{failures:#?}");
+}
+
+/// Each file is projected with the built-in spec of the version it declares,
+/// masked with a fixed key and dates reduced to their year; one file is also
+/// projected with dates shifted.
+#[test]
+fn masked_tables_and_diagnostics_match_the_golden_files() {
+    let (five, four) = common::builtins();
+    let key = b"oxedi-test-key-0";
+    let year = Mask::new(key, DateMode::Year).unwrap();
+    let shift = Mask::new(key, DateMode::Shift).unwrap();
+    let dir = golden_dir().join("masked");
+    let mut outputs = Vec::new();
+    for (name, bytes, delims) in common::all_files() {
+        let spec = common::select(&five, &four, &bytes, delims);
+        let document = Document::with_delimiters(&bytes[..], delims).unwrap();
+        let mut runs = vec![(name.clone(), &year)];
+        if name == "balanced_5010_sample.txt" {
+            runs.push((format!("{name}.shift"), &shift));
+        }
+        for (label, mask) in runs {
+            let (tables, diagnostics) = Processor::run_masked(spec, &document, mask);
+            outputs.push(if common::SUMMARY_ONLY.contains(&name.as_str()) {
+                (
+                    dir.join(format!("{label}.tables.summary.txt")),
+                    row_counts(&tables),
+                )
+            } else {
+                (dir.join(format!("{label}.tables.txt")), tables.to_string())
+            });
+            outputs.push((
+                dir.join(format!("{label}.diagnostics.txt")),
+                diagnostic_lines(&diagnostics),
+            ));
+        }
     }
     let failures = common::compare_goldens(&dir, &outputs, &[]);
     assert!(failures.is_empty(), "{failures:#?}");

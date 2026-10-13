@@ -6,7 +6,7 @@ const ISA: &str = "ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVE
 
 /// A complete interchange holding the given transactions, each written
 /// between its `ST` and its `SE`.
-fn interchange(transactions: &[&str]) -> String {
+pub(super) fn interchange(transactions: &[&str]) -> String {
     let mut text = format!("{ISA}GS*HP*SENDER*RECEIVER*20240101*1200*7*X*005010X221A1~");
     for (i, body) in transactions.iter().enumerate() {
         let count = body.matches('~').count() + 2;
