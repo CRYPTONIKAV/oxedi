@@ -12,7 +12,8 @@ name: Docs deploy
 #
 # The browser viewer is published next to the versions, in `viewer/` of gh-pages (the latest
 # release, so it is refreshed only when `latest` moves) and `viewer/dev/` (master), outside the
-# folders mike manages.
+# folders mike manages. A release that moves `latest` also refreshes llms.txt at the root of
+# gh-pages from the same script; mike copies docs/llms.txt into each version's folder.
 #
 # Releases and master pushes queue separately (see `concurrency`), so a release is never replaced
 # by a later master push, and the two can run at the same time. Both push to gh-pages, so every
@@ -208,6 +209,7 @@ jobs:
           # A viewer that was there before the run must still be there (mike does not touch it);
           # this run's own viewer must have been published.
           if { [ "$KIND" = "release" ] && [ "$MOVES" = "true" ]; } || [ "$RELEASE_BEFORE" = "true" ]; then has viewer/index.html; has viewer/pkg/index.js; fi
+          if [ "$KIND" = "release" ] && [ "$MOVES" = "true" ]; then has llms.txt; fi
           if [ "$KIND" = "dev" ] || [ "$DEV_BEFORE" = "true" ]; then has viewer/dev/index.html; has viewer/dev/pkg/index.js; fi
           for dir in viewer viewer/dev; do
             if git cat-file -e "origin/gh-pages:$dir/pkg/oxedi_bg.wasm" 2>/dev/null; then echo "gh-pages holds $dir/pkg/oxedi_bg.wasm, which the page never loads"; exit 1; fi
