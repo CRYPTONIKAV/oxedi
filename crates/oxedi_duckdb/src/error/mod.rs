@@ -146,6 +146,21 @@ fn quoted<S: AsRef<str>>(names: &[S]) -> String {
         .join(", ")
 }
 
+/// The SQL spelling of an identifier: as is when it is a plain lowercase name,
+/// otherwise in double quotes with inner double quotes doubled.
+fn identifier(name: &str) -> String {
+    let mut chars = name.chars();
+    let plain = chars
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase() || first == '_')
+        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+    if plain {
+        name.to_owned()
+    } else {
+        format!("\"{}\"", name.replace('"', "\"\""))
+    }
+}
+
 impl fmt::Display for ReadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -177,7 +192,8 @@ impl fmt::Display for ReadError {
                 f,
                 "{FUNCTION}: {name} must be a constant string; a table macro passed its \
                  parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
-                 parameter given with := or =>, so write {name} = {parameter}"
+                 parameter given with := or =>, so write {name} = {}",
+                identifier(parameter)
             ),
             ReadError::UnknownTable { table, known } => write!(
                 f,
