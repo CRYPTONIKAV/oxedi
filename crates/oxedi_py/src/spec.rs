@@ -5,8 +5,12 @@ use std::sync::{Arc, OnceLock};
 use oxedi_core::{Segment, Spec};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyCapsule, PyDict, PyString};
+
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+
+use crate::arrow;
+use crate::tables::extra;
 
 native_exception!(
     SpecError,
@@ -135,6 +139,26 @@ impl PySpec {
     /// The spec as JSON text.
     fn to_json(&self) -> String {
         self.inner.to_json()
+    }
+
+    /// The schema of every table of the spec, by name, in table order: one
+    /// `pyarrow.Schema` per table, with the column names and Arrow types the
+    /// tables of a parse with this spec have. A reference column (such as
+    /// `claim` in `services`) holds the `row` of a row in another table, and
+    /// its field metadata names that table under the key `oxedi.parent`.
+    /// Needs pyarrow.
+    #[gen_stub(override_return_type(type_repr = "builtins.dict[builtins.str, pyarrow.Schema]", imports = ("builtins", "pyarrow")))]
+    fn schema<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let schema_class = extra(py, "Spec", "schema", "pyarrow", "pandas")?.getattr("Schema")?;
+        let schemas = PyDict::new(py);
+        for (name, schema) in arrow::spec_schemas(&self.inner)? {
+            let capsule = PyCapsule::new_with_value(py, schema, c"arrow_schema")?;
+            schemas.set_item(
+                name,
+                schema_class.call_method1("_import_from_c_capsule", (capsule,))?,
+            )?;
+        }
+        Ok(schemas)
     }
 
     /// The loop names, in spec order.

@@ -38,6 +38,8 @@ def results(data: bytes, path: str) -> list[Result]:
     spec: Spec = Spec.builtin(version="4010").patch({"name": "x"}).patch('{"name": "y"}')
     loops: list[str] = Spec.from_json(spec.to_json()).loops()
     assert loops
+    schema_names: list[str] = list(spec.schema())
+    assert schema_names
     delimiters = Delimiters(element=b"*", component=b":", segment=b"~", repetition=None, release=None)
     return [
         oxedi.parse(data),

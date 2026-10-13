@@ -57,7 +57,7 @@ doc: ## rustdoc with warnings as errors
 PY_TOOLS := maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
 venv: ## create .venv with uv and the dev tools
 	uv venv $(VENV) --python 3.13
-	uv pip install --python $(PYTHON) $(PY_TOOLS) mypy pandas-stubs
+	uv pip install --python $(PYTHON) $(PY_TOOLS) mypy pandas-stubs pyarrow-stubs
 
 py-dev: ## build the extension into .venv (debug)
 	$(MATURIN) develop --uv --manifest-path $(PY_MANIFEST)

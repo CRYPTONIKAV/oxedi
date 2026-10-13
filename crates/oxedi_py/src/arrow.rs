@@ -17,7 +17,7 @@ use arrow_array::{
 use arrow_buffer::{Buffer, ToByteSlice};
 use arrow_data::ArrayData;
 use arrow_schema::{ArrowError, DataType, Field, Schema, SchemaRef, TimeUnit};
-use oxedi_core::{Column, ColumnData, Table, Tables};
+use oxedi_core::{Column, ColumnData, ColumnType, Spec, Table, Tables, spec_schema};
 use pyo3::PyErr;
 use pyo3::exceptions::PyRuntimeError;
 
@@ -72,36 +72,38 @@ fn share(tables: &Arc<Tables>, table: usize, column: usize, part: Part) -> Buffe
     }))
 }
 
-/// The Arrow type of a column, and the field metadata that keeps what the
-/// type alone cannot say (the implied decimals of an `Nn` integer).
-fn arrow_type(data: &ColumnData) -> Result<(DataType, HashMap<String, String>), ArrowError> {
+/// The field metadata key that marks a reference column with the table it
+/// points at.
+const PARENT_KEY: &str = "oxedi.parent";
+
+/// The Arrow type of a column type, and the field metadata that keeps what
+/// the type alone cannot say (the implied decimals of an `Nn` integer).
+fn arrow_type(kind: ColumnType) -> Result<(DataType, HashMap<String, String>), ArrowError> {
     let mut metadata = HashMap::new();
-    let data_type = match data.column() {
-        Column::Binary { .. } => DataType::Binary,
-        Column::Int64 { scale, .. } => {
-            if *scale > 0 {
+    let data_type = match kind {
+        ColumnType::Binary => DataType::Binary,
+        ColumnType::Int64 { scale } => {
+            if scale > 0 {
                 metadata.insert("scale".to_owned(), scale.to_string());
             }
             DataType::Int64
         }
-        Column::Decimal128 {
-            precision, scale, ..
-        } => {
-            let scale = i8::try_from(*scale).map_err(|_| {
+        ColumnType::Decimal128 { precision, scale } => {
+            let scale = i8::try_from(scale).map_err(|_| {
                 ArrowError::InvalidArgumentError(format!(
                     "decimal scale {scale} does not fit Arrow's i8 scale"
                 ))
             })?;
-            DataType::Decimal128(*precision, scale)
+            DataType::Decimal128(precision, scale)
         }
-        Column::Date32(_) => DataType::Date32,
-        Column::Time32(_) => DataType::Time32(TimeUnit::Second),
+        ColumnType::Date32 => DataType::Date32,
+        ColumnType::Time32 => DataType::Time32(TimeUnit::Second),
     };
     Ok((data_type, metadata))
 }
 
-fn field(name: &str, data: &ColumnData) -> Result<Field, ArrowError> {
-    let (data_type, metadata) = arrow_type(data)?;
+fn field(name: &str, kind: ColumnType) -> Result<Field, ArrowError> {
+    let (data_type, metadata) = arrow_type(kind)?;
     Ok(Field::new(name, data_type, true).with_metadata(metadata))
 }
 
@@ -112,7 +114,7 @@ fn column_array(
     column: usize,
     data: &ColumnData,
 ) -> Result<ArrayRef, ArrowError> {
-    let (data_type, _) = arrow_type(data)?;
+    let (data_type, _) = arrow_type(data.kind())?;
     let buffers = match data.column() {
         Column::Binary { .. } => vec![
             share(tables, table, column, Part::Offsets),
@@ -147,7 +149,7 @@ fn schema_of(table: &Table) -> Result<SchemaRef, ArrowError> {
     let fields = table
         .columns()
         .iter()
-        .map(|(name, data)| field(name, data))
+        .map(|(name, data)| field(name, data.kind()))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Arc::new(Schema::new(fields)))
 }
@@ -193,4 +195,39 @@ pub fn schema(tables: &Arc<Tables>, index: usize) -> Result<FFI_ArrowSchema, PyE
     schema_of(table)
         .and_then(|schema| FFI_ArrowSchema::try_from(schema.as_ref()))
         .map_err(|err| export_error(table, &err))
+}
+
+/// The schema of every table of `spec`, by name, in the spec's table order:
+/// the Arrow types the tables of a parse with `spec` have, with each
+/// reference column's field metadata naming the table it points at.
+pub fn spec_schemas(spec: &Spec) -> Result<Vec<(String, FFI_ArrowSchema)>, PyErr> {
+    spec_schema(spec)
+        .into_iter()
+        .map(|table| {
+            let fields = table
+                .columns
+                .iter()
+                .map(|column| {
+                    let field = field(&column.name, column.kind)?;
+                    Ok(match &column.parent {
+                        Some(parent) => {
+                            let mut metadata = field.metadata().clone();
+                            metadata.insert(PARENT_KEY.to_owned(), parent.clone());
+                            field.with_metadata(metadata)
+                        }
+                        None => field,
+                    })
+                })
+                .collect::<Result<Vec<_>, ArrowError>>();
+            fields
+                .and_then(|fields| FFI_ArrowSchema::try_from(&Schema::new(fields)))
+                .map(|schema| (table.name.clone(), schema))
+                .map_err(|err| {
+                    PyRuntimeError::new_err(format!(
+                        "the schema of table {:?} could not be exported to Arrow: {err}",
+                        table.name
+                    ))
+                })
+        })
+        .collect()
 }
