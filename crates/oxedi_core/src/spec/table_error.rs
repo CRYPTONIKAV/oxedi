@@ -418,7 +418,7 @@ impl fmt::Display for TableDefError {
             TableDefError::PhiOnControlElement { segment, element } => {
                 write!(
                     f,
-                    "\"phi\" cannot flag {segment}{element:02}: it is an envelope control number or count, and those elements cannot be flagged because the envelope checks them against the original value; remove \"phi\" from this column"
+                    "\"phi\" cannot flag {segment}{element:02}: it is an envelope control number or count; findings about envelope controls quote it unmasked, so it cannot be flagged; remove \"phi\" from this column"
                 )
             }
             TableDefError::UnknownPhiSeed { name } => {

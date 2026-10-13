@@ -218,8 +218,92 @@ fn a_control_element_error_is_displayed_in_full() {
     let error = control_spec("ST", 2).unwrap_err();
     assert_eq!(
         error.to_string(),
-        "table \"t\" column \"ctl\": \"phi\" cannot flag ST02: it is an envelope control number or count, and those elements cannot be flagged because the envelope checks them against the original value; remove \"phi\" from this column"
+        "table \"t\" column \"ctl\": \"phi\" cannot flag ST02: it is an envelope control number or count; findings about envelope controls quote it unmasked, so it cannot be flagged; remove \"phi\" from this column"
     );
+}
+
+/// The table error a patch over a built-in spec gives, or `None` when the
+/// patched spec loads.
+fn patched_error(base: &Spec, table: &str) -> Option<(Option<String>, TableDefError)> {
+    let error = match base.merge_patch(&format!(r#"{{"tables":{{"x":{table}}}}}"#)) {
+        Ok(_) => return None,
+        Err(SpecError::Patch { source }) => *source,
+        Err(other) => panic!("expected a patch error, got {other}"),
+    };
+    match error {
+        SpecError::BadTable { column, reason, .. } => Some((column, reason)),
+        other => panic!("expected a table error, got {other}"),
+    }
+}
+
+#[test]
+fn patched_built_in_specs_refuse_flags_on_envelope_controls() {
+    let cases = [
+        (
+            r#"{"loops":["interchange"],"columns":{"c":{"segment":"ISA","element":13,"phi":"id"}}}"#,
+            "ISA",
+            13,
+        ),
+        (
+            r#"{"loops":["interchange"],"columns":{"c":{"segment":"IEA","element":2,"phi":"id"}}}"#,
+            "IEA",
+            2,
+        ),
+        (
+            r#"{"loops":["transaction"],"columns":{"c":{"segment":"ST","element":2,"component":1,"phi":"id"}}}"#,
+            "ST",
+            2,
+        ),
+        (
+            r#"{"loops":["transaction"],"segment":"ST","repeat":{"from":1,"step":2},"columns":{"c":{"group_element":1,"phi":"id"}}}"#,
+            "ST",
+            2,
+        ),
+    ];
+    for (name, base) in [
+        ("5010", Spec::builtin_835()),
+        ("4010", Spec::builtin_835_4010()),
+    ] {
+        for (table, segment, element) in cases {
+            assert_eq!(
+                patched_error(&base, table),
+                Some((
+                    Some("c".to_string()),
+                    TableDefError::PhiOnControlElement {
+                        segment: segment.into(),
+                        element
+                    }
+                )),
+                "{name}: {table}"
+            );
+        }
+        let allowed =
+            r#"{"loops":["transaction"],"segment":"ST","columns":{"c":{"element":1,"phi":"id"}}}"#;
+        assert_eq!(patched_error(&base, allowed), None, "{name}");
+    }
+}
+
+#[test]
+fn a_repeated_group_is_refused_when_a_later_group_reads_a_control_element() {
+    for (name, base) in [
+        ("5010", Spec::builtin_835()),
+        ("4010", Spec::builtin_835_4010()),
+    ] {
+        let table = r#"{"loops":["transaction"],"segment":"ST","repeat":{"from":1,"step":1},"columns":{"c":{"group_element":0,"phi":"id"}}}"#;
+        assert_eq!(
+            patched_error(&base, table),
+            Some((
+                Some("c".to_string()),
+                TableDefError::PhiOnControlElement {
+                    segment: "ST".into(),
+                    element: 2
+                }
+            )),
+            "{name}"
+        );
+        let clear = r#"{"loops":["transaction"],"segment":"ST","repeat":{"from":1,"step":2},"columns":{"c":{"group_element":0,"phi":"id"}}}"#;
+        assert_eq!(patched_error(&base, clear), None, "{name}");
+    }
 }
 
 fn flagged(spec: &Spec) -> Vec<String> {
