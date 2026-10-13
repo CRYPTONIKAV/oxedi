@@ -58,8 +58,10 @@
 //! spec alone; `check` the element check and the parsed values it
 //! hands to the columns; `fill` the row filling, the diagnostic helpers and
 //! the text read of an element; `carry` the values read from loops above a
-//! table's anchor; `mask` the masking of rows and datums. This file holds the
-//! projector, its event handlers and the row and slot state.
+//! table's anchor; `mask` the masking of rows and datums; `quote` the
+//! rewrite of another validator's message so it no longer quotes flagged
+//! values. This file holds the projector, its event handlers and the row and
+//! slot state.
 
 mod carry;
 mod check;
@@ -68,6 +70,7 @@ mod mask;
 #[cfg(test)]
 mod mask_tests;
 mod plan;
+mod quote;
 mod schema;
 #[cfg(test)]
 mod schema_tests;

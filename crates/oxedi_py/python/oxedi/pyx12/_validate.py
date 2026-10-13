@@ -7,7 +7,7 @@ import os
 from bisect import bisect_right
 from typing import Any, BinaryIO, Optional, Union
 
-from .. import Diagnostic, Mask, parse
+from .. import Diagnostic, Mask, Spec, parse
 from .._core import _external_diagnostic, _loop_paths, _mask_findings
 from . import _capture
 from ._tree import Finding, collect
@@ -251,7 +251,9 @@ def _finish(result: Any, drafts: list[Draft]) -> list[Diagnostic]:
     ]
 
 
-def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
+def validate(
+    source: Source, mask: Optional[Mask] = None, spec: Optional[Spec] = None
+) -> list[Diagnostic]:
     """Validates an 835 file with pyx12 and returns what it finds.
 
     ``source`` is the file's bytes, a path, or a file object open in binary
@@ -301,39 +303,70 @@ def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
 
     With ``mask``, an ``oxedi.Mask``, the datum of a finding at a place a
     column flags as patient data reads is masked as ``parse`` masks its own
-    diagnostics with that mask. In the finding's message, every occurrence
-    of the original datum, and of each value its segment holds at such a
-    place, is replaced by the masked form, whether or not the finding names
-    an element; every other attribute, and the findings' number and order,
-    stay as without it. The flagged places are those of the built-in spec
-    of the file's version, the one ``parse(source)`` selects: ``validate``
-    takes no spec, so columns only a patched spec flags are not masked
-    here. pyx12 still reads the original file: the mask hides what
-    ``validate`` returns, not what pyx12 is given. ``mask`` of any other
-    type than ``oxedi.Mask`` or ``None`` raises ``TypeError``.
+    diagnostics with that mask. In the finding's message, the original
+    datum and each value its segment holds at such a place are replaced by
+    their masked forms, whether or not the finding names an element. A
+    value of 4 characters or more is replaced wherever it occurs. A shorter
+    one is replaced only where it stands apart: the character on each side
+    is the edge of the message, a character that is not an ASCII letter or
+    digit (an accented letter or ``-`` counts), or part of another replaced
+    value. Short values that overlap or touch are replaced as one group when
+    the group stands apart. A short value glued to letters or digits that
+    are not flagged values stays as written (with ``XAB`` and ``ABYZ``
+    flagged, ``QXABYZ`` keeps ``QX``), and two short values that together
+    spell a word of the message replace that word. Every other attribute,
+    and the findings' number and order, stay as without it. The flagged
+    places are those of the spec the parse uses: ``spec``, an
+    ``oxedi.Spec``, or the built-in spec of the file's version when it is
+    ``None``, so a patched spec that flags more columns masks them here as
+    ``parse(source, spec=spec, mask=mask)`` does. The same spec locates the
+    findings' loop paths, as in ``parse(source, spec=spec)``. A failure
+    finding for an exception inside pyx12, whose text no flagged place
+    points at, keeps the exception's type and drops its text: ``could not
+    finish validating: ValueError, whose message is not shown with a mask;
+    ...``, or ``its error tree could not be read (ValueError, whose message
+    is not shown with a mask)``. pyx12 still reads the original file: the
+    mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
+    of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,
+    and so does ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
     """
     if mask is not None and not isinstance(mask, Mask):
         raise TypeError(
             f"validate: mask must be an oxedi.Mask or None, not {type(mask).__name__}"
         )
+    if spec is not None and not isinstance(spec, Spec):
+        raise TypeError(
+            f"validate: spec must be an oxedi.Spec or None, not {type(spec).__name__}"
+        )
     _import_pyx12()
     data = _read(source)
-    result = parse(data)
-    findings = _findings(data, result)
+    result = parse(data, spec=spec)
+    findings = _findings(data, result, masked=mask is not None)
     if mask is None:
         return findings
     return _mask_findings(findings, result.document, mask, result.spec)
 
 
-def _findings(data: bytes, result: Any) -> list[Diagnostic]:
-    """pyx12's findings about ``data``, whose parse is ``result``."""
+def _reason(err: BaseException, masked: bool) -> str:
+    """How a failure finding names the exception pyx12 raised: its type and
+    its text, or, when ``masked``, its type and a note that its text is not
+    shown, as the text may quote a value of the file that no flagged place
+    can point at."""
+    if masked:
+        return f"{type(err).__name__}, whose message is not shown with a mask"
+    return f"{type(err).__name__}: {err}"
+
+
+def _findings(data: bytes, result: Any, masked: bool) -> list[Diagnostic]:
+    """pyx12's findings about ``data``, whose parse is ``result``; with
+    ``masked``, failure findings leave out the text of pyx12's exception."""
     document = result.document
     base = data.find(b"ISA")
     text = data[max(base, 0):].decode("latin-1")
     positions = _Positions.build(document, max(base, 0), text)
     run = _run(text)
     if run.failure is not None:
-        reason = f"{type(run.failure).__name__}: {run.failure}"
+        reason = _reason(run.failure, masked)
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if run.handler is None:
         failure = _failure("pyx12 built no error handler", run.track, positions, document)
@@ -341,7 +374,7 @@ def _findings(data: bytes, result: Any) -> list[Diagnostic]:
     try:
         found = collect(run.handler)
     except Exception as err:  # pyx12's tree is not ours: report it, do not raise
-        reason = f"its error tree could not be read ({type(err).__name__}: {err})"
+        reason = f"its error tree could not be read ({_reason(err, masked)})"
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if not found and not run.ok and not run.track:
         return _finish(result, [_rejection(text, positions, document)])

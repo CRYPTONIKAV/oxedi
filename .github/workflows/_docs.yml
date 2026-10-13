@@ -1,8 +1,8 @@
 name: Docs
 
 # The site in strict mode and every python and sql block of the docs and README (the SQL ones
-# load the DuckDB extension built here), and the mike deploy of docs.yml into a local branch that
-# is never pushed. Called by ci.yml and nightly.yml; deploying is docs.yml.
+# load the DuckDB extension built here), and the deploy script of docs.yml run without pushing on
+# a local gh-pages branch. Called by ci.yml and nightly.yml; deploying is docs.yml.
 on:
   workflow_call:
 
@@ -19,6 +19,7 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup-rust
         with:
+          targets: wasm32-unknown-unknown
           cache-key: docs
           workspaces: |
             . -> target
@@ -38,19 +39,86 @@ jobs:
       - name: Docs tools on PATH
         # mike runs mkdocs by name, so the venv's bin must be on PATH.
         run: echo "$PWD/.venv-docs/bin" >> "$GITHUB_PATH"
-      # The deploy steps of docs.yml without --push: mike commits to the local gh-pages branch,
-      # which starts from the fetched gh-pages when that exists (a shallow checkout has no
-      # origin/gh-pages ref, so the branch is taken from FETCH_HEAD). The version is one
-      # that never exists on the site, and nothing here pushes.
+      # The deploy publishes the viewer next to the site, so the dry run builds its module.
+      - name: wasm-bindgen CLI and wasm-opt
+        uses: ./.github/actions/wasm-tools
+      - name: Build the viewer's module
+        run: make wasm
+      # The deploy script of docs.yml with --no-push, three times on a local gh-pages branch that
+      # starts from the fetched gh-pages when that exists (a shallow checkout may have no
+      # origin/gh-pages ref, so the branch is taken from FETCH_HEAD): dev, a release above every
+      # published version (999.0, which moves latest) and a lower one after it (998.0, which does
+      # not). Each run ends with the script's own check of gh-pages; the assertions here pin which
+      # aliases, viewers and llms.txt each run leaves. Nothing here pushes.
       - name: Deploy (dry run, no push)
-        env:
-          NO_MKDOCS_2_WARNING: "true"
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git fetch origin gh-pages; then git branch -f gh-pages FETCH_HEAD; fi
-          mike deploy --update-aliases 0.0 latest
-          mike set-default latest
-          git show gh-pages:0.0/index.html > /dev/null
-          git show gh-pages:versions.json | jq -e 'any(.[]; .version == "0.0" and (.aliases | index("latest")))' > /dev/null
+          log=$(mktemp)
+          fail() { echo "deploy dry run: $*"; exit 1; }
+          # The object id of a path on gh-pages, or "absent".
+          blob() { git rev-parse -q --verify "gh-pages:$1" || echo absent; }
+          # The files of the released viewer: viewer/ without viewer/dev/.
+          released_viewer() { git ls-tree -r gh-pages -- viewer 2>/dev/null | grep -v $'\tviewer/dev/' || true; }
+          expect_aliases() {
+            local actual
+            actual=$(git show gh-pages:versions.json | jq -c --arg v "$1" '[.[] | select(.version == $v) | .aliases[]]')
+            [ "$actual" = "$2" ] || fail "after the $3 deploy, versions.json gives $1 the aliases $actual, expected $2"
+          }
+
+          # Before each run, viewer/index.html and docs/llms.txt get a marker line naming the run,
+          # so what gh-pages already held cannot pass for what the run published; both files are
+          # restored after the run.
+          mark() {
+            echo "<!-- deploy dry run: $1 -->" >> viewer/index.html
+            echo "# deploy dry run: $1" >> docs/llms.txt
+          }
+          unmark() { git checkout -- viewer/index.html docs/llms.txt; }
+          # Whether the file at a gh-pages path holds the marker line of a run.
+          marked() {
+            case "$1" in
+              *.html) git show "gh-pages:$1" | grep -qxF "<!-- deploy dry run: $2 -->" ;;
+              *) git show "gh-pages:$1" | grep -qxF "# deploy dry run: $2" ;;
+            esac
+          }
+
+          # dev: its own version and viewer/dev/; viewer/ and llms.txt stay as they were.
+          viewer=$(released_viewer); llms=$(blob llms.txt)
+          mark dev
+          .github/scripts/deploy-docs.sh --no-push dev
+          unmark
+          expect_aliases dev '[]' dev
+          marked viewer/dev/index.html dev || fail "the dev deploy did not publish viewer/dev/index.html (no dev marker)"
+          marked dev/llms.txt dev || fail "the dev deploy did not put docs/llms.txt into dev/ (no dev marker)"
+          [ "$(released_viewer)" = "$viewer" ] || fail "the dev deploy changed viewer/ on gh-pages"
+          [ "$(blob llms.txt)" = "$llms" ] || fail "the dev deploy changed llms.txt on gh-pages"
+
+          # 999.0 moves latest: the alias, the default page, viewer/ and llms.txt follow it. The
+          # default is first set to dev, so the redirect to latest/ shows that the run set it.
+          mike set-default dev
+          git show gh-pages:index.html | grep -q 'dev/' || fail "mike set-default dev did not make gh-pages index.html redirect to dev/"
+          mark 999.0
+          .github/scripts/deploy-docs.sh --no-push release 999.0 | tee "$log"
+          unmark
+          grep -qx "Version 999.0: latest moves = true" "$log" || fail "the 999.0 deploy did not decide to move latest"
+          expect_aliases 999.0 '["latest"]' 999.0
+          git show gh-pages:index.html | grep -q 'latest/' || fail "after the 999.0 deploy, gh-pages index.html does not redirect to latest/"
+          marked viewer/index.html 999.0 || fail "the 999.0 deploy did not publish viewer/index.html (no 999.0 marker)"
+          marked llms.txt 999.0 || fail "the 999.0 deploy did not publish the root llms.txt (no 999.0 marker)"
+          marked viewer/dev/index.html dev || fail "the 999.0 deploy changed viewer/dev/index.html"
+
+          # 998.0 keeps latest on 999.0 and leaves viewer/ and llms.txt alone: its marker reaches
+          # 998.0/llms.txt through mike and nothing outside 998.0/.
+          viewer=$(released_viewer); llms=$(blob llms.txt)
+          mark 998.0
+          .github/scripts/deploy-docs.sh --no-push release 998.0 | tee "$log"
+          unmark
+          grep -qx "Version 998.0: latest moves = false" "$log" || fail "the 998.0 deploy decided to move latest"
+          expect_aliases 998.0 '[]' 998.0
+          expect_aliases 999.0 '["latest"]' 998.0
+          marked 998.0/llms.txt 998.0 || fail "the 998.0 deploy did not put docs/llms.txt into 998.0/ (no 998.0 marker)"
+          [ "$(released_viewer)" = "$viewer" ] || fail "the 998.0 deploy changed viewer/ on gh-pages"
+          [ "$(blob llms.txt)" = "$llms" ] || fail "the 998.0 deploy changed llms.txt on gh-pages"
+          echo "deploy dry run: dev, 999.0 (moves latest) and 998.0 (keeps it) left gh-pages as expected"

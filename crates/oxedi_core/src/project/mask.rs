@@ -25,10 +25,9 @@
 //! Findings another validator raised about a document are matched the same
 //! way, by the segment their index names in it. The message of such a finding
 //! may quote values of that segment whatever element it names, or none, so
-//! every occurrence in it of the original datum, when the datum was masked,
-//! and of each value the segment holds at a flagged place is replaced by its
-//! masked form. Values are read as UTF-8 or as Latin-1, and the message is
-//! rewritten in one pass, so a masked form is never rewritten again.
+//! the original datum, when the datum was masked, and each value the segment
+//! holds at a flagged place are replaced by their masked forms where the
+//! message quotes them; the module notes of `quote.rs` say where.
 
 use crate::column::{civil_from_days, parse_dt};
 use crate::diagnostic::{Diagnostic, Rule};
@@ -39,6 +38,7 @@ use crate::segment::Segment;
 use crate::spec::Spec;
 
 use super::plan::Plans;
+use super::quote::unquoted;
 use super::{Projector, Row, Slot};
 
 /// The places flagged columns read, and the mask that rewrites the datums
@@ -197,11 +197,13 @@ impl<'s> Projector<'s> {
 
     /// Masks the datums of diagnostics another validator raised about
     /// `document`, as this projector masks its own: each is matched by the
-    /// segment its index names. An external finding also has every
-    /// occurrence in its message of the original datum, when the datum is
-    /// masked, and of each value that segment holds at a flagged place, read
-    /// as UTF-8 or as Latin-1, replaced by its masked form. Without a mask it
-    /// does nothing.
+    /// segment its index names. An external finding also has the original
+    /// datum, when the datum is masked, and each value that segment holds at
+    /// a flagged place, read as UTF-8 or as Latin-1, replaced by its masked
+    /// form where its message quotes them: a value of 4 characters or more
+    /// wherever it occurs, a shorter one only where it, or the group of
+    /// short values it overlaps or touches, stands apart from the message's
+    /// words and numbers. Without a mask it does nothing.
     pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
         let Some(datums) = &self.datums else {
             return;
@@ -263,48 +265,6 @@ impl<'s> Projector<'s> {
             _ => None,
         }
     }
-}
-
-/// `message` with every occurrence of each original of `quoted` replaced by
-/// its masked form. An original is bytes and the message text, so it is
-/// looked for read as UTF-8 and, when that differs, read as Latin-1 (one
-/// character per byte), the way a validator that decodes its input as
-/// Latin-1 quotes it. The message is read once from left to right, taking
-/// the longest original that starts at each place, so a masked form already
-/// written is never searched again.
-fn unquoted(message: &str, quoted: &[(Vec<u8>, Vec<u8>)]) -> String {
-    let mut patterns: Vec<(String, String)> = Vec::new();
-    for (original, masked) in quoted {
-        if original.is_empty() {
-            continue;
-        }
-        let masked = String::from_utf8_lossy(masked).into_owned();
-        let utf8 = String::from_utf8_lossy(original).into_owned();
-        let latin1: String = original.iter().copied().map(char::from).collect();
-        if latin1 != utf8 {
-            patterns.push((latin1, masked.clone()));
-        }
-        patterns.push((utf8, masked));
-    }
-    let mut out = String::with_capacity(message.len());
-    let mut rest = message;
-    while !rest.is_empty() {
-        let hit = patterns
-            .iter()
-            .filter_map(|(from, to)| Some((rest.strip_prefix(from.as_str())?, from.len(), to)))
-            .max_by_key(|&(_, len, _)| len);
-        if let Some((after, _, to)) = hit {
-            out.push_str(to);
-            rest = after;
-        } else {
-            let mut chars = rest.chars();
-            if let Some(c) = chars.next() {
-                out.push(c);
-            }
-            rest = chars.as_str();
-        }
-    }
-    out
 }
 
 /// A date of a flagged column under `dates`, with the row's `shift` in days

@@ -87,10 +87,19 @@ patient in another run.
 `oxedi.pyx12.validate` takes `mask=` too. A finding about a place the masked columns read gets
 its value masked as `parse` masks its own diagnostics. In pyx12's message, that value and every
 masked value of the segment the finding points at are replaced by their masked forms, also when
-the finding names no element (pyx12's "Segment CLP*... not found" quotes the claim id). The
-findings, their order and where they point stay the same as without the mask. `validate` takes no
-spec: it masks the places the built-in spec of the file's version flags, so a column only a patched
-spec flags is masked by `parse(..., spec=patched, mask=)` but not by `validate`. This example
+the finding names no element (pyx12's "Segment CLP*... not found" quotes the claim id). A value
+of 4 characters or more is replaced wherever it occurs. A shorter one is replaced only where it
+stands apart: the character on each side is the edge of the message, a character that is not an
+ASCII letter or digit (an accented letter or `-` counts), or part of another replaced value. So a
+name `D` leaves the word `Data` as written. Short values that overlap or touch are replaced as one
+group when the group stands apart, so initials `D` and `J` in `*DJ*` are both replaced. A short
+value glued to letters or digits that are not flagged values stays: with `XAB` and `ABYZ`
+flagged, `QXABYZ` keeps `QX`. The rule can also mask too much: initials `A` and `N` replace the
+`AN` of pyx12's "type AN". The
+findings, their order and where they point stay the same as without the mask. `validate` takes
+`spec=` too: it masks the places that spec flags (the built-in spec of the file's version when it
+is omitted), so a column only a patched spec flags is masked by `validate(..., mask=, spec=patched)`
+as by `parse(..., spec=patched, mask=)`; the same spec gives the findings' loop paths. This example
 writes an invalid claim date into the example file:
 
 ```python
@@ -108,7 +117,11 @@ for d in validate(data, mask=oxedi.Mask(key)):
 ```
 
 pyx12 still reads the original file: the mask hides what `validate` returns, not what pyx12 is
-given. A pyx12 message about a length still states the length of the original value.
+given. A pyx12 message about a length still states the length of the original value. When pyx12
+raises an exception, its finding keeps the exception's type and leaves out its text, which could
+quote any value of the file: `could not finish validating: ValueError, whose message is not shown
+with a mask; ...`, or `its error tree could not be read (ValueError, whose message is not shown
+with a mask)` when pyx12's error tree cannot be read.
 
 ## Use it in SQL
 

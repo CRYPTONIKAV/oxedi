@@ -66,6 +66,15 @@ A pyx12 finding has:
 - When pyx12 gives no value, `datum` is the element's bytes, or the segment id for a finding
   with no element.
 
+## With a patched spec or a mask
+
+`validate(data, spec=spec)` names the findings' loops with `spec`, an `oxedi.Spec`, as
+`parse(data, spec=spec)` does; without it the built-in spec of the file's version is used (see
+[Customizing the spec](../customize/spec.md)). `validate(data, mask=oxedi.Mask(key))` masks the
+patient data the spec flags in each finding's datum and in pyx12's message; see
+[Validate with pyx12](without-patient-data.md#validate-with-pyx12) in the patient-data guide.
+pyx12 itself still reads the original file.
+
 ## When pyx12 cannot read a file
 
 A file pyx12 cannot read, or an exception inside pyx12, comes back as one level 1 finding

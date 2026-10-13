@@ -258,6 +258,64 @@ def test_an_exception_inside_pyx12_becomes_one_failure(monkeypatch):
     assert failure.datum == bytes(document[5].id)
 
 
+def breaks_at_the_sixth_segment(monkeypatch):
+    """Makes pyx12 raise at the sixth segment it reads; clearing the list it
+    returns starts the count again."""
+    import pyx12.x12n_document
+
+    real = pyx12.x12n_document.apply_segment_errors
+    calls = []
+
+    def breaks(node, seg, errh):
+        calls.append(seg)
+        if len(calls) == 6:
+            raise ValueError("SECRETNAME")
+        return real(node, seg, errh)
+
+    monkeypatch.setattr(pyx12.x12n_document, "apply_segment_errors", breaks)
+    return calls
+
+
+def test_a_masked_failure_keeps_the_exception_type_and_drops_its_text(monkeypatch):
+    calls = breaks_at_the_sixth_segment(monkeypatch)
+    data = read(EYEMED)
+    (plain,) = validate(data)
+    calls.clear()
+    (masked,) = validate(data, mask=oxedi.Mask(MASK_KEY))
+    where = "it was processing segment #5; the last it completed is #4 (reported by pyx12)"
+    assert plain.rule == f"could not finish validating: ValueError: SECRETNAME; {where}"
+    assert masked.rule == (
+        "could not finish validating: ValueError, whose message is not shown with a mask;"
+        f" {where}"
+    )
+    assert "SECRETNAME" not in masked.rule
+    assert place(masked) == place(plain)
+
+
+def test_a_masked_error_tree_failure_keeps_the_exception_type_and_drops_its_text(monkeypatch):
+    import oxedi.pyx12._validate as module
+
+    def reshaped(handler):
+        raise ValueError("SECRETNAME")
+
+    monkeypatch.setattr(module, "collect", reshaped)
+    data = read(EYEMED)
+    (plain,) = validate(data)
+    (masked,) = validate(data, mask=oxedi.Mask(MASK_KEY))
+    last = len(oxedi.parse(data).document) - 1
+    where = f"it had read every segment; the last it completed is #{last} (reported by pyx12)"
+    assert plain.rule == (
+        "could not finish validating: its error tree could not be read"
+        f" (ValueError: SECRETNAME); {where}"
+    )
+    assert masked.rule == (
+        "could not finish validating: its error tree could not be read"
+        f" (ValueError, whose message is not shown with a mask); {where}"
+    )
+    assert "SECRETNAME" not in masked.rule
+    assert place(masked) == place(plain)
+
+
 def logger_state():
     import logging
 
@@ -882,6 +940,23 @@ def test_a_masked_validation_hides_findings_on_flagged_places(case, dates):
         assert any(p.datum != m.datum for p, m in zip(plain, masked)), case
 
 
+def test_a_masked_validation_leaves_words_holding_a_short_flagged_value_as_written():
+    # The patient's last name is "D": "Data" in pyx12's message is not it.
+    data = balanced_5010().replace(b"NM1*QC*1*DOE*JANE", b"NM1*QC*1*D*J\xe9", 1)
+    plain, masked = assert_masked_like_plain("short name", data, "year")
+    ((before, after),) = [
+        (p, m) for p, m in zip(plain, masked) if p.datum == "J\xe9".encode("latin-1")
+    ]
+    assert before.rule == (
+        'Data element "Patient First Name" (NM104) is type AN, contains an invalid'
+        " character(J\xe9) (reported by pyx12, code 6)"
+    )
+    assert after.rule == (
+        'Data element "Patient First Name" (NM104) is type AN, contains an invalid'
+        f" character({after.datum.decode()}) (reported by pyx12, code 6)"
+    )
+
+
 def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():
     data = balanced_5010()
     result = oxedi.parse(data)
@@ -909,3 +984,59 @@ def test_a_mask_that_is_not_a_mask_is_refused():
     with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), mask="nope")
     assert str(exc.value) == "validate: mask must be an oxedi.Mask or None, not str"
+
+
+def payer_name_spec():
+    return oxedi.Spec.builtin().patch(
+        {"tables": {"payments": {"columns": {"payer_name": {"phi": "name"}}}}}
+    )
+
+
+def payer_name_with_bad_character():
+    return balanced_5010().replace(b"N1*PR*ACME HEALTH PLAN", b"N1*PR*ACME H\xe9ALTH PLAN", 1)
+
+
+def test_a_patched_spec_masks_the_finding_it_flags_only_when_validate_gets_it():
+    data = payer_name_with_bad_character()
+    original = "ACME H\xe9ALTH PLAN".encode("latin-1")
+    mask = oxedi.Mask(MASK_KEY)
+
+    def on_payer_name(findings):
+        (found,) = [d for d in findings if d.code == "6"]
+        return found
+
+    without = on_payer_name(validate(data, mask=mask))
+    with_spec = on_payer_name(validate(data, mask=mask, spec=payer_name_spec()))
+
+    assert without.datum == original and original.decode("latin-1") in without.rule
+    assert with_spec.datum != original and len(with_spec.datum) == 16
+    assert original.decode("latin-1") not in with_spec.rule
+    assert f"character({with_spec.datum.decode()})" in with_spec.rule
+    assert place(with_spec) == place(without)
+
+
+def test_validate_with_a_spec_names_the_loops_parse_names_with_it():
+    spec = oxedi.Spec.builtin().patch(
+        {"loops": {"ZZ": {"parent": "1000A", "trigger": {"segment": "N3"}}}}
+    )
+    data = balanced_5010().replace(b"N3*100 MAIN ST", b"N3*100 MA\xe9N ST", 1)
+    found = validate(data, spec=spec)
+    segments = [d.segment for d in found]
+    assert segments and None not in segments
+    result = oxedi.parse(data, spec=spec)
+    expected = [
+        "/".join(f"{name}#{number}" for name, number in path)
+        for path in oxedi._core._loop_paths(result, segments)
+    ]
+    assert [d.path for d in found] == expected
+    (on_address,) = [d for d in found if d.code == "6"]
+    assert on_address.path == "interchange#1/group#1/transaction#1/1000A#1/ZZ#1"
+    (builtin,) = [d for d in validate(data) if d.code == "6"]
+    assert builtin.path == "interchange#1/group#1/transaction#1/1000A#1"
+    assert (builtin.segment, builtin.element) == (on_address.segment, on_address.element)
+
+
+def test_a_spec_that_is_not_a_spec_is_refused():
+    with pytest.raises(TypeError) as exc:
+        validate(balanced_5010(), spec="nope")
+    assert str(exc.value) == "validate: spec must be an oxedi.Spec or None, not str"

@@ -15,12 +15,14 @@ name: Docs deploy
 # folders mike manages. A release that moves `latest` also refreshes llms.txt at the root of
 # gh-pages from the same script; mike copies docs/llms.txt into each version's folder.
 #
-# Releases and master pushes queue separately (see `concurrency`), so a release is never replaced
-# by a later master push, and the two can run at the same time. Both push to gh-pages, so every
-# push goes through .github/scripts/retry-gh-pages.sh, which redoes a push rejected because
-# gh-pages moved on top of the current origin/gh-pages, up to 3 times. The last step checks what
-# the run was meant to publish and fails naming what is missing, so a release deploy that did
-# not happen shows as a failed run.
+# The deploy itself, the `latest` decision, the viewer and llms.txt and the final check are
+# .github/scripts/deploy-docs.sh, which the pull-request dry run (_docs.yml) also runs, without
+# pushing. Releases and master pushes queue separately (see `concurrency`), so a release is never
+# replaced by a later master push, and the two can run at the same time. Both push to gh-pages,
+# so every push goes through .github/scripts/retry-gh-pages.sh, which redoes a push rejected
+# because gh-pages moved on top of the current origin/gh-pages, up to 3 times. The script ends by
+# checking what the run was meant to publish and fails naming what is missing, so a release
+# deploy that did not happen shows as a failed run.
 on:
   push:
     branches: [master]
@@ -121,109 +123,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Record the viewers and llms.txt already published
-        id: before
-        if: steps.target.outputs.kind != 'skip'
-        run: |
-          git fetch origin gh-pages
-          for name in release:viewer/index.html dev:viewer/dev/index.html llms:llms.txt; do
-            if git cat-file -e "origin/gh-pages:${name#*:}" 2>/dev/null; then
-              echo "${name%%:*}=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "${name%%:*}=false" >> "$GITHUB_OUTPUT"
-            fi
-          done
       - name: wasm-bindgen CLI and wasm-opt
         if: steps.target.outputs.kind != 'skip'
         uses: ./.github/actions/wasm-tools
       - name: Build the viewer's module
         if: steps.target.outputs.kind != 'skip'
         run: make wasm
-      - name: Deploy dev
-        if: steps.target.outputs.kind == 'dev'
-        env:
-          NO_MKDOCS_2_WARNING: "true"
-        run: .github/scripts/retry-gh-pages.sh mike deploy --push --title "dev (unreleased)" dev
-      - name: Does latest move
-        id: latest
-        if: steps.target.outputs.kind == 'release'
-        env:
-          VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          set -euo pipefail
-          git fetch origin gh-pages
-          moves=$({ git show origin/gh-pages:versions.json 2>/dev/null || echo '[]'; } | .github/scripts/is-latest-minor.sh "$VERSION")
-          echo "moves=$moves" >> "$GITHUB_OUTPUT"
-          echo "Version $VERSION: latest moves = $moves"
-      - name: Deploy release and move latest
-        if: steps.target.outputs.kind == 'release' && steps.latest.outputs.moves == 'true'
-        env:
-          NO_MKDOCS_2_WARNING: "true"
-          VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          # The inner shell expands VERSION from the environment.
-          # shellcheck disable=SC2016
-          .github/scripts/retry-gh-pages.sh bash -ec '
-            mike deploy --push --update-aliases "$VERSION" latest
-            mike set-default --push latest'
-      - name: Deploy release and keep latest
-        if: steps.target.outputs.kind == 'release' && steps.latest.outputs.moves != 'true'
-        env:
-          NO_MKDOCS_2_WARNING: "true"
-          VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          # The inner shell expands VERSION from the environment.
-          # shellcheck disable=SC2016
-          .github/scripts/retry-gh-pages.sh bash -ec 'mike deploy --push "$VERSION"'
-      - name: Publish the viewer
-        # `viewer/` for a release that moves latest (keeping `viewer/dev/`), `viewer/dev/` for
-        # master. A release also writes llms.txt at the root. Nothing else on gh-pages is touched.
-        if: steps.target.outputs.kind == 'dev' || steps.latest.outputs.moves == 'true'
-        env:
-          KIND: ${{ steps.target.outputs.kind }}
-          VERSION: ${{ steps.target.outputs.version }}
-        run: .github/scripts/retry-gh-pages.sh .github/scripts/publish-viewer.sh
-      - name: The site and the viewer are intact
+      - name: Deploy the site and the viewer, then check gh-pages
         if: steps.target.outputs.kind != 'skip'
-        run: |
-          set -euo pipefail
-          git fetch origin gh-pages
-          has() { git cat-file -e "origin/gh-pages:$1" 2>/dev/null || { echo "gh-pages lacks $1"; exit 1; }; }
-          has versions.json
-          git show origin/gh-pages:versions.json | jq -r '.[].version' | while read -r version; do
-            has "$version/index.html"
-          done
-          # An alias is a symlink to its version's folder.
-          git show origin/gh-pages:versions.json | jq -r '.[].aliases[]' | while read -r alias; do
-            has "$alias"
-          done
-          # A release deploy must have published its own folder and, when latest was meant to
-          # move, the alias on it.
-          if [ "$KIND" = "release" ]; then
-            has "$VERSION/index.html"
-            if [ "$MOVES" = "true" ]; then
-              git show origin/gh-pages:versions.json | jq -e --arg v "$VERSION" 'any(.[]; .version == $v and (.aliases | index("latest")))' > /dev/null \
-                || { echo "gh-pages versions.json does not list latest among the aliases of $VERSION"; exit 1; }
-            fi
-          fi
-          # A viewer that was there before the run must still be there (mike does not touch it);
-          # this run's own viewer must have been published.
-          if { [ "$KIND" = "release" ] && [ "$MOVES" = "true" ]; } || [ "$RELEASE_BEFORE" = "true" ]; then has viewer/index.html; has viewer/pkg/index.js; fi
-          if { [ "$KIND" = "release" ] && [ "$MOVES" = "true" ]; } || [ "$LLMS_BEFORE" = "true" ]; then has llms.txt; fi
-          if [ "$KIND" = "dev" ] || [ "$DEV_BEFORE" = "true" ]; then has viewer/dev/index.html; has viewer/dev/pkg/index.js; fi
-          for dir in viewer viewer/dev; do
-            if git cat-file -e "origin/gh-pages:$dir/pkg/oxedi_bg.wasm" 2>/dev/null; then echo "gh-pages holds $dir/pkg/oxedi_bg.wasm, which the page never loads"; exit 1; fi
-          done
-          # The published page must carry the policy that forbids network connections.
-          for page in viewer/index.html viewer/dev/index.html; do
-            if git cat-file -e "origin/gh-pages:$page" 2>/dev/null; then
-              git show "origin/gh-pages:$page" | grep -q "connect-src 'none'" || { echo "gh-pages $page lacks the Content-Security-Policy (connect-src 'none')"; exit 1; }
-            fi
-          done
         env:
           KIND: ${{ steps.target.outputs.kind }}
           VERSION: ${{ steps.target.outputs.version }}
-          MOVES: ${{ steps.latest.outputs.moves }}
-          RELEASE_BEFORE: ${{ steps.before.outputs.release }}
-          DEV_BEFORE: ${{ steps.before.outputs.dev }}
-          LLMS_BEFORE: ${{ steps.before.outputs.llms }}
+        run: .github/scripts/deploy-docs.sh "$KIND" ${VERSION:+"$VERSION"}
