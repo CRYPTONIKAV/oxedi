@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# One attempt at publishing the viewer to gh-pages: builds a worktree from the current
-# origin/gh-pages, replaces the viewer's folder, commits and pushes. Nothing else on gh-pages is
-# touched. Run it through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
+# One attempt at publishing the viewer (and, for a release, the site's llms.txt) to gh-pages:
+# builds a worktree from the current origin/gh-pages, replaces the viewer's folder, commits and
+# pushes. Nothing outside viewer/ and, for a release, the root llms.txt is touched. Run it
+# through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
 # Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH=false to stop
 # after the commit in the temporary worktree (a dry run that never pushes).
 set -euo pipefail
@@ -17,20 +18,28 @@ if [ "$KIND" = "release" ]; then
   mkdir -p "$dest"
   find "$dest" -mindepth 1 -maxdepth 1 ! -name dev -exec rm -rf {} +
   label="$VERSION"
+  # llms.txt at the site root follows `latest`, like the viewer; mike only copies it into each
+  # version's folder.
+  cp docs/llms.txt "$pages/llms.txt"
+  paths="viewer llms.txt"
+  what="Viewer and llms.txt"
 else
   dest="$pages/viewer/dev"
   rm -rf "$dest"
   mkdir -p "$dest"
   label="dev"
+  paths="viewer"
+  what="Viewer"
 fi
 # The page embeds the module in pkg/module.js and never fetches the raw .wasm.
 tar -C viewer --exclude=./tests --exclude=./pkg/oxedi_bg.wasm -cf - . | tar -C "$dest" -xf -
 cd "$pages"
-git add -A viewer
+# shellcheck disable=SC2086
+git add -A $paths
 if git diff --cached --quiet; then
-  echo "The viewer on gh-pages is already up to date."
+  echo "$what on gh-pages: already up to date."
 else
-  git commit -m "Viewer $label from ${GITHUB_SHA::7}"
+  git commit -m "$what $label from ${GITHUB_SHA::7}"
   if [ "${PUSH:-true}" = "true" ]; then
     git push origin HEAD:gh-pages
   else
