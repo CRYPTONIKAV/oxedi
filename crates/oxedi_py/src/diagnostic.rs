@@ -275,7 +275,8 @@ pyo3_stub_gen::export_verbatim!("oxedi._core", "_external_diagnostic");
 /// Copies of `diagnostics`, findings an external validator raised about
 /// `document`, with the datum of each one at a place a column `spec` flags
 /// as patient data masked by `mask`, as `parse` masks its own diagnostics,
-/// and the original datum replaced in the message. The inputs are left as
+/// and, in the message, the original datum and each flagged value of the
+/// finding's segment replaced by its masked form. The inputs are left as
 /// they are.
 ///
 /// Internal: adapters to external validators call it; it is not part of the
@@ -301,6 +302,8 @@ pub fn mask_findings(
     found.into_iter().map(PyDiagnostic::from).collect()
 }
 
+pyo3_stub_gen::export_verbatim!("oxedi._core", "_mask_findings");
+
 /// The diagnostics as a Python list of `Diagnostic`.
 pub fn to_list(py: Python<'_>, diagnostics: Vec<Diagnostic>) -> PyResult<Bound<'_, PyList>> {
     let list = PyList::empty(py);
@@ -309,4 +312,3 @@ pub fn to_list(py: Python<'_>, diagnostics: Vec<Diagnostic>) -> PyResult<Bound<'
     }
     Ok(list)
 }
-pyo3_stub_gen::export_verbatim!("oxedi._core", "_mask_findings");

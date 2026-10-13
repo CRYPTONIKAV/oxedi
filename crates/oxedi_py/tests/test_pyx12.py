@@ -906,5 +906,6 @@ def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():
 
 
 def test_a_mask_that_is_not_a_mask_is_refused():
-    with pytest.raises(TypeError, match="validate: mask must be an oxedi.Mask or None, not str"):
+    with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), mask="nope")
+    assert str(exc.value) == "validate: mask must be an oxedi.Mask or None, not str"
