@@ -198,10 +198,15 @@ Each also has the spec's other columns.
 === "SQL"
 
     The examples need `my_*` tables. To try them, build them from the tables of a file, with
-    keys of your own in place of the positions:
+    keys of your own in place of the positions. When the extension is not loaded yet:
+
+    <!-- docs-test: skip the runner loads the locally built extension; INSTALL needs the network -->
+    ```sql
+    INSTALL oxedi FROM community;  -- once
+    LOAD oxedi;
+    ```
 
     ```sql
-    LOAD oxedi;  -- when the extension is not loaded yet
     CREATE TABLE my_payments AS
       SELECT "row" + 1 AS pay_key, * EXCLUDE ("row", segment)
       FROM read_835('remittance.835', table_name = 'payments');
