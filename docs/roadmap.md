@@ -32,8 +32,6 @@ what people need. If something matters to you, say so in an
   file, a folder or cloud storage. Patient fields would be masked by default.
 - **A mode without patient data.** Tables where patient names and ids are replaced by keyed
   hashes, for sharing data with analysts, vendors or tests.
-- **Interest and prompt-pay discounts in claim balancing**, so claims that carry interest are
-  checked correctly ([#129](https://github.com/javillegasna/oxedi/issues/129)).
 - **More X12 transactions**, starting with the 837 claim. The same engine, a different spec,
   and a way to match claims with their payments.
 - **More recipes**, such as Spark and Ray for very large batches.

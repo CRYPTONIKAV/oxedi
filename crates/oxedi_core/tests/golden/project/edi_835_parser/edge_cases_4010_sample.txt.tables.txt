@@ -1,0 +1,94 @@
+## rows (rows: 2)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | allowed_units: binary | billed_units: binary | charge_amount: decimal128(38, 2) | code: binary | modifier: binary | paid_amount: decimal128(38, 2) | qualifier: binary | service_date_segment: int64 | service_period_end_segment: int64 | service_period_start_segment: int64
+0 | 20 | 0 | 0 | 0 | 1 | ∅ | 250.00 | 99214 | ∅ | 180.00 | HC | 21 | ∅ | ∅
+1 | 30 | 0 | 0 | 1 | 1 | ∅ | 400.00 | 99215 | ∅ | 300.00 | HC | 31 | ∅ | ∅
+
+## rows_adjustment_groups (rows: 3)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | amount: decimal128(38, 2) | code: binary | group: binary | quantity: decimal128(38, 2)
+0 | 22 | 0 | 0 | 0 | 0 | 20.00 | 2 | PR | ∅
+1 | 23 | 0 | 0 | 0 | 0 | 50.00 | 45 | CO | ∅
+2 | 32 | 0 | 0 | 1 | 1 | 100.00 | 45 | CO | ∅
+
+## rows_adjustments (rows: 3)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | amount: decimal128(38, 2) | code: binary | group: binary
+0 | 22 | 0 | 0 | 0 | 0 | 20.00 | 2 | PR
+1 | 23 | 0 | 0 | 0 | 0 | 50.00 | 45 | CO
+2 | 32 | 0 | 0 | 1 | 1 | 100.00 | 45 | CO
+
+## rows_claim_adjustments (rows: 2)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | amount: decimal128(38, 2) | code: binary | group: binary | quantity: decimal128(38, 2)
+0 | 34 | 0 | 0 | 2 | -60.00 | 45 | CO | ∅
+1 | 39 | 0 | 0 | 3 | 30.00 | 45 | CO | ∅
+
+## rows_claim_amounts (rows: 1)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | amount: decimal128(38, 2) | qualifier: binary
+0 | 29 | 0 | 0 | 1 | 7.25 | I
+
+## rows_claim_dates (rows: 9)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | date: date32 | qualifier: binary
+0 | 18 | 0 | 0 | 0 | 2024-03-01 | 232
+1 | 19 | 0 | 0 | 0 | 2024-03-01 | 233
+2 | 26 | 0 | 0 | 1 | 2023-11-01 | 232
+3 | 27 | 0 | 0 | 1 | 2023-11-01 | 233
+4 | 28 | 0 | 0 | 1 | 2023-11-20 | 050
+5 | 36 | 0 | 0 | 2 | 2023-10-15 | 232
+6 | 37 | 0 | 0 | 2 | 2023-10-15 | 233
+7 | 42 | 0 | 0 | 3 | 2023-10-15 | 232
+8 | 43 | 0 | 0 | 3 | 2023-10-15 | 233
+
+## rows_claim_entities (rows: 4)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | entity: binary | first_name: binary | identification_code: binary | identification_code_qualifier: binary | last_name: binary | type: binary
+0 | 17 | 0 | 0 | 0 | QC | NORA | BHM00071 | MI | HALVERSON | 1
+1 | 25 | 0 | 0 | 1 | QC | DANIEL | BHM00072 | MI | OKAFOR | 1
+2 | 35 | 0 | 0 | 2 | QC | ELENA | BHM00073 | MI | VASQUEZ | 1
+3 | 40 | 0 | 0 | 3 | QC | ELENA | BHM00073 | MI | VASQUEZ | 1
+
+## rows_claim_references (rows: 1)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | qualifier: binary | value: binary
+0 | 41 | 0 | 0 | 3 | F8 | BHP23950
+
+## rows_claims (rows: 4)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | charge_amount: decimal128(38, 2) | claim_type: binary | icn: binary | marker: binary | paid_amount: decimal128(38, 2) | patient_segment: int64 | rendering_provider_segment: int64 | statement_period_end_segment: int64 | statement_period_start_segment: int64 | status: binary
+0 | 16 | 0 | 0 | 250.00 | 12 | BHP24001 | MRC1001 | 180.00 | 17 | ∅ | 19 | 18 | 1
+1 | 24 | 0 | 0 | 400.00 | 12 | BHP24002 | MRC1002 | 300.00 | 25 | ∅ | 27 | 26 | 1
+2 | 33 | 0 | 0 | -300.00 | 12 | BHP23950 | MRC0950 | -240.00 | 35 | ∅ | 37 | 36 | 22
+3 | 38 | 0 | 0 | 300.00 | 12 | BHP24003 | MRC0950 | 270.00 | 40 | ∅ | 43 | 42 | 1
+
+## rows_interchanges (rows: 1)
+row: int64 | segment: int64 | authorization_information_qualifier: binary | receiver: binary | sender: binary | transmission_date: date32 | transmission_time: time32 (seconds)
+0 | 0 | 00 | MAPLERIDGEMG    | BRIGHTWAYHP     | 2024-03-15 | 10:15:00
+
+## rows_organizations (rows: 2)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | address: binary | address_segment: int64 | city: binary | identification_code: binary | location_segment: int64 | name: binary | state: binary | type: binary | zip_code: binary
+0 | 7 | 0 | 0 | 400 HARBOR BLVD | 8 | RIVERTON | ∅ | 9 | BRIGHTWAY HEALTH PLAN | OR | PR | 97001
+1 | 11 | 0 | 0 | 25 CEDAR LN | 12 | RIVERTON | 1765432103 | 13 | MAPLE RIDGE MEDICAL GROUP | OR | PE | 97002
+
+## rows_payments (rows: 1)
+row: int64 | segment: int64 | interchange: int64 | amount_paid: decimal128(38, 2) | bpr_segment: int64 | payee_segment: int64 | payer_segment: int64 | payment_method: binary | routing_number: binary | transaction_date: date32
+0 | 2 | 0 | 444.50 | 3 | 11 | 7 | ACH | 987654320 | 2024-03-18
+
+## rows_provider_adjustments (rows: 8)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | amount: decimal128(38, 2) | fiscal_period_date: date32 | provider_id: binary | reason_code: binary | reference_id: binary
+0 | 44 | 0 | 0 | -7.25 | 2024-12-31 | 1765432103 | L6 | MRC1002
+1 | 44 | 0 | 0 | 35.00 | 2024-12-31 | 1765432103 | WO | BHP23811
+2 | 44 | 0 | 0 | 12.50 | 2024-12-31 | 1765432103 | FB | BAL0301
+3 | 44 | 0 | 0 | -4.00 | 2024-12-31 | 1765432103 | CS | ADJ0302
+4 | 44 | 0 | 0 | 8.00 | 2024-12-31 | 1765432103 | 72 | RET0303
+5 | 44 | 0 | 0 | 3.00 | 2024-12-31 | 1765432103 | J1 | NR0304
+6 | 45 | 0 | 0 | -1.75 | 2024-12-31 | 1765432103 | CS | ADJ0305
+7 | 45 | 0 | 0 | 20.00 | 2024-12-31 | 1765432103 | WO | BHP23812
+
+## rows_references (rows: 0)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | qual: binary | value: binary
+
+## rows_remarks (rows: 0)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | code: binary | qual: binary
+
+## rows_service_amounts (rows: 0)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | amount: decimal128(38, 2) | qualifier: binary
+
+## rows_service_dates (rows: 2)
+row: int64 | segment: int64 | interchange: int64 | payment: int64 | claim: int64 | service: int64 | date: date32 | qualifier: binary
+0 | 21 | 0 | 0 | 0 | 0 | 2024-03-01 | 472
+1 | 31 | 0 | 0 | 1 | 1 | 2023-11-01 | 472
+

@@ -20,6 +20,8 @@ FIXTURES = [
     "blue_cross_nc_sample.txt",
     "balanced_5010_sample.txt",
     "balanced_4010_sample.txt",
+    "edge_cases_5010_sample.txt",
+    "edge_cases_4010_sample.txt",
 ]
 SAMPLES = [
     "edi835_test_davisvision.RMT",

@@ -19,6 +19,11 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   summary, tables, diagnostics, text and loops. The parser runs as WebAssembly in the page, and
   the page cannot open network connections.
 
+### Fixed
+- The documentation now describes how interest balances: a claim's interest is reported in
+  `AMT*I` and paid through `PLB` with reason code `L6`, so a claim that carries interest balances
+  under the existing rules.
+
 ## [0.5.0] - 2026-10-12
 
 ### Added
