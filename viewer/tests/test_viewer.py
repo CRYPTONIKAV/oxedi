@@ -247,3 +247,33 @@ def test_unterminated_last_segment_is_visible_in_text(viewer):
         "document.querySelector('#panel-text .textview').scrollTop = 1e9"
     )
     viewer.page.wait_for_selector("#panel-text .line .raw:text-is('ZZ*TAIL')")
+
+
+def test_hide_patient_data_masks_cells_and_csv_and_restores(viewer, tmp_path):
+    data = SAMPLE_FIXTURE.read_bytes()
+    name = b"DOE"
+    assert b"NM1*QC*1*DOE*" in data
+    viewer.open()
+    viewer.load("masked.835", data)
+    viewer.wait_loaded()
+    viewer.tab("tables")
+    assert name.decode() in text_of(viewer, "#panel-tables")
+
+    viewer.page.check("#mask")
+    viewer.page.wait_for_selector("#panel-tables:not([hidden])", state="attached")
+    viewer.tab("tables")
+    grid = text_of(viewer, "#panel-tables")
+    assert "DOE" not in grid
+    assert re.search(r"\b[0-9a-f]{16}\b", grid)
+
+    with viewer.page.expect_download() as download:
+        viewer.page.click("text=Download CSV")
+    path = tmp_path / "claims.csv"
+    download.value.save_as(path)
+    csv = path.read_bytes().decode("utf-8")
+    assert "DOE" not in csv
+    assert re.search(r"(^|,)[0-9a-f]{16}(,|\r)", csv)
+
+    viewer.page.uncheck("#mask")
+    viewer.tab("tables")
+    assert "DOE" in text_of(viewer, "#panel-tables")

@@ -91,13 +91,19 @@ async function start() {
   }
   $('version').textContent = `v${module.version()}`;
 
+  // One random key per page load: masked values match within a session only.
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  const mask = $('mask');
   const loader = createLoader({
     parse: module.parse,
+    maskKey: () => (mask.checked ? key : undefined),
     status: $('status'),
     alert: $('alert'),
     onLoad: showLoaded,
     onClear: clearViews,
   });
+
+  mask.addEventListener('change', () => loader.reparse());
 
   const input = $('file');
   input.addEventListener('change', () => {
