@@ -102,8 +102,9 @@ loop may repeat.
 Two synthetic files for the patient-data mask: copies of the balanced fixtures with one
 finding at each place a mask flags, so a masked parse has diagnostics whose datum would
 otherwise quote patient data. Same rule as above: **never edit them**. Every name, identifier
-and amount is invented. `pyx12` finds the same five in both files, and in the 5010 file also
-its `ST03`, which its 5010 map marks Not Used.
+and amount is invented. `pyx12` finds the same five in both files, with two differences: in the
+5010 file also its `ST03`, which its 5010 map marks Not Used, and in the 4010 file it reports the
+six-digit date twice, as too short and as an invalid date.
 
 | File | Bytes | Version | Line endings | Diagnostics |
 |------|-------|---------|--------------|-------------|
