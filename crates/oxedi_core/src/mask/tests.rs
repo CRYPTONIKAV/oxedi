@@ -60,7 +60,30 @@ fn text_is_deterministic_and_key_sensitive() {
     assert_ne!(a.text(Phi::Id, b"x"), b.text(Phi::Id, b"x"));
 }
 
+/// The shift worked out here from the formula, with the crates directly.
+fn expected_shift(key: &[u8], seed: &[u8]) -> i32 {
+    use hmac::{Hmac, Mac};
+    let mut mac = Hmac::<sha2::Sha256>::new_from_slice(key).unwrap();
+    mac.update(b"shift\0");
+    mac.update(seed);
+    let digest = mac.finalize().into_bytes();
+    let head = u32::from_be_bytes([digest[0], digest[1], digest[2], digest[3]]);
+    i32::try_from(head % 365).unwrap() - 182
+}
+
+#[test]
+fn shift_days_matches_the_formula_for_two_known_pairs() {
+    let cases: [(&[u8], &[u8], i32); 2] =
+        [(KEY, b"PAT1001", -26), (b"oxedi-test-key-1", b"CLM-2", 4)];
+    for (key, seed, pinned) in cases {
+        let mask = Mask::new(key, DateMode::Shift).unwrap();
+        assert_eq!(expected_shift(key, seed), pinned);
+        assert_eq!(mask.shift_days(seed), pinned);
+    }
+}
+
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(4096))]
     #[test]
     fn shift_stays_in_range(seed in proptest::collection::vec(any::<u8>(), 0..32)) {
         let mask = Mask::new(KEY, DateMode::Shift).unwrap();

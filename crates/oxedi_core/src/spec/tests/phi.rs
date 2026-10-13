@@ -270,3 +270,29 @@ fn the_flags_survive_a_json_round_trip() {
         spec.table("claims").unwrap().phi_seed()
     );
 }
+
+#[test]
+fn phi_declarations_of_the_wrong_shape_show_the_spec_error() {
+    let cases = [
+        (
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1,"phi":1}}}}"#,
+            "spec: the value at tables.t.columns.c.phi must be a string; found a number (1)",
+        ),
+        (
+            r#"{"t":{"loops":["A"],"phi_seed":3,"columns":{"c":{"segment":"AA","element":1,"phi":"id"}}}}"#,
+            "spec: the value at tables.t.phi_seed must be a string; found a number (3)",
+        ),
+        (
+            r#"{"t":{"loops":["A"],"phi_seed":["c"],"columns":{"c":{"segment":"AA","element":1,"phi":"id"}}}}"#,
+            "spec: the value at tables.t.phi_seed must be a string; found an array (1 items)",
+        ),
+    ];
+    for (tables, expected) in cases {
+        assert_eq!(spec_with(tables).unwrap_err().to_string(), expected);
+    }
+    let spec = spec_with(
+        r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1,"phi":null}}}}"#,
+    )
+    .unwrap();
+    assert_eq!(spec.table("t").unwrap().phi(0), None);
+}
