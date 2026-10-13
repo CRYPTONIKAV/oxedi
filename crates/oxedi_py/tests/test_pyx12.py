@@ -285,7 +285,7 @@ def test_a_masked_failure_keeps_the_exception_type_and_drops_its_text(monkeypatc
     where = "it was processing segment #5; the last it completed is #4 (reported by pyx12)"
     assert plain.rule == f"could not finish validating: ValueError: SECRETNAME; {where}"
     assert masked.rule == (
-        "could not finish validating: ValueError (its message is not shown with a mask);"
+        "could not finish validating: ValueError, whose message is not shown with a mask;"
         f" {where}"
     )
     assert "SECRETNAME" not in masked.rule
@@ -310,7 +310,7 @@ def test_a_masked_error_tree_failure_keeps_the_exception_type_and_drops_its_text
     )
     assert masked.rule == (
         "could not finish validating: its error tree could not be read"
-        f" (ValueError (its message is not shown with a mask)); {where}"
+        f" (ValueError, whose message is not shown with a mask); {where}"
     )
     assert "SECRETNAME" not in masked.rule
     assert place(masked) == place(plain)

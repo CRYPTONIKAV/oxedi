@@ -49,8 +49,8 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   values stays (with `XAB` and `ABYZ` flagged, `QXABYZ` keeps `QX`), and two short values that
   together spell a word of the message replace it.
 - With `mask=`, a `validate` finding for an exception inside pyx12 keeps the exception's type
-  and leaves out its text (`could not finish validating: ValueError (its message is not shown
-  with a mask); ...`, also when pyx12's error tree cannot be read), since that text could quote
+  and leaves out its text (`could not finish validating: ValueError, whose message is not shown
+  with a mask; ...`, also when pyx12's error tree cannot be read), since that text could quote
   any value of the file.
 
 ### Fixed

@@ -119,9 +119,9 @@ for d in validate(data, mask=oxedi.Mask(key)):
 pyx12 still reads the original file: the mask hides what `validate` returns, not what pyx12 is
 given. A pyx12 message about a length still states the length of the original value. When pyx12
 raises an exception, its finding keeps the exception's type and leaves out its text, which could
-quote any value of the file: `could not finish validating: ValueError (its message is not shown
-with a mask); ...`, or `its error tree could not be read (ValueError (its message is not shown
-with a mask))` when pyx12's error tree cannot be read.
+quote any value of the file: `could not finish validating: ValueError, whose message is not shown
+with a mask; ...`, or `its error tree could not be read (ValueError, whose message is not shown
+with a mask)` when pyx12's error tree cannot be read.
 
 ## Use it in SQL
 

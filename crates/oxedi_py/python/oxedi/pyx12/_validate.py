@@ -323,9 +323,9 @@ def validate(
     findings' loop paths, as in ``parse(source, spec=spec)``. A failure
     finding for an exception inside pyx12, whose text no flagged place
     points at, keeps the exception's type and drops its text: ``could not
-    finish validating: ValueError (its message is not shown with a mask);
-    ...``, or ``its error tree could not be read (ValueError (its message
-    is not shown with a mask))``. pyx12 still reads the original file: the
+    finish validating: ValueError, whose message is not shown with a mask;
+    ...``, or ``its error tree could not be read (ValueError, whose message
+    is not shown with a mask)``. pyx12 still reads the original file: the
     mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
     of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,
     and so does ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
@@ -353,7 +353,7 @@ def _reason(err: BaseException, masked: bool) -> str:
     shown, as the text may quote a value of the file that no flagged place
     can point at."""
     if masked:
-        return f"{type(err).__name__} (its message is not shown with a mask)"
+        return f"{type(err).__name__}, whose message is not shown with a mask"
     return f"{type(err).__name__}: {err}"
 
 
