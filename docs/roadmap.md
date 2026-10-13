@@ -16,22 +16,22 @@ what people need. If something matters to you, say so in an
 - **Validate with pyx12** and get its findings in the same shape as oxedi's own. See
   [Validating with pyx12](python/pyx12.md).
 - **Adapt to your payers** by changing the spec, which is plain data. See [The spec](customize/spec.md).
+- **Try it in your browser.** Drop an 835 on the [viewer](https://javillegas.dev/oxedi/viewer/)
+  and see its payments, tables, problems and loops. The file is read in the browser and never
+  uploaded, so it is safe to use with real remittances. See [Try it in your browser](start/viewer.md).
 - **Move from edi-835-parser** without rewriting your code. See
   [Migrating from edi-835-parser](migrating-from-edi-835-parser.md).
 
 ## Next
 
-- **A viewer in the browser.** Drop an 835 on a web page and see its payments, tables,
-  problems and loops. The file is read in the browser and never uploaded, so it is safe to use
-  with real remittances. No install needed to try oxedi.
+- **A mode without patient data.** Tables where patient names and ids are replaced by keyed
+  hashes, for sharing data with analysts, vendors or tests.
 
 ## Being considered
 
 - **Ask an AI assistant about your remittances.** A local tool server that lets an assistant
   answer questions such as totals by payer, denied claims or a claim's adjustments, over a
   file, a folder or cloud storage. Patient fields would be masked by default.
-- **A mode without patient data.** Tables where patient names and ids are replaced by keyed
-  hashes, for sharing data with analysts, vendors or tests.
 - **More X12 transactions**, starting with the 837 claim. The same engine, a different spec,
   and a way to match claims with their payments.
 - **More recipes**, such as Spark and Ray for very large batches.
