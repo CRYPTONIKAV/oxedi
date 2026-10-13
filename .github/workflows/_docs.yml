@@ -1,7 +1,8 @@
 name: Docs
 
 # The site in strict mode and every python and sql block of the docs and README (the SQL ones
-# load the DuckDB extension built here). Called by ci.yml and nightly.yml; deploying is docs.yml.
+# load the DuckDB extension built here), and the mike deploy of docs.yml into a local branch that
+# is never pushed. Called by ci.yml and nightly.yml; deploying is docs.yml.
 on:
   workflow_call:
 
@@ -16,6 +17,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
+          fetch-depth: 0 # the dry run deploys on top of gh-pages
       - uses: ./.github/actions/setup-rust
         with:
           cache-key: docs
@@ -34,3 +36,21 @@ jobs:
         run: make docs
       - name: Examples
         run: make docs-test
+      - name: Docs tools on PATH
+        # mike runs mkdocs by name, so the venv's bin must be on PATH.
+        run: echo "$PWD/.venv-docs/bin" >> "$GITHUB_PATH"
+      # The deploy steps of docs.yml without --push: mike commits to the local gh-pages branch,
+      # which starts from origin/gh-pages when that exists. The version is one that never exists
+      # on the site, and nothing here pushes.
+      - name: Deploy (dry run, no push)
+        env:
+          NO_MKDOCS_2_WARNING: "true"
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin gh-pages; then git branch -f gh-pages origin/gh-pages; fi
+          mike deploy --update-aliases 0.0 latest
+          mike set-default latest
+          git show gh-pages:0.0/index.html > /dev/null
+          git show gh-pages:versions.json | jq -e 'any(.[]; .version == "0.0" and (.aliases | index("latest")))' > /dev/null
