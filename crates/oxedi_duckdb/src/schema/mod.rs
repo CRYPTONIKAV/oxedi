@@ -1,6 +1,8 @@
 //! The DuckDB type of each core column type, and owned logical type
 //! handles: those DuckDB is given and those it hands back.
 
+use std::fmt;
+
 use libduckdb_sys as ffi;
 use oxedi_core::ColumnType;
 
@@ -39,25 +41,31 @@ impl SqlType {
         kind: ColumnType,
         binary: bool,
     ) -> Result<SqlType, ReadError> {
+        SqlType::try_of(kind, binary).ok_or_else(|| ReadError::UnsupportedType {
+            table: table.to_owned(),
+            column: column.to_owned(),
+            kind,
+        })
+    }
+
+    /// The DuckDB type of a core column; `binary` turns text into `BLOB`.
+    /// `None` for a decimal DuckDB does not store as a 128-bit integer.
+    pub fn try_of(kind: ColumnType, binary: bool) -> Option<SqlType> {
         match kind {
-            ColumnType::Binary if binary => Ok(SqlType::Blob),
-            ColumnType::Binary => Ok(SqlType::Varchar),
-            ColumnType::Int64 { .. } => Ok(SqlType::Bigint),
+            ColumnType::Binary if binary => Some(SqlType::Blob),
+            ColumnType::Binary => Some(SqlType::Varchar),
+            ColumnType::Int64 { .. } => Some(SqlType::Bigint),
             ColumnType::Decimal128 { precision, scale }
                 if HUGEINT_WIDTHS.contains(&precision) && scale <= precision =>
             {
-                Ok(SqlType::Decimal {
+                Some(SqlType::Decimal {
                     width: precision,
                     scale,
                 })
             }
-            ColumnType::Decimal128 { .. } => Err(ReadError::UnsupportedType {
-                table: table.to_owned(),
-                column: column.to_owned(),
-                kind,
-            }),
-            ColumnType::Date32 => Ok(SqlType::Date),
-            ColumnType::Time32 => Ok(SqlType::Time),
+            ColumnType::Decimal128 { .. } => None,
+            ColumnType::Date32 => Some(SqlType::Date),
+            ColumnType::Time32 => Some(SqlType::Time),
         }
     }
 
@@ -95,6 +103,20 @@ impl SqlType {
     }
 }
 
+impl fmt::Display for SqlType {
+    /// The type as DuckDB's `DESCRIBE` writes it.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SqlType::Bigint => write!(f, "BIGINT"),
+            SqlType::Varchar => write!(f, "VARCHAR"),
+            SqlType::Blob => write!(f, "BLOB"),
+            SqlType::Date => write!(f, "DATE"),
+            SqlType::Time => write!(f, "TIME"),
+            SqlType::Decimal { width, scale } => write!(f, "DECIMAL({width},{scale})"),
+        }
+    }
+}
+
 /// The `ANY` type, for the path parameter.
 pub fn any_type() -> LogicalType {
     // SAFETY: creating a logical type from a primitive id has no precondition.
@@ -104,6 +126,12 @@ pub fn any_type() -> LogicalType {
 /// The `VARCHAR` type.
 pub fn varchar_type() -> LogicalType {
     SqlType::Varchar.logical_type()
+}
+
+/// The `INTEGER` type.
+pub fn integer_type() -> LogicalType {
+    // SAFETY: creating a logical type from a primitive id has no precondition.
+    LogicalType(unsafe { ffi::duckdb_create_logical_type(ffi::DUCKDB_TYPE_DUCKDB_TYPE_INTEGER) })
 }
 
 /// The `BOOLEAN` type.

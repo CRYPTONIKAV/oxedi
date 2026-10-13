@@ -108,6 +108,9 @@ What the writer tolerates and what it refuses is listed in
 [What the writer accepts](../python/own-tables.md#what-the-writer-accepts). It is the same for
 `COPY`, with `INTEGER` for `BIGINT` and `ENUM` or `BLOB` for text as the SQL types.
 
+`oxedi_schema()` lists the columns and types of each table, and which columns refer to which
+table, without a file; see [See the columns without a file](reading.md#see-the-columns-without-a-file).
+
 To number rows from tables with your own keys, see
 [Writing from your tables](../python/own-tables.md#translate-your-keys) (SQL tab).
 [Types and limits](limits.md) lists the accepted types per column.

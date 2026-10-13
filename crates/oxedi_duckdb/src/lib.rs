@@ -1,6 +1,6 @@
 //! `oxedi`, a DuckDB extension over the oxedi EDI 835 parser core.
 //!
-//! It registers a table function and a copy format. The table function:
+//! It registers two table functions and a copy format. The first:
 //!
 //! ```sql
 //! read_835(path, table_name := 'claims', filename := false, version := NULL,
@@ -26,6 +26,13 @@
 //! `http://` and `https://` paths are never patterns. Plain paths and lists
 //! of them are read through the caller's own file system and secrets.
 //!
+//! The second, `oxedi_schema(version := '5010', binary := false)`, needs no
+//! file: it returns one row per column of every table `read_835` returns
+//! for that version (`diagnostics` included): `table_name`, `column_name`,
+//! `column_type` (the DuckDB type `read_835` gives it with the same
+//! `binary`), `parent` (the table a reference column points at, else NULL)
+//! and `position` (1-based, in the table).
+//!
 //! The copy format `edi835` writes the tables of the spec back into an 835:
 //!
 //! ```sql
@@ -47,6 +54,7 @@
 //!
 //! - `builtins`: the built-in specs and the schema of their tables.
 //! - `copy`: the `edi835` copy format.
+//! - `describe`: the `oxedi_schema` table function.
 //! - `diagnostics`: the `diagnostics` table.
 //! - `error`: the errors `read_835` reports.
 //! - `files`: reading and writing files through DuckDB's file system.
@@ -59,6 +67,7 @@
 
 mod builtins;
 mod copy;
+mod describe;
 mod diagnostics;
 mod error;
 mod files;
@@ -115,6 +124,8 @@ unsafe fn load(
     let builtins = Arc::new(builtins::Builtins::load());
     // SAFETY: `connection` is the live connection created above.
     let registered = unsafe { function::register(connection, Arc::clone(&builtins)) }
+        // SAFETY: as above.
+        .and_then(|()| unsafe { describe::register(connection, Arc::clone(&builtins)) })
         // SAFETY: as above.
         .and_then(|()| unsafe { copy::register(connection, builtins) });
     // SAFETY: `connection` was created above and is closed once; the

@@ -1,0 +1,295 @@
+# name: test/sql/oxedi_schema.test
+# description: oxedi_schema describes every table read_835 returns, with the types DESCRIBE gives,
+#              for both versions and with binary; reference columns name their table
+# group: [oxedi]
+
+require oxedi
+
+# ---- the columns and types equal DESCRIBE of read_835, table by table ----
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'adjustments', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'claims', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'claims');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'payments', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'payments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'provider_adjustments', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'provider_adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'services', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'services');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'diagnostics', version := '5010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010') WHERE table_name = 'diagnostics');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'adjustments', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'claims', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'claims');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'payments', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'payments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'provider_adjustments', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'provider_adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'services', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'services');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', table_name := 'diagnostics', version := '5010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '5010', binary := true) WHERE table_name = 'diagnostics');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'adjustments', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'claims', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'claims');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'payments', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'payments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'provider_adjustments', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'provider_adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'services', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'services');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'diagnostics', version := '4010')))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010') WHERE table_name = 'diagnostics');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'adjustments', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'claims', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'claims');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'payments', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'payments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'provider_adjustments', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'provider_adjustments');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'services', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'services');
+----
+true
+
+query I
+SELECT (SELECT string_agg(column_name || ' ' || column_type, ', ')
+        FROM (DESCRIBE SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_4010_sample.txt', table_name := 'diagnostics', version := '4010', binary := true)))
+     = (SELECT string_agg(column_name || ' ' || column_type, ', ' ORDER BY position)
+        FROM oxedi_schema(version := '4010', binary := true) WHERE table_name = 'diagnostics');
+----
+true
+
+# ---- the default version is 5010, as for read_835; NULL is the default too ----
+
+query I
+SELECT count(*) FROM (
+    (SELECT * FROM oxedi_schema() EXCEPT SELECT * FROM oxedi_schema(version := '5010'))
+    UNION ALL
+    (SELECT * FROM oxedi_schema(version := '5010') EXCEPT SELECT * FROM oxedi_schema())
+    UNION ALL
+    (SELECT * FROM oxedi_schema(version := NULL) EXCEPT SELECT * FROM oxedi_schema()));
+----
+0
+
+# ---- the tables in spec order, diagnostics last ----
+
+query T
+SELECT table_name FROM oxedi_schema() WHERE position = 1;
+----
+adjustments
+claims
+payments
+provider_adjustments
+services
+diagnostics
+
+query TI rowsort
+SELECT table_name, count(*) FROM oxedi_schema() GROUP BY table_name;
+----
+adjustments	9
+claims	28
+diagnostics	10
+payments	29
+provider_adjustments	8
+services	13
+
+# ---- reference columns name the table whose row they hold ----
+
+query TTTI
+SELECT table_name, column_name, parent, position FROM oxedi_schema() WHERE parent IS NOT NULL;
+----
+adjustments	payment	payments	3
+adjustments	claim	claims	4
+adjustments	service	services	5
+claims	payment	payments	3
+provider_adjustments	payment	payments	3
+services	payment	payments	3
+services	claim	claims	4
+
+query TTTTI
+SELECT * FROM oxedi_schema() WHERE table_name = 'claims' AND position <= 4;
+----
+claims	row	BIGINT	NULL	1
+claims	segment	BIGINT	NULL	2
+claims	payment	BIGINT	payments	3
+claims	charge_amount	DECIMAL(38,2)	NULL	4
+
+query TT
+SELECT column_name, typeof(position) FROM oxedi_schema() LIMIT 1;
+----
+row	INTEGER
+
+# ---- errors ----
+
+statement error
+SELECT * FROM oxedi_schema(version := '3070');
+----
+oxedi_schema: unknown version "3070"; version must be one of "5010", "4010"
+
+statement error
+SELECT * FROM oxedi_schema(binary := NULL);
+----
+oxedi_schema: binary must not be NULL; leave it out to use its default
+
+# ---- inside a table macro, as for read_835 ----
+
+statement error
+CREATE MACRO schema_pinned(v) AS TABLE SELECT * FROM oxedi_schema(version := v);
+----
+oxedi_schema: version must be a constant string; a table macro passed its parameter "v" as "0_macro_parametersschema_pinned.v"; DuckDB does not substitute a macro parameter given with := or =>, so write version = v
+
+statement ok
+CREATE MACRO schema_of(v) AS TABLE SELECT * FROM oxedi_schema(version := v::VARCHAR);
+
+query I
+SELECT count(*) FROM schema_of('4010') WHERE table_name = 'claims';
+----
+28
+
+statement ok
+CREATE MACRO schema_eq(v) AS TABLE SELECT * FROM oxedi_schema(version = v);
+
+query I
+SELECT count(*) FROM schema_eq('4010') WHERE table_name = 'claims';
+----
+28

@@ -18,7 +18,8 @@ use crate::diagnostics;
 use crate::error::ReadError;
 use crate::files::FileSystem;
 use crate::schema::SqlType;
-use write::{Place, Vector};
+use write::Place;
+pub(crate) use write::Vector;
 
 /// The column every table carries with each row's ordinal.
 const ROW_COLUMN: &str = "row";

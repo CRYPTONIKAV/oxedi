@@ -7,6 +7,7 @@ import datetime
 import decimal
 import pandas
 import polars
+import pyarrow
 import typing
 import typing_extensions
 __all__ = [
@@ -367,6 +368,15 @@ class Spec:
     def to_json(self) -> builtins.str:
         r"""
         The spec as JSON text.
+        """
+    def schema(self) -> builtins.dict[builtins.str, pyarrow.Schema]:
+        r"""
+        The schema of every table of the spec, by name, in table order: one
+        `pyarrow.Schema` per table, with the column names and Arrow types the
+        tables of a parse with this spec have. A reference column (such as
+        `claim` in `services`) holds the `row` of a row in another table, and
+        its field metadata names that table under the key `oxedi.parent`.
+        Needs pyarrow.
         """
     def loops(self) -> builtins.list[builtins.str]:
         r"""

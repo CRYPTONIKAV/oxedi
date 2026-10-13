@@ -38,7 +38,7 @@ pub struct Options {
 }
 
 /// A named parameter as the call gave it.
-enum Named {
+pub(crate) enum Named {
     /// Not given.
     Absent,
     /// Given as SQL NULL.
@@ -93,7 +93,7 @@ impl Options {
 /// # Safety
 ///
 /// `info` must be a live bind info.
-unsafe fn named(info: ffi::duckdb_bind_info, name: &str) -> Named {
+pub(crate) unsafe fn named(info: ffi::duckdb_bind_info, name: &str) -> Named {
     let Ok(name) = CString::new(name) else {
         return Named::Absent;
     };
@@ -126,11 +126,7 @@ const MACRO_PARAMETERS: &str = "0_macro_parameters";
 /// defer, so the prefix is the only sign that the value is not a constant.
 /// A real table name or version never starts with it.
 fn constant(name: &'static str, text: String) -> Result<String, ReadError> {
-    let parameter = text
-        .strip_prefix(MACRO_PARAMETERS)
-        .and_then(|qualified| qualified.rsplit_once('.'))
-        .map(|(_, parameter)| parameter.to_owned());
-    match parameter {
+    match macro_parameter(&text) {
         Some(parameter) => Err(ReadError::MacroParameter {
             name,
             parameter,
@@ -138,6 +134,14 @@ fn constant(name: &'static str, text: String) -> Result<String, ReadError> {
         }),
         None => Ok(text),
     }
+}
+
+/// The name of the table macro parameter `text` stands for, when it is one
+/// (see [`constant`]).
+pub(crate) fn macro_parameter(text: &str) -> Option<String> {
+    text.strip_prefix(MACRO_PARAMETERS)
+        .and_then(|qualified| qualified.rsplit_once('.'))
+        .map(|(_, parameter)| parameter.to_owned())
 }
 
 /// The paths of a VARCHAR or a list of VARCHAR.

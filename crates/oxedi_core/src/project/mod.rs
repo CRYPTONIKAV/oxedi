@@ -49,7 +49,8 @@
 //! below the limit.
 //!
 //! The module is split by responsibility: `plan` holds the per-table plans
-//! built from the spec; `check` the element check and the parsed values it
+//! built from the spec; `schema` the columns of each table, known from the
+//! spec alone; `check` the element check and the parsed values it
 //! hands to the columns; `fill` the row filling, the diagnostic helpers and
 //! the text read of an element; `carry` the values read from loops above a
 //! table's anchor. This file holds the projector, its event
@@ -59,6 +60,9 @@ mod carry;
 mod check;
 mod fill;
 mod plan;
+mod schema;
+#[cfg(test)]
+mod schema_tests;
 #[cfg(test)]
 mod source_tests;
 #[cfg(test)]
@@ -72,13 +76,13 @@ use crate::delimiters::Delimiters;
 use crate::diagnostic::Diagnostic;
 use crate::engine::Event;
 use crate::segment::Segment;
-use crate::spec::{LoopId, OccurrenceDef, ROW_COLUMN, SEGMENT_COLUMN, Spec};
+use crate::spec::{LoopId, OccurrenceDef, Spec};
 
 use carry::Carried;
 use check::Checked;
 use fill::append;
-pub use plan::table_columns;
 use plan::{Candidate, ElementPlan, Plans, column_type};
+pub use schema::{ColumnSchema, TableSchema, spec_schema, table_columns, table_schema};
 pub use unknown::UnknownTable;
 
 /// A column value of a row being collected.
@@ -197,20 +201,7 @@ impl<'s> Projector<'s> {
                 .iter()
                 .map(|(_, source)| column_type(spec, def, source))
                 .collect();
-            let index_column = ColumnType::Int64 { scale: 0 };
-            let mut columns = vec![
-                (ROW_COLUMN.to_string(), index_column),
-                (SEGMENT_COLUMN.to_string(), index_column),
-            ];
-            for &above in &def.ancestors {
-                columns.push((spec.tables()[above].reference.clone(), index_column));
-            }
-            columns.extend(
-                def.columns
-                    .iter()
-                    .map(|(name, _)| name.clone())
-                    .zip(kinds.iter().copied()),
-            );
+            let columns = table_columns(spec, def);
             for &id in &def.loops {
                 match def.segment {
                     Some(_) => segment_tables[id.index()].push(index),

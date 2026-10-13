@@ -1,7 +1,7 @@
 //! The built-in 835 specs `read_835` chooses from, each with the columns of
 //! every table it projects.
 
-use oxedi_core::{ColumnType, Delimiters, Processor, Segment, Spec};
+use oxedi_core::{ColumnType, Segment, Spec, spec_schema};
 
 /// The columns of one projected table, in order.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,6 +10,9 @@ pub struct TableSchema {
     pub name: String,
     /// Each column's name and core type.
     pub columns: Vec<(String, ColumnType)>,
+    /// Per column, in the same order: the table a reference column points
+    /// at, `None` for every other column.
+    pub parents: Vec<Option<String>>,
 }
 
 /// One built-in spec and the schema of its tables.
@@ -44,19 +47,21 @@ impl Builtin {
     }
 }
 
-/// The tables a spec projects, read from a processor that saw no segment.
+/// The tables a spec projects, as the core describes them.
 fn schema_of(spec: &Spec) -> Vec<TableSchema> {
-    let delimiters = Delimiters::new(b'*', b':', b'~');
-    Processor::new(spec, &delimiters)
-        .take_tables()
-        .iter()
-        .map(|table| TableSchema {
-            name: table.name().to_owned(),
-            columns: table
-                .columns()
-                .iter()
-                .map(|(name, data)| (name.clone(), data.kind()))
-                .collect(),
+    spec_schema(spec)
+        .into_iter()
+        .map(|table| {
+            let (columns, parents) = table
+                .columns
+                .into_iter()
+                .map(|column| ((column.name, column.kind), column.parent))
+                .unzip();
+            TableSchema {
+                name: table.name,
+                columns,
+                parents,
+            }
         })
         .collect()
 }

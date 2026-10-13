@@ -72,7 +72,7 @@ impl Vector {
     }
 
     /// Marks row `index` NULL.
-    fn set_null(&mut self, index: usize) {
+    pub fn set_null(&mut self, index: usize) {
         // SAFETY: the vector is live; ensuring a writable validity mask
         // before reading it is what the C API requires.
         unsafe {
@@ -95,6 +95,25 @@ impl Vector {
                 bytes.as_ptr().cast::<c_char>(),
                 bytes.len() as ffi::idx_t,
             );
+        }
+    }
+
+    /// Stores `text` as the VARCHAR of row `index`.
+    pub fn set_text(&mut self, index: usize, text: &str) {
+        if index < self.capacity {
+            self.set_bytes(index, text.as_bytes());
+        }
+    }
+
+    /// Stores `value` as the INTEGER of row `index`.
+    ///
+    /// # Safety
+    ///
+    /// The vector must be an INTEGER vector.
+    pub unsafe fn set_integer(&mut self, index: usize, value: i32) {
+        // SAFETY: INTEGER vectors store `i32` (caller contract).
+        if let Some(slot) = unsafe { self.values::<i32>(self.capacity) }.get_mut(index) {
+            *slot = value;
         }
     }
 

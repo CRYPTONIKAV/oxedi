@@ -46,27 +46,60 @@ Order matters:
 
 ## See the columns a table needs
 
-Parse any file and look at its tables. [Tables and columns](../reference/tables.md) lists them
-all.
+Ask the spec. No file is needed, and a patched spec describes its own columns.
+[Tables and columns](../reference/tables.md) lists the built-in ones.
 
 === "Python"
+
+    `Spec.schema()` maps each table name to a `pyarrow.Schema`, with the Arrow types `parse`
+    gives that table. A reference column (`payment`, `claim`, `service`) holds the `row` of
+    another table, and its field metadata names that table under `oxedi.parent`. It needs
+    pyarrow.
 
     ```python
     import oxedi
 
-    result = oxedi.parse_file("remittance.835")
-    print(result.tables["claims"].to_polars().schema)
+    schemas = oxedi.Spec.builtin().schema()
+    claims = schemas["claims"]
+    print(claims.field("charge_amount").type)
+    print(claims.field("payment").metadata)
     ```
+
+    ```text
+    decimal128(38, 2)
+    {b'oxedi.parent': b'payments'}
+    ```
+
+    Pass the spec you write with, such as `Spec.builtin("4010")` or a patched one.
 
 === "SQL"
 
+    `oxedi_schema()` returns one row per column, with the type `read_835` gives it. `parent`
+    names the table a reference column points at.
+
     ```sql
-    DESCRIBE SELECT * FROM read_835('remittance.835', table_name := 'claims');
+    SELECT column_name, column_type, parent
+    FROM oxedi_schema(version := '5010')
+    WHERE table_name = 'claims' AND position <= 4;
     ```
 
-`result.tables["claims"].columns` gives the names alone. A schema that does not need a file is
-tracked in
-[#138](https://github.com/javillegasna/oxedi/issues/138).
+    ```text
+    ┌───────────────┬───────────────┬──────────┐
+    │  column_name  │  column_type  │  parent  │
+    │    varchar    │    varchar    │ varchar  │
+    ├───────────────┼───────────────┼──────────┤
+    │ row           │ BIGINT        │ NULL     │
+    │ segment       │ BIGINT        │ NULL     │
+    │ payment       │ BIGINT        │ payments │
+    │ charge_amount │ DECIMAL(38,2) │ NULL     │
+    └───────────────┴───────────────┴──────────┘
+    ```
+
+    It also lists the `diagnostics` table, which `read_835` can return but `COPY` does not
+    write. See [Reading with SQL](../duckdb/reading.md#see-the-columns-without-a-file).
+
+Neither says which columns a valid file requires: the writer reports a missing required element
+by table, row and column.
 
 ## Translate your keys
 
