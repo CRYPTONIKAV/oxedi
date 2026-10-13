@@ -29,6 +29,13 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   field metadata of a reference column (`payment`, `claim`, `service`) names the table it points
   at under `oxedi.parent`. It needs pyarrow.
 
+### Changed
+- A spec patch that removes or unflags `claims.patient_id` now needs `"phi_seed"` cleared
+  (`"phi_seed": null`) or pointed at another `id` column in the same patch; otherwise it raises
+  `SpecError`, with or without a mask.
+- `provider_adjustments.reference_id` is flagged as an `id`, so a `PLB` reference that equals a
+  claim number gets the same token as `claims.claim_id`.
+
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in
   `AMT*I` and paid through `PLB` with reason code `L6`, so a claim that carries interest balances

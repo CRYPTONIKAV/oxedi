@@ -100,6 +100,11 @@ SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', 
 read_835: mask_key: the mask key must be at least 16 bytes long; got 5
 
 statement error
+SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := '');
+----
+read_835: mask_key: the mask key must be at least 16 bytes long; got 0
+
+statement error
 SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := 'month');
 ----
 read_835: mask_dates: the mask date mode must be "year", "shift" or "keep"; got "month"
@@ -112,7 +117,7 @@ read_835: mask_dates "year" was given without mask_key; mask_dates only chooses 
 statement error
 SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := NULL);
 ----
-read_835: mask_key must not be NULL; leave it out to use its default
+read_835: mask_key must not be NULL; leave it out to read without masking, or give a key of at least 16 bytes (a NULL often means a variable is not set)
 
 statement error
 SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := NULL);

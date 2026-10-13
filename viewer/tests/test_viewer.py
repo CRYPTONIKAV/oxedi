@@ -6,6 +6,7 @@ import re
 
 import oxedi
 import pytest
+from playwright.sync_api import expect
 from conftest import CSP, FIXTURES, SAMPLES
 
 SAMPLE_FIXTURE = FIXTURES / "balanced_5010_sample.txt"
@@ -261,6 +262,11 @@ def test_hide_patient_data_masks_cells_and_csv_and_restores(viewer, tmp_path):
 
     viewer.page.check("#mask")
     viewer.page.wait_for_selector("#panel-tables:not([hidden])", state="attached")
+    # The re-parse is asynchronous: wait for a token before reading the grid. (The page's
+    # CSP forbids eval, so this uses an expectation, not wait_for_function.)
+    panel = viewer.page.locator("#panel-tables")
+    expect(panel).not_to_contain_text("DOE")
+    expect(panel).to_contain_text(re.compile(r"[0-9a-f]{16}"))
     viewer.tab("tables")
     grid = text_of(viewer, "#panel-tables")
     assert "DOE" not in grid
@@ -275,6 +281,7 @@ def test_hide_patient_data_masks_cells_and_csv_and_restores(viewer, tmp_path):
     assert re.search(r"(^|,)[0-9a-f]{16}(,|\r)", csv)
 
     viewer.page.uncheck("#mask")
+    expect(viewer.page.locator("#panel-tables")).to_contain_text("DOE")
     viewer.tab("tables")
     assert "DOE" in text_of(viewer, "#panel-tables")
 

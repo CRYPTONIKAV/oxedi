@@ -34,7 +34,6 @@ mod occurrence_error;
 mod occurrences;
 mod patch;
 mod phi;
-
 mod raw;
 mod render;
 mod segments;

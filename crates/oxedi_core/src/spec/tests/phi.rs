@@ -133,11 +133,11 @@ fn phi_errors_display_the_rule_and_the_datum() {
             TableDefError::UnknownPhiSeed {
                 name: "nope".into(),
             },
-            "\"phi_seed\" names column \"nope\", which the table does not have",
+            "\"phi_seed\" names column \"nope\", which the table does not have; name an existing column flagged \"phi\": \"id\", or set \"phi_seed\": null",
         ),
         (
             TableDefError::PhiSeedNotId { name: "c".into() },
-            "\"phi_seed\" names column \"c\", which is not flagged \"phi\": \"id\"",
+            "\"phi_seed\" names column \"c\", which is not flagged \"phi\": \"id\"; flag it \"id\", name another \"id\" column, or set \"phi_seed\": null",
         ),
     ];
     for (error, expected) in cases {
@@ -191,7 +191,7 @@ fn flagged(spec: &Spec) -> Vec<String> {
 }
 
 #[test]
-fn the_built_in_specs_flag_the_ten_patient_columns() {
+fn the_built_in_specs_flag_the_eleven_patient_columns() {
     let expected = [
         "claims.claim_id=id",
         "claims.group_number=id",
@@ -201,6 +201,7 @@ fn the_built_in_specs_flag_the_ten_patient_columns() {
         "claims.payer_control_number=id",
         "claims.statement_from=date",
         "claims.statement_to=date",
+        "provider_adjustments.reference_id=id",
         "services.line_item_control_number=id",
         "services.service_date=date",
     ];

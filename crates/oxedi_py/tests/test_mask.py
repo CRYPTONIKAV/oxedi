@@ -104,13 +104,21 @@ def test_parse_file_masks(tmp_path):
 def test_a_short_key_is_refused_with_the_core_message():
     with pytest.raises(ValueError) as info:
         oxedi.Mask(b"x" * 15)
-    assert "15" in str(info.value) and "16" in str(info.value)
+    assert str(info.value) == "the mask key must be at least 16 bytes long; got 15"
+
+
+def test_an_empty_key_is_refused_with_the_core_message():
+    with pytest.raises(ValueError) as info:
+        oxedi.Mask(b"")
+    assert str(info.value) == "the mask key must be at least 16 bytes long; got 0"
 
 
 def test_an_unknown_date_mode_is_refused():
     with pytest.raises(ValueError) as info:
         oxedi.Mask(KEY, dates="month")
-    assert '"month"' in str(info.value) or "month" in str(info.value)
+    assert str(info.value) == (
+        'the mask date mode must be "year", "shift" or "keep"; got "month"'
+    )
 
 
 def test_the_repr_does_not_show_the_key():

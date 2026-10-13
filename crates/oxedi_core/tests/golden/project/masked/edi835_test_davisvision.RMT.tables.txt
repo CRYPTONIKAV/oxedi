@@ -13,7 +13,7 @@ row: int64 | segment: int64 | credit_debit_flag: binary | handling_code: binary 
 
 ## provider_adjustments (rows: 1)
 row: int64 | segment: int64 | payment: int64 | amount: decimal128(38, 2) | fiscal_period_date: date32 | provider_id: binary | reason_code: binary | reference_id: binary
-0 | 29 | 0 | -170.00 | 2024-01-01 | 878324429 | FB | YMUTWU 04459 VUQ URE 8.61 NJX
+0 | 29 | 0 | -170.00 | 2024-01-01 | 878324429 | FB | a76a9ae01c55cbb4
 
 ## services (rows: 2)
 row: int64 | segment: int64 | payment: int64 | claim: int64 | allowed_amount: decimal128(38, 2) | charge_amount: decimal128(38, 2) | line_item_control_number: binary | original_units: decimal128(38, 2) | payment_amount: decimal128(38, 2) | procedure_code: binary | procedure_qualifier: binary | service_date: date32 | units_paid: decimal128(38, 2)

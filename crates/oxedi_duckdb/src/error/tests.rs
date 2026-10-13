@@ -253,6 +253,11 @@ fn null_option() {
         text(ReadError::NullOption { name: "table_name" }),
         "read_835: table_name must not be NULL; leave it out to use its default"
     );
+    assert_eq!(
+        text(ReadError::NullOption { name: "mask_key" }),
+        "read_835: mask_key must not be NULL; leave it out to read without masking, \
+         or give a key of at least 16 bytes (a NULL often means a variable is not set)"
+    );
 }
 
 #[test]

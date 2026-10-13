@@ -29,9 +29,9 @@ row: int64 | segment: int64 | credit_debit_flag: binary | handling_code: binary 
 
 ## provider_adjustments (rows: 3)
 row: int64 | segment: int64 | payment: int64 | amount: decimal128(38, 2) | fiscal_period_date: date32 | provider_id: binary | reason_code: binary | reference_id: binary
-0 | 58 | 0 | 25.00 | 2024-12-31 | 1234567893 | WO | OVERPAY01
-1 | 58 | 0 | -5.00 | 2024-12-31 | 1234567893 | L6 | INTEREST01
-2 | 58 | 0 | 10.00 | 2024-12-31 | 1234567893 | FB | BALANCE01
+0 | 58 | 0 | 25.00 | 2024-12-31 | 1234567893 | WO | 049afadb829ba53f
+1 | 58 | 0 | -5.00 | 2024-12-31 | 1234567893 | L6 | 259342e7ea96d07a
+2 | 58 | 0 | 10.00 | 2024-12-31 | 1234567893 | FB | 2202cd85e322ba88
 
 ## services (rows: 4)
 row: int64 | segment: int64 | payment: int64 | claim: int64 | allowed_amount: decimal128(38, 2) | charge_amount: decimal128(38, 2) | line_item_control_number: binary | original_units: decimal128(38, 2) | payment_amount: decimal128(38, 2) | procedure_code: binary | procedure_qualifier: binary | service_date: date32 | units_paid: decimal128(38, 2)

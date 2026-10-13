@@ -189,6 +189,14 @@ fn is_token(text: &str) -> bool {
 /// chance, and a token leaks only by being the original. A diagnostic's text
 /// also holds positions and counts, so an original shorter than six bytes
 /// leaks there only as a whole quoted datum.
+///
+/// Every cell of every table is scanned, flagged or not, for an `id` original
+/// of six or more characters (a patient control number can ride in an
+/// unflagged column, such as a provider adjustment reference); an unflagged
+/// cell leaks only by equality. `name` and short `id` originals are checked
+/// against flagged cells only: a surname is short and common, and provider
+/// data can equal it by coincidence (a rendering provider named like a
+/// patient), which is not a leak.
 #[test]
 fn no_original_value_of_a_flagged_column_survives_masking() {
     runs(
@@ -199,21 +207,19 @@ fn no_original_value_of_a_flagged_column_survives_masking() {
             let mut cells = Vec::new();
             for table in masked {
                 for (column, data) in table.columns() {
-                    if let Some(kind) = flag(spec, table, column) {
-                        cells.extend(
-                            (0..table.len()).filter_map(|row| Some((kind, data.render(row)?))),
-                        );
-                    }
+                    let kind = flag(spec, table, column);
+                    cells
+                        .extend((0..table.len()).filter_map(|row| Some((kind, data.render(row)?))));
                 }
             }
             let texts: Vec<String> = diagnostics.iter().map(ToString::to_string).collect();
             for (kind, original) in &originals {
                 let is_date = *kind == Phi::Date;
-                for (_, cell) in cells
-                    .iter()
-                    .filter(|(own, _)| (*own == Phi::Date) == is_date)
-                {
-                    let leaks = if is_token(cell) {
+                for (own, cell) in cells.iter().filter(|(own, _)| match own {
+                    Some(own) => (*own == Phi::Date) == is_date,
+                    None => *kind == Phi::Id && original.len() >= 6,
+                }) {
+                    let leaks = if own.is_none() || is_token(cell) {
                         cell == original
                     } else {
                         cell.contains(original.as_str())

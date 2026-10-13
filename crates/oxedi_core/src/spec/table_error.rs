@@ -410,13 +410,13 @@ impl fmt::Display for TableDefError {
             TableDefError::UnknownPhiSeed { name } => {
                 write!(
                     f,
-                    "\"phi_seed\" names column {name:?}, which the table does not have"
+                    "\"phi_seed\" names column {name:?}, which the table does not have; name an existing column flagged \"phi\": \"id\", or set \"phi_seed\": null"
                 )
             }
             TableDefError::PhiSeedNotId { name } => {
                 write!(
                     f,
-                    "\"phi_seed\" names column {name:?}, which is not flagged \"phi\": \"id\""
+                    "\"phi_seed\" names column {name:?}, which is not flagged \"phi\": \"id\"; flag it \"id\", name another \"id\" column, or set \"phi_seed\": null"
                 )
             }
         }

@@ -549,7 +549,7 @@
       "provider_id": {"element": 1},
       "fiscal_period_date": {"element": 2},
       "reason_code": {"group_element": 0, "component": 1},
-      "reference_id": {"group_element": 0, "component": 2},
+      "reference_id": {"group_element": 0, "component": 2, "phi": "id"},
       "amount": {"group_element": 1}
     } }
   },

@@ -274,6 +274,11 @@ impl fmt::Display for ReadError {
             ReadError::EmptyPathList => {
                 write!(f, "{FUNCTION}: the list of paths must not be empty")
             }
+            ReadError::NullOption { name: "mask_key" } => write!(
+                f,
+                "{FUNCTION}: mask_key must not be NULL; leave it out to read without masking, \
+                 or give a key of at least 16 bytes (a NULL often means a variable is not set)"
+            ),
             ReadError::NullOption { name } => write!(
                 f,
                 "{FUNCTION}: {name} must not be NULL; leave it out to use its default"
@@ -375,8 +380,8 @@ impl fmt::Display for ReadError {
 
 impl std::error::Error for ReadError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // `Parse` prints the core error in full, so the chain stops here
-        // instead of printing it a second time.
+        // `Parse` and `Mask` print the core error in full, so the chain
+        // stops here instead of printing it a second time.
         None
     }
 }

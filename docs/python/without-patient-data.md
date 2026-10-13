@@ -24,9 +24,11 @@ patched spec can flag others (see [Customizing the spec](../customize/spec.md#fl
 | `claims` | `statement_from`, `statement_to` | date |
 | `services` | `line_item_control_number` | id |
 | `services` | `service_date` | date |
+| `provider_adjustments` | `reference_id` | id |
 
 A name or an id becomes 16 lowercase hexadecimal characters: the first 8 bytes of an HMAC-SHA256
-of the value, keyed with your key. Two consequences follow:
+of the message `kind`, a zero byte, then the value (`kind` is `name` or `id`), keyed with your key,
+so a token can be reproduced from the key. Two consequences follow:
 
 - The same value and key always give the same token, so a masked `patient_id` still joins the
   same patient across claims and files.
@@ -107,16 +109,16 @@ LIMIT 2;
     literal, as above, keeps it in the history too. Pass the key as a prepared-statement
     parameter instead, so it never enters the SQL text:
 
-<!-- docs-test: skip needs the DuckDB extension loaded in the connection -->
-```python
-import duckdb
+    <!-- docs-test: skip needs the DuckDB extension loaded in the connection -->
+    ```python
+    import duckdb
 
-con = duckdb.connect()                    # with the oxedi extension loaded
-rows = con.execute(
-    "SELECT patient_last_name FROM read_835(?, mask_key := ?, mask_dates := ?)",
-    ["remittance.835", key, "shift"],
-).fetchall()
-```
+    con = duckdb.connect()                    # with the oxedi extension loaded
+    rows = con.execute(
+        "SELECT patient_last_name FROM read_835(?, mask_key := ?, mask_dates := ?)",
+        ["remittance.835", key, "shift"],
+    ).fetchall()
+    ```
 
 ## What is not masked
 
@@ -129,8 +131,8 @@ rows = con.execute(
 With the default `dates="year"`, this follows the HIPAA Safe Harbor identifiers that appear in the
 tables: names, member and claim numbers, and dates reduced to the year. `"shift"` and `"keep"`
 do not remove dates the way Safe Harbor requires. It is not a legal de-identification
-determination. Free text, rare
-combinations of values and the data you add yourself are still yours to review.
+determination. Free text, rare combinations of values and the data you add yourself are still
+yours to review.
 
 ## Make synthetic test files
 

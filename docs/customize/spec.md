@@ -125,8 +125,11 @@ print("contract_class" in spec.schema()["claims"].names)
 True
 ```
 
-A patch that flags a numeric column, uses another word or names a `phi_seed` column the table
-lacks raises `oxedi.SpecError` with the table, the column and the reason.
+A patch that flags a numeric column, uses another word, flags a column that is not a date with
+`"date"`, names a `phi_seed` column the table lacks, or names one that is not flagged `"id"`
+raises `oxedi.SpecError` with the table, the column and the reason. A patch that removes or
+unflags `claims.patient_id` must also set `"phi_seed": null` on `claims` (or name another `id`
+column).
 
 ## Add or change a segment
 
