@@ -146,15 +146,96 @@ fn quoted<S: AsRef<str>>(names: &[S]) -> String {
         .join(", ")
 }
 
-/// The SQL spelling of an identifier: as is when it is a plain lowercase name,
-/// otherwise in double quotes with inner double quotes doubled.
+/// DuckDB's reserved keywords (`duckdb_keywords()` with category `reserved`),
+/// which cannot be written as a bare identifier.
+const RESERVED_KEYWORDS: &[&str] = &[
+    "all",
+    "analyse",
+    "analyze",
+    "and",
+    "any",
+    "array",
+    "as",
+    "asc",
+    "asymmetric",
+    "both",
+    "case",
+    "cast",
+    "check",
+    "collate",
+    "column",
+    "constraint",
+    "create",
+    "default",
+    "deferrable",
+    "desc",
+    "describe",
+    "distinct",
+    "do",
+    "else",
+    "end",
+    "except",
+    "false",
+    "fetch",
+    "for",
+    "foreign",
+    "from",
+    "group",
+    "having",
+    "in",
+    "initially",
+    "intersect",
+    "into",
+    "lambda",
+    "lateral",
+    "leading",
+    "limit",
+    "not",
+    "null",
+    "offset",
+    "on",
+    "only",
+    "or",
+    "order",
+    "pivot",
+    "pivot_longer",
+    "pivot_wider",
+    "placing",
+    "primary",
+    "qualify",
+    "references",
+    "returning",
+    "select",
+    "show",
+    "some",
+    "summarize",
+    "symmetric",
+    "table",
+    "then",
+    "to",
+    "trailing",
+    "true",
+    "union",
+    "unique",
+    "unpivot",
+    "using",
+    "variadic",
+    "when",
+    "where",
+    "window",
+    "with",
+];
+
+/// The SQL spelling of an identifier: as is when it is a plain lowercase name
+/// that is not a reserved keyword, otherwise in double quotes with inner
+/// double quotes doubled.
 fn identifier(name: &str) -> String {
     let mut chars = name.chars();
     let plain = chars
         .next()
         .is_some_and(|first| first.is_ascii_lowercase() || first == '_')
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
-    if plain {
+    if plain && !RESERVED_KEYWORDS.contains(&name) {
         name.to_owned()
     } else {
         format!("\"{}\"", name.replace('"', "\"\""))

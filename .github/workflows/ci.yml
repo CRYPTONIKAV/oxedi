@@ -1,12 +1,12 @@
 name: CI
 
-# Runs each area (Rust, Python, DuckDB, Docs, Viewer, Workflows) only when files it depends on changed: on a
-# pull request against its base, on a push against the previous commit of the branch. A draft
-# pull request runs Rust only; the rest runs once it is ready for review. nightly.yml runs every
-# area on master. Runs of a pull request share a group and a new push cancels the running one;
-# each push to a branch has its own group, so no push is replaced by a later one. `CI result` is
-# the one check to require: it fails when any area failed or was cancelled and passes when each
-# one passed or was not needed.
+# Runs each area (Rust, Python, DuckDB, Docs, Viewer, Workflows) only when files it depends on
+# changed: on a pull request against its base, on a push against the previous commit of the
+# branch. A draft pull request runs Rust only; the rest runs once it is ready for review.
+# nightly.yml runs every area on master. Runs of a pull request share a group and a new push
+# cancels the running one; each push to a branch has its own group, so no push is replaced by a
+# later one. `CI result` is the one check to require: it fails when any area failed or was
+# cancelled and passes when each one passed or was not needed.
 on:
   push:
     branches: [main, master]
@@ -111,7 +111,7 @@ jobs:
               - '.github/actions/**'
               - '.github/workflows/ci.yml'
               - '.github/workflows/_viewer.yml'
-              - '.github/scripts/**'
+              - '.github/scripts/publish-viewer.sh'
             workflows:
               - '.github/workflows/**'
               - '.github/scripts/**'
@@ -152,7 +152,7 @@ jobs:
   workflows:
     name: Workflows
     needs: changes
-    if: needs.changes.outputs.workflows == 'true'
+    if: needs.changes.outputs.workflows == 'true' && !github.event.pull_request.draft
     uses: ./.github/workflows/_lint.yml
 
   ci-result:

@@ -29,5 +29,10 @@ if printf '[]' | "$script" 0.5.1 2>/dev/null; then
   failed=1
 fi
 
+if printf 'not json' | "$script" 0.5 > /dev/null 2>&1; then
+  echo "FAIL: invalid versions.json must fail"
+  failed=1
+fi
+
 if [ "$failed" -eq 0 ]; then echo "is-latest-minor: ok"; fi
 exit "$failed"

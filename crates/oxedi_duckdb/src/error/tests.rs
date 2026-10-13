@@ -61,12 +61,12 @@ fn macro_parameter_that_needs_quoting() {
     assert_eq!(
         text(ReadError::MacroParameter {
             name: "version",
-            parameter: "My \"Ver\".x".to_owned(),
-            value: "0_macro_parametersone.My \"Ver\".x".to_owned(),
+            parameter: "My \"Ver\"".to_owned(),
+            value: "0_macro_parametersone.My \"Ver\"".to_owned(),
         }),
         "read_835: version must be a constant string; a table macro passed its parameter \
-         \"My \\\"Ver\\\".x\" as \"0_macro_parametersone.My \\\"Ver\\\".x\"; DuckDB does not \
-         substitute a macro parameter given with := or =>, so write version = \"My \"\"Ver\"\".x\""
+         \"My \\\"Ver\\\"\" as \"0_macro_parametersone.My \\\"Ver\\\"\"; DuckDB does not \
+         substitute a macro parameter given with := or =>, so write version = \"My \"\"Ver\"\"\""
     );
 }
 
@@ -81,6 +81,8 @@ fn identifier_quoting() {
         );
     }
     assert_eq!(super::identifier("a\"b"), "\"a\"\"b\"");
+    assert_eq!(super::identifier("order"), "\"order\"");
+    assert_eq!(super::identifier("ordering"), "ordering");
 }
 
 #[test]

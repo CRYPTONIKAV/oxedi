@@ -11,5 +11,9 @@ if ! [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
   exit 2
 fi
 
-highest=$({ jq -r '.[].version' | grep -E '^[0-9]+\.[0-9]+$' || true; echo "$version"; } | sort -V | tail -n 1)
+if ! listed=$(jq -r '.[].version'); then
+  echo "is-latest-minor.sh: stdin is not a versions.json (a JSON list of objects with a version)" >&2
+  exit 1
+fi
+highest=$({ printf '%s\n' "$listed" | grep -E '^[0-9]+\.[0-9]+$' || true; echo "$version"; } | sort -V | tail -n 1)
 if [ "$highest" = "$version" ]; then echo true; else echo false; fi
