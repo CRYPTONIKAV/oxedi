@@ -9,6 +9,11 @@ name: Docs deploy
 #
 # The browser viewer is published next to the versions, in `viewer/` of gh-pages (the latest
 # release) and `viewer/dev/` (master), outside the folders mike manages.
+#
+# Releases and master pushes queue separately (see `concurrency`), so a release is never replaced
+# by a later master push, and the two can run at the same time. Both push to gh-pages, so every
+# push goes through .github/scripts/retry-gh-pages.sh, which redoes a rejected push on top of the
+# current origin/gh-pages, up to 3 times.
 on:
   push:
     branches: [master]
@@ -24,6 +29,7 @@ on:
       - "Makefile"
       - "rust-toolchain.toml"
       - ".github/workflows/docs.yml"
+      - ".github/scripts/**"
       - ".github/actions/**"
   workflow_dispatch:
     inputs:
@@ -32,9 +38,11 @@ on:
         required: true
         type: string
 
-# One deploy at a time: every run pushes to gh-pages.
+# One release deploy at a time and one dev deploy at a time, in separate groups. A queued dev
+# deploy is replaced by a newer one (the newest master wins); a queued release deploy is only
+# ever replaced by another release, never by a master push. Nothing is cancelled once running.
 concurrency:
-  group: docs-deploy
+  group: ${{ (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && 'docs-deploy-release' || 'docs-deploy-dev' }}
   cancel-in-progress: false
 
 permissions:
@@ -124,15 +132,18 @@ jobs:
         if: steps.target.outputs.kind == 'dev'
         env:
           NO_MKDOCS_2_WARNING: "true"
-        run: mike deploy --push --title "dev (unreleased)" dev
+        run: .github/scripts/retry-gh-pages.sh mike deploy --push --title "dev (unreleased)" dev
       - name: Deploy release and move latest
         if: steps.target.outputs.kind == 'release'
         env:
           NO_MKDOCS_2_WARNING: "true"
           VERSION: ${{ steps.target.outputs.version }}
         run: |
-          mike deploy --push --update-aliases "$VERSION" latest
-          mike set-default --push latest
+          # The inner shell expands VERSION from the environment.
+          # shellcheck disable=SC2016
+          .github/scripts/retry-gh-pages.sh bash -ec '
+            mike deploy --push --update-aliases "$VERSION" latest
+            mike set-default --push latest'
       - name: Publish the viewer
         # `viewer/` for a release (keeping `viewer/dev/`), `viewer/dev/` for master. Nothing else
         # on gh-pages is touched.
@@ -140,33 +151,7 @@ jobs:
         env:
           KIND: ${{ steps.target.outputs.kind }}
           VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          set -euo pipefail
-          git fetch origin gh-pages
-          pages=$(mktemp -d)/gh-pages
-          git worktree add -B viewer-publish "$pages" origin/gh-pages
-          trap 'git worktree remove --force "$pages"' EXIT
-          if [ "$KIND" = "release" ]; then
-            dest="$pages/viewer"
-            mkdir -p "$dest"
-            find "$dest" -mindepth 1 -maxdepth 1 ! -name dev -exec rm -rf {} +
-            label="$VERSION"
-          else
-            dest="$pages/viewer/dev"
-            rm -rf "$dest"
-            mkdir -p "$dest"
-            label="dev"
-          fi
-          # The page embeds the module in pkg/module.js and never fetches the raw .wasm.
-          tar -C viewer --exclude=./tests --exclude=./pkg/oxedi_bg.wasm -cf - . | tar -C "$dest" -xf -
-          cd "$pages"
-          git add -A viewer
-          if git diff --cached --quiet; then
-            echo "The viewer on gh-pages is already up to date."
-          else
-            git commit -m "Viewer $label from ${GITHUB_SHA::7}"
-            git push origin HEAD:gh-pages
-          fi
+        run: .github/scripts/retry-gh-pages.sh .github/scripts/publish-viewer.sh
       - name: The site and the viewer are intact
         if: steps.target.outputs.kind != 'skip'
         run: |
