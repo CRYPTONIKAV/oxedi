@@ -639,6 +639,8 @@
       
         
       
+        
+      
     
     
     
@@ -755,6 +757,34 @@
     
   
     Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/without-patient-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Without patient data
   
 
     
@@ -2095,6 +2125,16 @@ row number together. <a href="../../recipes/lakehouse/">A Parquet lakehouse</a> 
 <td><code>ignore_errors</code></td>
 <td><code>false</code></td>
 <td>report a file that is not an X12 interchange as a <code>diagnostics</code> row and go on</td>
+</tr>
+<tr>
+<td><code>mask_key</code></td>
+<td>none</td>
+<td>hide patient data: a key of at least 16 bytes. NULL is refused. See <a href="../../python/without-patient-data/">Sharing data without patient information</a></td>
+</tr>
+<tr>
+<td><code>mask_dates</code></td>
+<td><code>'year'</code></td>
+<td>with <code>mask_key</code>, how masked dates change: <code>'year'</code>, <code>'shift'</code> or <code>'keep'</code>. An error without <code>mask_key</code></td>
 </tr>
 </tbody>
 </table>

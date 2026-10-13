@@ -641,6 +641,8 @@
       
         
       
+        
+      
     
     
     
@@ -760,6 +762,34 @@
     
   
     Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/without-patient-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Without patient data
   
 
     
@@ -978,6 +1008,17 @@
     <span class="md-ellipsis">
       
         Choose where a column reads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flag-patient-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flag patient data
       
     </span>
   </a>
@@ -1943,6 +1984,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#flag-patient-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flag patient data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#add-or-change-a-segment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2064,6 +2116,33 @@ match, counting from 1. It chooses among the segments read while the row's loop 
 is open. A loop above the anchor offers the segments its enclosing instance read before the
 row's instance opened.</p>
 </details>
+<h2 id="flag-patient-data">Flag patient data<a class="headerlink" href="#flag-patient-data" title="Permanent link">&para;</a></h2>
+<p>Which columns <a href="../../python/without-patient-data/">hide patient data</a> when you pass a mask is
+part of the spec. A column carries a <code>phi</code> key with one of three words:</p>
+<ul>
+<li><code>"name"</code> and <code>"id"</code> become a keyed token. They need a text column (<code>AN</code> or <code>ID</code> element, or
+  one the spec does not type).</li>
+<li><code>"date"</code> shifts or reduces a date. It needs a date (<code>DT</code>) column.</li>
+</ul>
+<p>A table can also carry <code>phi_seed</code>, the name of one <code>id</code> column. With <code>dates="shift"</code> its value
+decides how many days the row and the rows under it move; the built-in <code>claims</code> table uses
+<code>patient_id</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">spec</span> <span class="o">=</span> <span class="n">oxedi</span><span class="o">.</span><span class="n">Spec</span><span class="o">.</span><span class="n">builtin</span><span class="p">()</span><span class="o">.</span><span class="n">patch</span><span class="p">({</span>
+    <span class="s2">"tables"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"claims"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"columns"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"contract_class"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"segment"</span><span class="p">:</span> <span class="s2">"REF"</span><span class="p">,</span> <span class="s2">"where"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"1"</span><span class="p">:</span> <span class="s2">"CE"</span><span class="p">},</span> <span class="s2">"element"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"phi"</span><span class="p">:</span> <span class="s2">"id"</span><span class="p">}</span>
+    <span class="p">}}}</span>
+<span class="p">})</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">oxedi</span><span class="o">.</span><span class="n">Mask</span><span class="p">(</span><span class="s2">"a-secret-of-at-least-16-bytes"</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">oxedi</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"remittance.835"</span><span class="p">)</span><span class="o">.</span><span class="n">read_bytes</span><span class="p">(),</span> <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"contract_class"</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">schema</span><span class="p">()[</span><span class="s2">"claims"</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>True
+</code></pre></div>
+<p>A patch that flags a numeric column, uses another word, flags a column that is not a date with
+<code>"date"</code>, names a <code>phi_seed</code> column the table lacks, or names one that is not flagged <code>"id"</code>
+raises <code>oxedi.SpecError</code> with the table, the column and the reason. A patch that removes or
+unflags <code>claims.patient_id</code> must also set <code>"phi_seed": null</code> on <code>claims</code> (or name another <code>id</code>
+column).</p>
 <h2 id="add-or-change-a-segment">Add or change a segment<a class="headerlink" href="#add-or-change-a-segment" title="Permanent link">&para;</a></h2>
 <p>A loop's segments are named occurrences. A patch adds one by its name, or changes it, or
 removes it with <code>null</code>:</p>

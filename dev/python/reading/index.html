@@ -641,6 +641,8 @@
       
         
       
+        
+      
     
     
     
@@ -868,6 +870,34 @@
     
   
     Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../without-patient-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Without patient data
   
 
     
@@ -2027,6 +2057,8 @@ start with an <code>ISA</code> segment. Anything else parses, and its problems c
 </div>
 <p><code>parse</code>, <code>parse_file</code> and <code>stream</code> read the version the file declares and use the matching
 built-in spec. To choose another one or extend it, see <a href="../../customize/spec/">the spec</a>.</p>
+<p>To share a file's tables without the patient's name, ids and dates, pass <code>mask=</code> to any of them.
+See <a href="../without-patient-data/">Sharing data without patient information</a>.</p>
 <h2 id="use-the-tables">Use the tables<a class="headerlink" href="#use-the-tables" title="Permanent link">&para;</a></h2>
 <p>Every parse gives the same five tables:</p>
 <table>
