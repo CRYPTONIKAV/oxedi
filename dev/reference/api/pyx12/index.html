@@ -1945,7 +1945,9 @@
 
 <a href="#oxedi.pyx12.validate" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate</span><span class="p">(</span>
-    <span class="n">source</span><span class="p">:</span> <span class="n">Source</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mask</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">source</span><span class="p">:</span> <span class="n">Source</span><span class="p">,</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mask</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Spec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span>
 </code></pre></div>
 
@@ -1995,16 +1997,32 @@ as <code>oxedi.parse</code> does. Nothing is written to disk and no
 acknowledgement is generated.</p>
 <p>With <code>mask</code>, an <code>oxedi.Mask</code>, the datum of a finding at a place a
 column flags as patient data reads is masked as <code>parse</code> masks its own
-diagnostics with that mask. In the finding's message, every occurrence
-of the original datum, and of each value its segment holds at such a
-place, is replaced by the masked form, whether or not the finding names
-an element; every other attribute, and the findings' number and order,
-stay as without it. The flagged places are those of the built-in spec
-of the file's version, the one <code>parse(source)</code> selects: <code>validate</code>
-takes no spec, so columns only a patched spec flags are not masked
-here. pyx12 still reads the original file: the mask hides what
-<code>validate</code> returns, not what pyx12 is given. <code>mask</code> of any other
-type than <code>oxedi.Mask</code> or <code>None</code> raises <code>TypeError</code>.</p>
+diagnostics with that mask. In the finding's message, the original
+datum and each value its segment holds at such a place are replaced by
+their masked forms, whether or not the finding names an element. A
+value of 4 characters or more is replaced wherever it occurs. A shorter
+one is replaced only where it stands apart: the character on each side
+is the edge of the message, a character that is not an ASCII letter or
+digit (an accented letter or <code>-</code> counts), or part of another replaced
+value. Short values that overlap or touch are replaced as one group when
+the group stands apart. A short value glued to letters or digits that
+are not flagged values stays as written (with <code>XAB</code> and <code>ABYZ</code>
+flagged, <code>QXABYZ</code> keeps <code>QX</code>), and two short values that together
+spell a word of the message replace that word. Every other attribute,
+and the findings' number and order, stay as without it. The flagged
+places are those of the spec the parse uses: <code>spec</code>, an
+<code>oxedi.Spec</code>, or the built-in spec of the file's version when it is
+<code>None</code>, so a patched spec that flags more columns masks them here as
+<code>parse(source, spec=spec, mask=mask)</code> does. The same spec locates the
+findings' loop paths, as in <code>parse(source, spec=spec)</code>. A failure
+finding for an exception inside pyx12, whose text no flagged place
+points at, keeps the exception's type and drops its text: <code>could not
+finish validating: ValueError, whose message is not shown with a mask;
+...</code>, or <code>its error tree could not be read (ValueError, whose message
+is not shown with a mask)</code>. pyx12 still reads the original file: the
+mask hides what <code>validate</code> returns, not what pyx12 is given. <code>mask</code>
+of any other type than <code>oxedi.Mask</code> or <code>None</code> raises <code>TypeError</code>,
+and so does <code>spec</code> of any other type than <code>oxedi.Spec</code> or <code>None</code>.</p>
 
 
     </div>

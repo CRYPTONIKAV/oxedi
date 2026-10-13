@@ -2198,10 +2198,19 @@ patient in another run.</p>
 <p><code>oxedi.pyx12.validate</code> takes <code>mask=</code> too. A finding about a place the masked columns read gets
 its value masked as <code>parse</code> masks its own diagnostics. In pyx12's message, that value and every
 masked value of the segment the finding points at are replaced by their masked forms, also when
-the finding names no element (pyx12's "Segment <abbr title="Claim payment information segment">CLP</abbr>*... not found" quotes the claim id). The
-findings, their order and where they point stay the same as without the mask. <code>validate</code> takes no
-spec: it masks the places the built-in spec of the file's version flags, so a column only a patched
-spec flags is masked by <code>parse(..., spec=patched, mask=)</code> but not by <code>validate</code>. This example
+the finding names no element (pyx12's "Segment <abbr title="Claim payment information segment">CLP</abbr>*... not found" quotes the claim id). A value
+of 4 characters or more is replaced wherever it occurs. A shorter one is replaced only where it
+stands apart: the character on each side is the edge of the message, a character that is not an
+ASCII letter or digit (an accented letter or <code>-</code> counts), or part of another replaced value. So a
+name <code>D</code> leaves the word <code>Data</code> as written. Short values that overlap or touch are replaced as one
+group when the group stands apart, so initials <code>D</code> and <code>J</code> in <code>*DJ*</code> are both replaced. A short
+value glued to letters or digits that are not flagged values stays: with <code>XAB</code> and <code>ABYZ</code>
+flagged, <code>QXABYZ</code> keeps <code>QX</code>. The rule can also mask too much: initials <code>A</code> and <code>N</code> replace the
+<code>AN</code> of pyx12's "type AN". The
+findings, their order and where they point stay the same as without the mask. <code>validate</code> takes
+<code>spec=</code> too: it masks the places that spec flags (the built-in spec of the file's version when it
+is omitted), so a column only a patched spec flags is masked by <code>validate(..., mask=, spec=patched)</code>
+as by <code>parse(..., spec=patched, mask=)</code>; the same spec gives the findings' loop paths. This example
 writes an invalid claim date into the example file:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">oxedi.pyx12</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate</span>
@@ -2214,7 +2223,11 @@ writes an invalid claim date into the example file:</p>
 8 b'46891844d3db70db' Data element "Claim Date" (DTM02) contains an invalid date (46891844d3db70db) (reported by pyx12, code 8)
 </code></pre></div>
 <p>pyx12 still reads the original file: the mask hides what <code>validate</code> returns, not what pyx12 is
-given. A pyx12 message about a length still states the length of the original value.</p>
+given. A pyx12 message about a length still states the length of the original value. When pyx12
+raises an exception, its finding keeps the exception's type and leaves out its text, which could
+quote any value of the file: <code>could not finish validating: ValueError, whose message is not shown
+with a mask; ...</code>, or <code>its error tree could not be read (ValueError, whose message is not shown
+with a mask)</code> when pyx12's error tree cannot be read.</p>
 <h2 id="use-it-in-sql">Use it in SQL<a class="headerlink" href="#use-it-in-sql" title="Permanent link">&para;</a></h2>
 <p><code>read_835</code> takes <code>mask_key</code> and <code>mask_dates</code> (<code>'year'</code>, <code>'shift'</code> or <code>'keep'</code>). A NULL key is
 refused, and <code>mask_dates</code> without <code>mask_key</code> is an error.</p>
