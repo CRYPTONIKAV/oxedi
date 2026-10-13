@@ -18,6 +18,22 @@ native_exception!(
     "A spec that cannot be loaded or patched; the message names the rule, the loop and key, and the datum."
 );
 
+/// One table's schema, offered to `pyarrow.schema` through the Arrow
+/// PyCapsule interface; it is not part of the module's public names.
+#[pyclass(frozen)]
+struct SchemaExport {
+    name: String,
+    schema: arrow_schema::Schema,
+}
+
+#[pymethods]
+impl SchemaExport {
+    fn __arrow_c_schema__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyCapsule>> {
+        let schema = arrow::export_schema(&self.name, &self.schema)?;
+        PyCapsule::new_with_value(py, schema, c"arrow_schema")
+    }
+}
+
 static BUILTIN: OnceLock<Arc<Spec>> = OnceLock::new();
 static BUILTIN_4010: OnceLock<Arc<Spec>> = OnceLock::new();
 
@@ -149,14 +165,17 @@ impl PySpec {
     /// Needs pyarrow.
     #[gen_stub(override_return_type(type_repr = "builtins.dict[builtins.str, pyarrow.Schema]", imports = ("builtins", "pyarrow")))]
     fn schema<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        let schema_class = extra(py, "Spec", "schema", "pyarrow", "pandas")?.getattr("Schema")?;
+        let make = extra(py, "Spec", "schema", "pyarrow", "pandas")?.getattr("schema")?;
         let schemas = PyDict::new(py);
         for (name, schema) in arrow::spec_schemas(&self.inner)? {
-            let capsule = PyCapsule::new_with_value(py, schema, c"arrow_schema")?;
-            schemas.set_item(
-                name,
-                schema_class.call_method1("_import_from_c_capsule", (capsule,))?,
+            let export = Bound::new(
+                py,
+                SchemaExport {
+                    name: name.clone(),
+                    schema,
+                },
             )?;
+            schemas.set_item(name, make.call1((export,))?)?;
         }
         Ok(schemas)
     }
