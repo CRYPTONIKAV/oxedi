@@ -47,5 +47,10 @@ jobs:
           python -m mypy --config-file crates/oxedi_py/pyproject.toml crates/oxedi_py/python/oxedi
       - name: Test
         run: pytest crates/oxedi_py/tests
+      - name: Test without pyx12
+        if: matrix.python == '3.13'
+        run: |
+          uv pip uninstall pyx12
+          pytest crates/oxedi_py/tests
       - name: Wheel in a clean environment
         run: crates/oxedi_py/scripts/smoke_wheel.sh

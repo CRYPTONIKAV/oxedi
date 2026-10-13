@@ -6,6 +6,8 @@ PY_TESTS    := crates/oxedi_py/tests
 # stubtest reads an allowlist only when one exists; each entry carries its reason.
 STUBTEST_ALLOWLIST := crates/oxedi_py/stubtest-allowlist.txt
 VENV        := .venv
+# Same tools without pyx12, to run the suite as a user without it would.
+NOPYX12_VENV := .venv-nopyx12
 # The documentation site has its own environment; the package never depends on it.
 DOCS_VENV   := .venv-docs
 DOCS_PYTHON := $(DOCS_VENV)/bin/python
@@ -22,10 +24,10 @@ CARGO_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -
 DUCKDB_VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' crates/oxedi_duckdb/Cargo.toml | head -n 1)
 VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-dev\.?/.dev/')
 
-.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-units viewer-oracle viewer-test publish-test publish-test-verify publish tag clean-dist
+.PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test py-test-nopyx12 stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-units viewer-oracle viewer-test publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
-	@grep -E '^[a-z][a-z_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
+	@grep -E '^[a-z][a-z0-9_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 	@echo
 	@echo "Python releases use release-check and tag (tags v*, which start the PyPI workflow)."
 	@echo "The DuckDB extension uses duckdb-release-check and duckdb-tag (tags duckdb-v*, which do not)."
@@ -61,6 +63,13 @@ py-dev: ## build the extension into .venv (debug)
 
 py-test: py-dev ## build and run the Python suite
 	$(PYTEST) -q $(PY_TESTS)
+
+py-test-nopyx12: ## build into a venv without pyx12 and run the Python suite (pyx12 tests skip)
+	uv venv --clear $(NOPYX12_VENV) --python 3.13
+	uv pip install --python $(NOPYX12_VENV)/bin/python maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
+	VIRTUAL_ENV=$(CURDIR)/$(NOPYX12_VENV) $(NOPYX12_VENV)/bin/maturin develop --uv --manifest-path $(PY_MANIFEST)
+	$(NOPYX12_VENV)/bin/python -c "import importlib.util, sys; sys.exit(1 if importlib.util.find_spec('pyx12') else 0)"
+	$(NOPYX12_VENV)/bin/python -m pytest -q -rs $(PY_TESTS)
 
 stubs: ## regenerate the native module's type stub from the binding
 	cargo run --locked -p oxedi_py --bin stub_gen
