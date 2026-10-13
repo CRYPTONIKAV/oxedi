@@ -102,6 +102,7 @@ jobs:
               - 'crates/oxedi_py/**'
               - 'crates/oxedi_wasm/**'
               - 'viewer/**'
+              - 'docs/llms.txt'
               - 'docs/requirements.txt'
               - 'Cargo.toml'
               - 'Cargo.lock'

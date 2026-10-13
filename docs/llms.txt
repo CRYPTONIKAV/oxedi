@@ -14,7 +14,7 @@ Read an 835 into payment, claim, service line and adjustment tables for Polars, 
 ## Python
 
 - [Reading 835 files](https://javillegas.dev/oxedi/latest/python/reading/): Parse files into payment, claim, service line and adjustment tables
-- [Reading large files](https://javillegas.dev/oxedi/latest/python/large-files/): Read many or big files with bounded memory
+- [Reading large files](https://javillegas.dev/oxedi/latest/python/large-files/): Stream tables one transaction or claim at a time, and parse many files in parallel
 - [Diagnostics](https://javillegas.dev/oxedi/latest/python/diagnostics/): The problems oxedi reports instead of raising errors
 - [Writing 835 files](https://javillegas.dev/oxedi/latest/python/writing/): Write an 835 from tables with checked control numbers, counts and balancing
 - [Writing from your own tables](https://javillegas.dev/oxedi/latest/python/own-tables/): Build an 835 from your own DataFrames
