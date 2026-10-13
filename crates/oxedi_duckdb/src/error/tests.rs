@@ -47,7 +47,7 @@ fn macro_parameter() {
     assert_eq!(
         text(ReadError::MacroParameter {
             name: "table_name",
-            parameter: "tbl".to_owned(),
+            parameter: Some("tbl".to_owned()),
             value: "0_macro_parametersone.tbl".to_owned(),
         }),
         "read_835: table_name must be a constant string; a table macro passed its parameter \
@@ -57,11 +57,25 @@ fn macro_parameter() {
 }
 
 #[test]
+fn macro_parameter_without_a_name() {
+    assert_eq!(
+        text(ReadError::MacroParameter {
+            name: "table_name",
+            parameter: None,
+            value: "0_macro_parametersm.a.b".to_owned(),
+        }),
+        "read_835: table_name must be a constant string; a table macro passed a parameter as \
+         \"0_macro_parametersm.a.b\"; DuckDB does not substitute a macro parameter given with \
+         := or =>, so write table_name = <the parameter>"
+    );
+}
+
+#[test]
 fn macro_parameter_that_needs_quoting() {
     assert_eq!(
         text(ReadError::MacroParameter {
             name: "version",
-            parameter: "My \"Ver\"".to_owned(),
+            parameter: Some("My \"Ver\"".to_owned()),
             value: "0_macro_parametersone.My \"Ver\"".to_owned(),
         }),
         "read_835: version must be a constant string; a table macro passed its parameter \

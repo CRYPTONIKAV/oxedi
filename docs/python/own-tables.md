@@ -117,7 +117,39 @@ Each also has the spec's other columns.
 
     Use `with_row_index("row")` to number the rows.
 
-    <!-- docs-test: skip needs the reader's own tables (my_payments and the others), which the example files do not provide -->
+    The examples need `my_*` tables. To try them, build them from the tables of a parse, with
+    keys of your own in place of the positions:
+
+    ```python
+    import datetime
+
+    import oxedi
+    import polars as pl
+
+    frames = oxedi.parse_file("remittance.835").tables.to_polars()
+    envelope = oxedi.Envelope(
+        sender_id="ACMEPAYER",
+        receiver_id="SUNRISECLINIC",
+        date=datetime.date(2024, 1, 10),
+        time=datetime.time(9, 0),
+    )
+
+    def keyed(name, **keys):
+        """The spec's table without its positions, keyed as your own system would."""
+        table = frames[name].with_columns(
+            **{key: pl.col(source) + 1 for key, source in keys.items()}
+        )
+        return table.drop("row", "payment", "claim", "service", "segment", strict=False)
+
+    my_payments = keyed("payments", pay_key="row")
+    my_claims = keyed("claims", claim_key="row", pay_key="payment")
+    my_services = keyed("services", service_key="row", claim_key="claim")
+    my_adjustments = keyed("adjustments", claim_key="claim").with_columns(
+        service_key=frames["adjustments"]["service"] + 1
+    )
+    my_provider_adjustments = keyed("provider_adjustments", pay_key="payment")
+    ```
+
     ```python
     import polars as pl
 
@@ -165,6 +197,30 @@ Each also has the spec's other columns.
 
 === "SQL"
 
+    The examples need `my_*` tables. To try them, build them from the tables of a file, with
+    keys of your own in place of the positions:
+
+    ```sql
+    LOAD oxedi;  -- when the extension is not loaded yet
+    CREATE TABLE my_payments AS
+      SELECT "row" + 1 AS pay_key, * EXCLUDE ("row", segment)
+      FROM read_835('remittance.835', table_name = 'payments');
+    CREATE TABLE my_claims AS
+      SELECT "row" + 1 AS claim_key, payment + 1 AS pay_key, * EXCLUDE ("row", segment, payment)
+      FROM read_835('remittance.835', table_name = 'claims');
+    CREATE TABLE my_services AS
+      SELECT "row" + 1 AS service_key, claim + 1 AS claim_key,
+             * EXCLUDE ("row", segment, payment, claim)
+      FROM read_835('remittance.835', table_name = 'services');
+    CREATE TABLE my_adjustments AS
+      SELECT claim + 1 AS claim_key, service + 1 AS service_key,
+             * EXCLUDE ("row", segment, payment, claim, service)
+      FROM read_835('remittance.835', table_name = 'adjustments');
+    CREATE TABLE my_provider_adjustments AS
+      SELECT payment + 1 AS pay_key, * EXCLUDE ("row", segment, payment)
+      FROM read_835('remittance.835', table_name = 'provider_adjustments');
+    ```
+
     Give each table a `row` with `row_number()`. Put the parents' `row` in its parent columns
     with a join, and drop your helper columns with `EXCLUDE`.
 
@@ -173,7 +229,6 @@ Each also has the spec's other columns.
     - The adjustments of a claim, which have no `service`, come first (`NULLS FIRST`).
     - Your keys need not sort in parent order across parents.
 
-    <!-- docs-test: skip needs the reader's own tables (my_payments and the others), which the example files do not provide -->
     ```sql
     COPY (
       WITH payments AS (

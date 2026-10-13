@@ -1,6 +1,6 @@
 use oxedi_core::DateMode;
 
-use super::{constant, mask_of};
+use super::{constant, macro_parameter, mask_of};
 use crate::error::ReadError;
 
 #[test]
@@ -17,17 +17,34 @@ fn a_macro_parameter_is_refused_with_its_name() {
     assert!(matches!(
         error,
         Err(ReadError::MacroParameter { name: "version", ref parameter, ref value })
-            if parameter == "v" && value == "0_macro_parameterspinned.v"
+            if parameter.as_deref() == Some("v") && value == "0_macro_parameterspinned.v"
     ));
 }
 
 #[test]
-fn the_parameter_is_the_part_after_the_last_dot() {
+fn the_parameter_is_the_part_after_the_one_dot() {
+    assert_eq!(
+        macro_parameter("0_macro_parametersm.x"),
+        Some(Some("x".to_owned()))
+    );
+}
+
+#[test]
+fn more_dots_leave_the_parameter_unnamed() {
+    assert_eq!(macro_parameter("0_macro_parametersm.a.b"), Some(None));
     let error = constant("table_name", "0_macro_parametersmy.macro.tbl".to_owned());
     assert!(matches!(
         error,
-        Err(ReadError::MacroParameter { ref parameter, .. }) if parameter == "tbl"
+        Err(ReadError::MacroParameter {
+            parameter: None,
+            ..
+        })
     ));
+}
+
+#[test]
+fn a_value_is_not_a_macro_parameter() {
+    assert_eq!(macro_parameter("claims"), None);
 }
 
 #[test]

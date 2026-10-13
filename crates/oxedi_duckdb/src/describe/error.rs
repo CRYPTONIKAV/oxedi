@@ -5,7 +5,7 @@ use std::fmt;
 
 use oxedi_core::ColumnType;
 
-use crate::error::identifier;
+use crate::error::macro_hint;
 use crate::function::FromPanic;
 
 /// The name every message starts with, as DuckDB shows it to the user.
@@ -22,8 +22,9 @@ pub enum SchemaError {
     /// `version` received a table macro's parameter, which DuckDB passed as
     /// the parameter's qualified name instead of a value.
     MacroParameter {
-        /// The macro parameter forwarded to it.
-        parameter: String,
+        /// The macro parameter forwarded to it, when its name can be told
+        /// from the macro's.
+        parameter: Option<String>,
         /// The text DuckDB passed.
         value: String,
     },
@@ -58,13 +59,15 @@ impl fmt::Display for SchemaError {
                 f,
                 "{FUNCTION}: {name} must not be NULL; leave it out to use its default"
             ),
-            SchemaError::MacroParameter { parameter, value } => write!(
-                f,
-                "{FUNCTION}: version must be a constant string; a table macro passed its \
-                 parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
-                 parameter given with := or =>, so write version = {}",
-                identifier(parameter)
-            ),
+            SchemaError::MacroParameter { parameter, value } => {
+                let (passed, written) = macro_hint(parameter.as_deref(), value);
+                write!(
+                    f,
+                    "{FUNCTION}: version must be a constant string; a table macro passed \
+                     {passed}; DuckDB does not substitute a macro parameter given with := or \
+                     =>, so write version = {written}"
+                )
+            }
             SchemaError::UnknownVersion { version, known } => write!(
                 f,
                 "{FUNCTION}: unknown version {version:?}; version must be one of {}",

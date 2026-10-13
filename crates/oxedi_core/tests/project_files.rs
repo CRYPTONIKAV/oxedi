@@ -344,8 +344,43 @@ fn a_three_line_patch_adds_a_column_the_table_then_shows() {
 #[test]
 fn filling_some_tables_gives_each_the_rows_of_a_full_run() {
     let (five, four) = common::builtins();
-    for (name, bytes, delims) in common::all_files() {
+    each_table_alone_equals_the_full_run(&five, &four);
+}
+
+/// The same holds for a spec patched with a new table and a new column, which
+/// the built-in goldens do not cover.
+#[test]
+fn filling_some_tables_of_a_patched_spec_gives_each_the_rows_of_a_full_run() {
+    let patch = r#"{"tables":{
+        "claim_dates":{"loops":["2100"],"segment":"DTM","columns":{
+            "qualifier":{"element":1},"date":{"element":2}}},
+        "claims":{"columns":{"first_amount":{"segment":"AMT","element":2}}}
+    }}"#;
+    let (five, four) = common::builtins();
+    let (five, four) = (
+        five.merge_patch(patch).unwrap(),
+        four.merge_patch(patch).unwrap(),
+    );
+    each_table_alone_equals_the_full_run(&five, &four);
+    let any_dates = common::all_files().into_iter().any(|(_, bytes, delims)| {
         let spec = common::select(&five, &four, &bytes, delims);
+        let document = Document::with_delimiters(&bytes[..], delims).unwrap();
+        let (whole, _) = Processor::run(spec, &document);
+        whole
+            .get("claim_dates")
+            .is_some_and(|table| table.len() > 0)
+            && whole
+                .get("claims")
+                .unwrap()
+                .column("first_amount")
+                .is_some()
+    });
+    assert!(any_dates, "no file fills the new table");
+}
+
+fn each_table_alone_equals_the_full_run(five: &Spec, four: &Spec) {
+    for (name, bytes, delims) in common::all_files() {
+        let spec = common::select(five, four, &bytes, delims);
         let document = Document::with_delimiters(&bytes[..], delims).unwrap();
         let (whole, diagnostics) = Processor::run(spec, &document);
         let names: Vec<&str> = spec.tables().iter().map(|t| t.name.as_str()).collect();

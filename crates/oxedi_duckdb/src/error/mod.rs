@@ -34,8 +34,9 @@ pub enum ReadError {
     MacroParameter {
         /// The `read_835` parameter.
         name: &'static str,
-        /// The macro parameter forwarded to it.
-        parameter: String,
+        /// The macro parameter forwarded to it, when its name can be told
+        /// from the macro's.
+        parameter: Option<String>,
         /// The text DuckDB passed.
         value: String,
     },
@@ -255,6 +256,22 @@ pub(crate) fn identifier(name: &str) -> String {
     }
 }
 
+/// How an error about a forwarded macro parameter names it: what the macro
+/// passed, and what to write instead of `:=`. Without a name the hint says
+/// to write the parameter itself.
+pub(crate) fn macro_hint(parameter: Option<&str>, value: &str) -> (String, String) {
+    match parameter {
+        Some(name) => (
+            format!("its parameter {name:?} as {value:?}"),
+            identifier(name),
+        ),
+        None => (
+            format!("a parameter as {value:?}"),
+            "<the parameter>".to_owned(),
+        ),
+    }
+}
+
 impl fmt::Display for ReadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -287,13 +304,15 @@ impl fmt::Display for ReadError {
                 name,
                 parameter,
                 value,
-            } => write!(
-                f,
-                "{FUNCTION}: {name} must be a constant string; a table macro passed its \
-                 parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
-                 parameter given with := or =>, so write {name} = {}",
-                identifier(parameter)
-            ),
+            } => {
+                let (passed, written) = macro_hint(parameter.as_deref(), value);
+                write!(
+                    f,
+                    "{FUNCTION}: {name} must be a constant string; a table macro passed \
+                     {passed}; DuckDB does not substitute a macro parameter given with := or \
+                     =>, so write {name} = {written}"
+                )
+            }
             ReadError::Mask { name, source } => write!(f, "{FUNCTION}: {name}: {source}"),
             ReadError::MaskDatesWithoutKey { dates } => write!(
                 f,

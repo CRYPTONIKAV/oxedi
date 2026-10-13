@@ -24,6 +24,9 @@ and the extension has its own version.
   table is unchanged.
 
 ### Fixed
+- The macro-parameter error of `read_835` and `oxedi_schema` names the parameter only when
+  DuckDB's qualified name has a single dot; with more dots the macro's name may contain a dot too,
+  so the error says `write table_name = <the parameter>` instead of guessing.
 - A table macro that forwards its parameter to `table_name` or `version` with `:=` while the
   path is fixed now fails with an error that says the value must be a constant string and to write
   the argument with `=` (`table_name = tbl`), which forwards the parameter, instead of naming
