@@ -309,7 +309,8 @@ def test_a_masked_error_tree_failure_keeps_the_exception_type_and_drops_its_text
         f" (ValueError: SECRETNAME); {where}"
     )
     assert masked.rule == (
-        f"could not finish validating: its error tree could not be read (ValueError); {where}"
+        "could not finish validating: its error tree could not be read"
+        f" (ValueError (its message is not shown with a mask)); {where}"
     )
     assert "SECRETNAME" not in masked.rule
     assert place(masked) == place(plain)

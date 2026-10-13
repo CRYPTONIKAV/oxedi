@@ -305,24 +305,30 @@ def validate(
     column flags as patient data reads is masked as ``parse`` masks its own
     diagnostics with that mask. In the finding's message, the original
     datum and each value its segment holds at such a place are replaced by
-    their masked forms, whether or not the finding names an element; a
-    value under 4 characters only where it stands apart (quoted, between
-    separators or spaces, or at an edge of the message), and values that
-    overlap are replaced together. Every other attribute, and the findings'
-    number and order, stay as without it. The flagged places are those of
-    the spec the parse uses: ``spec``, an ``oxedi.Spec``, or the built-in
-    spec of the file's version when it is ``None``, so a patched spec that
-    flags more columns masks them here as ``parse(source, spec=spec,
-    mask=mask)`` does. The same spec locates the findings' loop paths, as
-    in ``parse(source, spec=spec)``. A failure finding for an exception
-    inside pyx12, whose text no
-    flagged place points at, keeps the exception's type and drops its
-    text: ``could not finish validating: ValueError (its message is not
-    shown with a mask); ...``, or ``its error tree could not be read
-    (ValueError)``. pyx12 still reads the original file: the mask hides
-    what ``validate`` returns, not what pyx12 is given. ``mask`` of any other
-    type than ``oxedi.Mask`` or ``None`` raises ``TypeError``, and so does
-    ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
+    their masked forms, whether or not the finding names an element. A
+    value of 4 characters or more is replaced wherever it occurs. A shorter
+    one is replaced only where it stands apart: the character on each side
+    is the edge of the message, a character that is not an ASCII letter or
+    digit (an accented letter or ``-`` counts), or part of another replaced
+    value. Short values that overlap or touch are replaced as one group when
+    the group stands apart. A short value glued to letters or digits that
+    are not flagged values stays as written (with ``XAB`` and ``ABYZ``
+    flagged, ``QXABYZ`` keeps ``QX``), and two short values that together
+    spell a word of the message replace that word. Every other attribute,
+    and the findings' number and order, stay as without it. The flagged
+    places are those of the spec the parse uses: ``spec``, an
+    ``oxedi.Spec``, or the built-in spec of the file's version when it is
+    ``None``, so a patched spec that flags more columns masks them here as
+    ``parse(source, spec=spec, mask=mask)`` does. The same spec locates the
+    findings' loop paths, as in ``parse(source, spec=spec)``. A failure
+    finding for an exception inside pyx12, whose text no flagged place
+    points at, keeps the exception's type and drops its text: ``could not
+    finish validating: ValueError (its message is not shown with a mask);
+    ...``, or ``its error tree could not be read (ValueError (its message
+    is not shown with a mask))``. pyx12 still reads the original file: the
+    mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
+    of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,
+    and so does ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
     """
     if mask is not None and not isinstance(mask, Mask):
         raise TypeError(
@@ -343,10 +349,11 @@ def validate(
 
 def _reason(err: BaseException, masked: bool) -> str:
     """How a failure finding names the exception pyx12 raised: its type and
-    its text, or only its type when ``masked``, as the text may quote a
-    value of the file that no flagged place can point at."""
+    its text, or, when ``masked``, its type and a note that its text is not
+    shown, as the text may quote a value of the file that no flagged place
+    can point at."""
     if masked:
-        return type(err).__name__
+        return f"{type(err).__name__} (its message is not shown with a mask)"
     return f"{type(err).__name__}: {err}"
 
 
@@ -360,8 +367,6 @@ def _findings(data: bytes, result: Any, masked: bool) -> list[Diagnostic]:
     run = _run(text)
     if run.failure is not None:
         reason = _reason(run.failure, masked)
-        if masked:
-            reason += " (its message is not shown with a mask)"
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if run.handler is None:
         failure = _failure("pyx12 built no error handler", run.track, positions, document)
