@@ -1,6 +1,5 @@
 //! The `phi` and `phi_seed` keys: which columns hold patient data.
 
-use crate::column::ColumnType;
 use crate::spec::*;
 use crate::{Phi, SpecError};
 
@@ -68,7 +67,7 @@ fn bad_phi_declarations_are_refused() {
             Some("c"),
             TableDefError::PhiNeedsText {
                 kind: "name",
-                found: ColumnType::Int64 { scale: 0 },
+                found: ColumnKind::Element(Some(ElementType::N(0))),
             },
         ),
         (
@@ -76,14 +75,14 @@ fn bad_phi_declarations_are_refused() {
             Some("c"),
             TableDefError::PhiNeedsText {
                 kind: "id",
-                found: ColumnType::Date32,
+                found: ColumnKind::Element(Some(ElementType::Dt)),
             },
         ),
         (
             r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":1,"phi":"date"}}}}"#,
             Some("c"),
             TableDefError::PhiNeedsDate {
-                found: ColumnType::Binary,
+                found: ColumnKind::Element(Some(ElementType::An)),
             },
         ),
         (
@@ -120,15 +119,15 @@ fn phi_errors_display_the_rule_and_the_datum() {
         (
             TableDefError::PhiNeedsText {
                 kind: "name",
-                found: ColumnType::Date32,
+                found: ColumnKind::Element(Some(ElementType::Dt)),
             },
-            "\"phi\": \"name\" applies to a text column; this column is date32",
+            "\"phi\": \"name\" applies to a text column; this column is DT (date CCYYMMDD or YYMMDD)",
         ),
         (
             TableDefError::PhiNeedsDate {
-                found: ColumnType::Binary,
+                found: ColumnKind::Element(Some(ElementType::An)),
             },
-            "\"phi\": \"date\" applies to a date column; this column is binary",
+            "\"phi\": \"date\" applies to a date column; this column is AN (string)",
         ),
         (
             TableDefError::UnknownPhiSeed {
@@ -144,6 +143,38 @@ fn phi_errors_display_the_rule_and_the_datum() {
     for (error, expected) in cases {
         assert_eq!(error.to_string(), expected);
     }
+}
+
+#[test]
+fn a_segment_index_and_an_undefined_element_are_judged_by_the_spec() {
+    let (column, error) = reason(
+        r#"{"t":{"loops":["A"],"segment":"AA","columns":{"c":{"segment_index":true,"phi":"id"}}}}"#,
+    );
+    assert_eq!(column.as_deref(), Some("c"));
+    assert_eq!(
+        error,
+        TableDefError::PhiNeedsText {
+            kind: "id",
+            found: ColumnKind::SegmentIndex
+        }
+    );
+    assert_eq!(
+        error.to_string(),
+        "\"phi\": \"id\" applies to a text column; this column is a segment index"
+    );
+    assert!(
+        spec_with(
+            r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":9,"phi":"name"}}}}"#
+        )
+        .is_ok()
+    );
+    let (_, error) = reason(
+        r#"{"t":{"loops":["A"],"columns":{"c":{"segment":"AA","element":9,"phi":"date"}}}}"#,
+    );
+    assert_eq!(
+        error.to_string(),
+        "\"phi\": \"date\" applies to a date column; this column is an element the spec does not define"
+    );
 }
 
 fn flagged(spec: &Spec) -> Vec<String> {

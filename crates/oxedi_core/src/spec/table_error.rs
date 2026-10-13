@@ -2,9 +2,9 @@
 
 use std::fmt;
 
+use super::phi::ColumnKind;
 use super::render::{render_chain, render_names};
 use super::tables::Pick;
-use crate::column::ColumnType;
 
 /// The tables above two anchor loops, outermost first.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -226,12 +226,12 @@ pub enum TableDefError {
         /// The kind given: `name` or `id`.
         kind: &'static str,
         /// The column's type.
-        found: ColumnType,
+        found: ColumnKind,
     },
     /// `phi` is `date` on a column that is not a date.
     PhiNeedsDate {
         /// The column's type.
-        found: ColumnType,
+        found: ColumnKind,
     },
     /// `phi_seed` names a column the table does not have.
     UnknownPhiSeed {

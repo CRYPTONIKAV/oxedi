@@ -34,6 +34,7 @@ mod occurrence_error;
 mod occurrences;
 mod patch;
 mod phi;
+
 mod raw;
 mod render;
 mod segments;
@@ -51,6 +52,7 @@ pub use loops::{Control, ControlCount, ControlError, LoopDef, LoopId, Trigger};
 pub use occurrence_error::OccurrenceError;
 pub use occurrences::{OccurrenceDef, Qualifier, Usage};
 pub use patch::merge_patch;
+pub use phi::ColumnKind;
 pub use segments::{
     ElementDef, ElementDefError, ElementType, ROW_COLUMN, SEGMENT_COLUMN, SegmentDef,
 };

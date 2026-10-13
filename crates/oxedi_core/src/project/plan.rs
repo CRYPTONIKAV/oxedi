@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 
 use super::carry::Carried;
 use crate::column::ColumnType;
-use crate::spec::{ColumnSource, ElementDef, OccurrenceDef, Pick, Qualifier, Spec, TableDef};
+use crate::spec::{
+    ColumnKind, ColumnSource, ElementDef, OccurrenceDef, Pick, Qualifier, Spec, TableDef,
+};
 
 /// One defined element, with what checking it needs worked out once.
 #[derive(Debug, Clone)]
@@ -269,22 +271,9 @@ impl<'s> Plans<'s> {
 
 /// The column type of a declared column: its element's type, `Int64` for a
 /// segment index, `Binary` for an element the spec does not define.
-pub(crate) fn column_type(spec: &Spec, table: &TableDef, source: &ColumnSource) -> ColumnType {
-    let def = match source {
-        ColumnSource::Element {
-            segment,
-            element,
-            component,
-            ..
-        } => spec.element_def(segment, *element, *component),
-        ColumnSource::SegmentIndex { .. } => return ColumnType::Int64 { scale: 0 },
-        ColumnSource::GroupElement { offset, component } => match (&table.segment, table.repeat) {
-            (Some(segment), Some(repeat)) => repeat
-                .from
-                .checked_add(*offset)
-                .and_then(|position| spec.element_def(segment, position, *component)),
-            _ => None,
-        },
-    };
-    ColumnType::of(def.map(|def| def.kind))
+pub(super) fn column_type(spec: &Spec, table: &TableDef, source: &ColumnSource) -> ColumnType {
+    match spec.column_kind(table, source) {
+        ColumnKind::SegmentIndex => ColumnType::Int64 { scale: 0 },
+        ColumnKind::Element(kind) => ColumnType::of(kind),
+    }
 }

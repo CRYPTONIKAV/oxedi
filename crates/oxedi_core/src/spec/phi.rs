@@ -1,12 +1,60 @@
 //! Compilation of the columns flagged as patient data and of the seed column.
 
+use std::fmt;
+
 use super::Spec;
 use super::error::SpecError;
+use super::segments::ElementType;
 use super::table_error::TableDefError;
+use super::tables::ColumnSource;
 use super::tables::TableDef;
-use crate::column::ColumnType;
 use crate::mask::Phi;
-use crate::project::column_type;
+
+/// What a column reads, in the spec's own terms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColumnKind {
+    /// The index of a segment.
+    SegmentIndex,
+    /// An element or component; `None` when the spec does not define it.
+    Element(Option<ElementType>),
+}
+
+impl fmt::Display for ColumnKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ColumnKind::SegmentIndex => write!(f, "a segment index"),
+            ColumnKind::Element(Some(kind)) => write!(f, "{kind}"),
+            ColumnKind::Element(None) => write!(f, "an element the spec does not define"),
+        }
+    }
+}
+
+impl Spec {
+    /// What `source` of a column of `table` reads: a segment index, or the
+    /// element type the spec declares for the element (`None` when it
+    /// declares none).
+    pub(crate) fn column_kind(&self, table: &TableDef, source: &ColumnSource) -> ColumnKind {
+        let def = match source {
+            ColumnSource::Element {
+                segment,
+                element,
+                component,
+                ..
+            } => self.element_def(segment, *element, *component),
+            ColumnSource::SegmentIndex { .. } => return ColumnKind::SegmentIndex,
+            ColumnSource::GroupElement { offset, component } => {
+                match (&table.segment, table.repeat) {
+                    (Some(segment), Some(repeat)) => repeat
+                        .from
+                        .checked_add(*offset)
+                        .and_then(|position| self.element_def(segment, position, *component)),
+                    _ => None,
+                }
+            }
+        };
+        ColumnKind::Element(def.map(|def| def.kind))
+    }
+}
 
 /// Fills `table.phi` from the `phi` word each column wrote (parallel to
 /// `table.columns`) and `table.phi_seed` from the `phi_seed` column name.
@@ -35,9 +83,13 @@ pub(super) fn compile_phi(
                 },
             ));
         };
-        let found = column_type(spec, table, source);
+        let found = spec.column_kind(table, source);
         let reason = match (kind, found) {
-            (Phi::Date, ColumnType::Date32) | (Phi::Name | Phi::Id, ColumnType::Binary) => None,
+            (Phi::Date, ColumnKind::Element(Some(ElementType::Dt)))
+            | (
+                Phi::Name | Phi::Id,
+                ColumnKind::Element(None | Some(ElementType::An | ElementType::Id)),
+            ) => None,
             (Phi::Date, found) => Some(TableDefError::PhiNeedsDate { found }),
             (kind, found) => Some(TableDefError::PhiNeedsText {
                 kind: kind.word(),
