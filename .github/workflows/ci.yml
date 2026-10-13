@@ -97,6 +97,10 @@ jobs:
               - '.github/workflows/docs.yml'
               - '.github/workflows/ci.yml'
               - '.github/workflows/_docs.yml'
+              # The deploy dry run runs these.
+              - '.github/scripts/deploy-docs.sh'
+              - '.github/scripts/is-latest-minor.sh'
+              - '.github/scripts/publish-viewer.sh'
             viewer:
               - 'crates/oxedi_core/**'
               - 'crates/oxedi_py/**'

@@ -3,13 +3,21 @@
 # builds a worktree from the current origin/gh-pages, replaces the viewer's folder, commits and
 # pushes. Nothing outside viewer/ and, for a release, the root llms.txt is touched. Run it
 # through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
-# Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH=false to stop
-# after the commit in the temporary worktree (a dry run that never pushes).
+# Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH: true (the
+# default) pushes; false stops after the commit in the temporary worktree (a dry run that never
+# pushes); local starts from the local gh-pages branch instead of origin/gh-pages, fetches
+# nothing, and moves that branch onto the commit (deploy-docs.sh --no-push).
 set -euo pipefail
 
-git fetch origin gh-pages
+push=${PUSH:-true}
+if [ "$push" = "local" ]; then
+  base=gh-pages
+else
+  git fetch origin gh-pages
+  base=origin/gh-pages
+fi
 pages=$(mktemp -d)/gh-pages
-git worktree add -B viewer-publish "$pages" origin/gh-pages
+git worktree add -B viewer-publish "$pages" "$base"
 trap 'git worktree remove --force "$pages"' EXIT
 
 # `viewer/` for a release (keeping `viewer/dev/`), `viewer/dev/` for master.
@@ -40,8 +48,11 @@ if git diff --cached --quiet; then
   echo "$what on gh-pages: already up to date."
 else
   git commit -m "$what $label from ${GITHUB_SHA::7}"
-  if [ "${PUSH:-true}" = "true" ]; then
+  if [ "$push" = "true" ]; then
     git push origin HEAD:gh-pages
+  elif [ "$push" = "local" ]; then
+    git branch -f gh-pages HEAD
+    echo "PUSH=local: moved the local gh-pages to $(git rev-parse --short HEAD), nothing pushed."
   else
     echo "PUSH=false: committed $(git rev-parse --short HEAD) locally, nothing pushed."
   fi
