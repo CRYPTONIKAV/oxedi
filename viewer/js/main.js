@@ -65,13 +65,32 @@ function clearViews() {
   for (const name of ['tables', 'diagnostics', 'text', 'loops']) views[name].clear();
 }
 
+// The tab and filters to put back once the file they belong to is shown again.
+let saved = null;
+
 function showLoaded(file) {
   loaded = file;
   renderSummary(panels.summary, file);
   for (const name of ['tables', 'diagnostics', 'text', 'loops']) views[name].show(file);
   $('diag-count').textContent = String(file.view.diagnostics.length);
   $('results').hidden = false;
-  selectTab('summary');
+  const keep = saved && saved.source === file.source ? saved.state : null;
+  saved = null;
+  if (keep) {
+    views.tables.restore(keep.tables);
+    views.diagnostics.restore(keep.diagnostics);
+  }
+  selectTab(keep ? keep.tab : 'summary');
+}
+
+/** Remembers the view of the open file, once per file, across quick repeated toggles. */
+function remember(source) {
+  if (saved && saved.source === source) return;
+  const open = loaded && loaded.source === source;
+  saved = {
+    source,
+    state: open ? { tab: current, tables: views.tables.state(), diagnostics: views.diagnostics.state() } : null,
+  };
 }
 
 function fail(message) {
@@ -105,6 +124,7 @@ async function start() {
 
   mask.addEventListener('change', () => {
     $('mask-note').hidden = !mask.checked;
+    remember(loader.current());
     loader.reparse();
   });
 

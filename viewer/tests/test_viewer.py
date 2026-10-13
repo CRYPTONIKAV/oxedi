@@ -313,3 +313,66 @@ def test_findings_on_flagged_places_are_masked_in_the_diagnostics_list(viewer):
     for datum in plain:
         assert (datum.decode() if isinstance(datum, bytes) else datum) not in shown
     assert len(re.findall(r'datum "[0-9a-f]{16}"', shown)) == 5
+
+
+SLOW_READS = """() => {
+  const original = Blob.prototype.arrayBuffer;
+  Blob.prototype.arrayBuffer = async function () {
+    const buffer = await original.call(this);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    return buffer;
+  };
+}"""
+
+
+def test_the_toggle_keeps_the_tab_and_the_filter_of_the_open_file(viewer):
+    data = SAMPLE_FIXTURE.read_bytes()
+    viewer.open()
+    viewer.load("keep.835", data)
+    viewer.wait_loaded()
+    viewer.tab("tables")
+    viewer.page.fill("#table-filter", "DOE")
+    panel = viewer.page.locator("#panel-tables")
+    expect(panel).to_contain_text(re.compile(r"\d+ of \d+ rows"))
+
+    viewer.page.check("#mask")
+    # Rows matching "DOE" are filtered on the masked values, so none show it any more.
+    expect(panel).not_to_contain_text("DOE")
+    assert viewer.page.get_attribute("#tab-tables", "aria-selected") == "true"
+    assert viewer.page.input_value("#table-filter") == "DOE"
+    expect(viewer.page.locator("#panel-tables .toolbar span[role=status]")).to_have_text(re.compile(r"^0 of \d+ rows$"))
+
+    viewer.page.fill("#table-filter", "")
+    expect(panel).to_contain_text(re.compile(r"[0-9a-f]{16}"))
+
+
+def test_a_toggle_during_a_load_ends_on_the_new_file_masked(viewer):
+    first = SAMPLE_FIXTURE.read_bytes()
+    second = (FIXTURES / "masked_findings_5010_sample.txt").read_bytes()
+    viewer.open()
+    viewer.load("a.835", first)
+    viewer.wait_loaded()
+    viewer.page.evaluate(SLOW_READS)
+    viewer.load("b.835", second)
+    viewer.page.check("#mask")
+    viewer.tab("tables")
+    panel = viewer.page.locator("#panel-tables")
+    expect(panel).to_contain_text(re.compile(r"[0-9a-f]{16}"))
+    expect(viewer.page.locator("#panel-summary")).to_contain_text("b.835")
+    assert "DOE" not in text_of(viewer, "#panel-tables")
+
+
+def test_two_quick_toggles_during_a_load_end_on_the_new_file_unmasked(viewer):
+    first = SAMPLE_FIXTURE.read_bytes()
+    second = (FIXTURES / "masked_findings_5010_sample.txt").read_bytes()
+    viewer.open()
+    viewer.load("a.835", first)
+    viewer.wait_loaded()
+    viewer.page.evaluate(SLOW_READS)
+    viewer.load("b.835", second)
+    viewer.page.check("#mask")
+    viewer.page.uncheck("#mask")
+    expect(viewer.page.locator("#panel-summary")).to_contain_text("b.835")
+    viewer.tab("tables")
+    expect(viewer.page.locator("#panel-tables")).to_contain_text("DOE")
+    assert not re.search(r"\b[0-9a-f]{16}\b", text_of(viewer, "#panel-tables"))
