@@ -4,7 +4,7 @@
 
 use std::fmt;
 
-use oxedi_core::{ColumnType, DocumentError};
+use oxedi_core::{ColumnType, DocumentError, MaskError};
 
 /// The name every message starts with, as DuckDB shows it to the user.
 pub const FUNCTION: &str = "read_835";
@@ -38,6 +38,19 @@ pub enum ReadError {
         parameter: String,
         /// The text DuckDB passed.
         value: String,
+    },
+    /// `mask_key` or `mask_dates` does not build a mask.
+    Mask {
+        /// The `read_835` parameter at fault.
+        name: &'static str,
+        /// The core's error.
+        source: MaskError,
+    },
+    /// `mask_dates` was given without `mask_key`, so there is nothing to
+    /// choose the date mode of.
+    MaskDatesWithoutKey {
+        /// The mode given.
+        dates: String,
     },
     /// `table_name` names no table of the spec.
     UnknownTable {
@@ -275,6 +288,12 @@ impl fmt::Display for ReadError {
                  parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
                  parameter given with := or =>, so write {name} = {}",
                 identifier(parameter)
+            ),
+            ReadError::Mask { name, source } => write!(f, "{FUNCTION}: {name}: {source}"),
+            ReadError::MaskDatesWithoutKey { dates } => write!(
+                f,
+                "{FUNCTION}: mask_dates {dates:?} was given without mask_key; mask_dates only \
+                 chooses how a mask treats dates, so give mask_key as well"
             ),
             ReadError::UnknownTable { table, known } => write!(
                 f,

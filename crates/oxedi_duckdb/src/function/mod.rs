@@ -224,6 +224,7 @@ unsafe fn bind_with(info: ffi::duckdb_bind_info) -> Result<(), ReadError> {
         filename: options.filename,
         ignore_errors: options.ignore_errors,
         binary: options.binary,
+        mask: options.mask,
     };
     // SAFETY: `info` is live; DuckDB owns the box from here and frees it
     // with `drop_box::<Bound>`.

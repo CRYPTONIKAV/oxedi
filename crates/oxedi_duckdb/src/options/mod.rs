@@ -3,6 +3,7 @@
 use std::ffi::CString;
 
 use libduckdb_sys as ffi;
+use oxedi_core::{DateMode, Mask};
 
 use crate::error::ReadError;
 use crate::value::Value;
@@ -12,16 +13,18 @@ pub const DEFAULT_TABLE: &str = "claims";
 
 /// The named parameters, in registration order, with whether each is a
 /// boolean (else a VARCHAR).
-pub const NAMED: [(&str, bool); 5] = [
+pub const NAMED: [(&str, bool); 7] = [
     ("table_name", false),
     ("filename", true),
     ("version", false),
     ("binary", true),
     ("ignore_errors", true),
+    ("mask_key", false),
+    ("mask_dates", false),
 ];
 
 /// What one call of `read_835` asked for.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Options {
     /// The paths as given: plain paths or glob patterns.
     pub paths: Vec<String>,
@@ -35,6 +38,8 @@ pub struct Options {
     pub binary: bool,
     /// Whether a file that cannot be parsed is reported instead of failing.
     pub ignore_errors: bool,
+    /// The mask that hides patient data, when `mask_key` was given.
+    pub mask: Option<Mask>,
 }
 
 /// A named parameter as the call gave it.
@@ -65,6 +70,11 @@ impl Options {
         };
         // SAFETY: each name below is one of NAMED (caller contract).
         let named = |name: &str| unsafe { named(info, name) };
+        let text = |name: &'static str, parameter: Named| match parameter {
+            Named::Absent => Ok(None),
+            Named::Null => Err(ReadError::NullOption { name }),
+            Named::Given(value) => constant(name, value.text()).map(Some),
+        };
         let flag = |name: &'static str| match named(name) {
             Named::Absent => Ok(false),
             Named::Null => Err(ReadError::NullOption { name }),
@@ -84,8 +94,36 @@ impl Options {
             },
             binary: flag("binary")?,
             ignore_errors: flag("ignore_errors")?,
+            mask: mask_of(
+                text("mask_key", named("mask_key"))?,
+                text("mask_dates", named("mask_dates"))?,
+            )?,
         })
     }
+}
+
+/// The mask the key and date mode ask for: none without a key, and a date
+/// mode without a key is refused.
+fn mask_of(key: Option<String>, dates: Option<String>) -> Result<Option<Mask>, ReadError> {
+    let Some(key) = key else {
+        return match dates {
+            Some(dates) => Err(ReadError::MaskDatesWithoutKey { dates }),
+            None => Ok(None),
+        };
+    };
+    let dates = match dates {
+        Some(dates) => DateMode::parse(&dates).map_err(|source| ReadError::Mask {
+            name: "mask_dates",
+            source,
+        })?,
+        None => DateMode::Year,
+    };
+    Mask::new(key.as_bytes(), dates)
+        .map(Some)
+        .map_err(|source| ReadError::Mask {
+            name: "mask_key",
+            source,
+        })
 }
 
 /// The named parameter `name` of the bind.

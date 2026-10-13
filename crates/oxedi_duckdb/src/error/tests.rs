@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use oxedi_core::{ColumnType, Document};
+use oxedi_core::{ColumnType, Document, MaskError};
 
 use super::ReadError;
 
@@ -263,5 +263,41 @@ fn pattern_without_external_access() {
         }),
         "read_835: the pattern \"data/*.835\" cannot be expanded while \
          enable_external_access is false; list the files instead"
+    );
+}
+
+#[test]
+fn mask_key_too_short() {
+    assert_eq!(
+        text(ReadError::Mask {
+            name: "mask_key",
+            source: MaskError::ShortKey { length: 5 },
+        }),
+        "read_835: mask_key: the mask key must be at least 16 bytes long; got 5"
+    );
+}
+
+#[test]
+fn mask_dates_unknown() {
+    assert_eq!(
+        text(ReadError::Mask {
+            name: "mask_dates",
+            source: MaskError::UnknownDateMode {
+                given: "month".to_owned()
+            },
+        }),
+        "read_835: mask_dates: the mask date mode must be \"year\", \"shift\" or \"keep\"; \
+         got \"month\""
+    );
+}
+
+#[test]
+fn mask_dates_without_key() {
+    assert_eq!(
+        text(ReadError::MaskDatesWithoutKey {
+            dates: "year".to_owned()
+        }),
+        "read_835: mask_dates \"year\" was given without mask_key; mask_dates only chooses how \
+         a mask treats dates, so give mask_key as well"
     );
 }
