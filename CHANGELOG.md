@@ -15,6 +15,9 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
   quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
   never masked. A key under 16 bytes raises `ValueError`.
+- `oxedi.pyx12.validate` accepts `mask=`: a finding about a place a column flagged as patient
+  data reads has its value masked as `parse` masks its diagnostics, in its datum and in pyx12's
+  message. pyx12 still reads the original file.
 - A "Hide patient data" switch in the browser viewer.
 - A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.

@@ -37,7 +37,9 @@ so a token can be reproduced from the key. Two consequences follow:
 An empty value stays empty, and a missing value stays null.
 
 The diagnostics are masked too. The value a finding quotes is masked when it comes from `DTM02`,
-`REF02`, `NM1` elements 3, 4 and 9, `CLP01` or `CLP07`. This covers every segment of those types,
+`REF02`, `NM1` elements 3, 4 and 9, `CLP01`, `CLP07` or the reference of a `PLB` adjustment
+(the second component of each adjustment identifier, read into
+`provider_adjustments.reference_id`). This covers every segment of those types,
 so it also hides the value of a finding about the payer, the payee or a provider, such as one
 about a `DTM*405` date or a payer `REF02`. Amounts a finding quotes stay as they are.
 A `LengthOutOfRange` finding still states the length of the original value. With
@@ -79,6 +81,30 @@ Keep the key out of the files you share, and reuse it when you need the same tok
 patient in another run.
 
 `oxedi.parse`, `oxedi.parse_file` and `oxedi.stream` all take `mask=` and mask the same way.
+
+## Validate with pyx12
+
+`oxedi.pyx12.validate` takes `mask=` too. A finding about a place the masked columns read gets
+its value masked as `parse` masks its own diagnostics, and that value is replaced in pyx12's
+message as well. The findings, their order and where they point stay the same as without the
+mask. This example writes an invalid claim date into the example file:
+
+```python
+from pathlib import Path
+from oxedi.pyx12 import validate
+
+data = Path("remittance.835").read_bytes().replace(b"DTM*232*20240105", b"DTM*232*20240230")
+for d in validate(data, mask=oxedi.Mask(key)):
+    print(d.code, d.datum, d.rule)
+```
+
+```text
+10 b'005010X221A1' Data element "Implementation Convention Reference" (ST03) is marked as Not Used (reported by pyx12, code 10)
+8 b'46891844d3db70db' Data element "Claim Date" (DTM02) contains an invalid date (46891844d3db70db) (reported by pyx12, code 8)
+```
+
+pyx12 still reads the original file: the mask hides what `validate` returns, not what pyx12 is
+given. A pyx12 message about a length still states the length of the original value.
 
 ## Use it in SQL
 
@@ -126,7 +152,6 @@ LIMIT 2;
   never changes them. Do not share `result.document.write()`.
 - **Payer, payee and provider data.** Names, addresses and identification codes of the payer, the
   payee and the rendering provider are not patient data and stay as they are.
-- **Findings from `oxedi.pyx12.validate`.** They quote pyx12's own text and are not masked.
 
 With the default `dates="year"`, this follows the HIPAA Safe Harbor identifiers that appear in the
 tables: names, member and claim numbers, and dates reduced to the year. `"shift"` and `"keep"`

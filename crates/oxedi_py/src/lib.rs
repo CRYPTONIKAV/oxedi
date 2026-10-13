@@ -81,6 +81,7 @@ fn core_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<write::PyEnvelope>()?;
     m.add_class::<write::PyWriteFinding>()?;
     m.add_function(wrap_pyfunction!(diagnostic::external_diagnostic, m)?)?;
+    m.add_function(wrap_pyfunction!(diagnostic::mask_findings, m)?)?;
     m.add_function(wrap_pyfunction!(parse::parse, m)?)?;
     m.add_function(wrap_pyfunction!(parse::loop_paths, m)?)?;
     m.add_function(wrap_pyfunction!(stream::stream, m)?)?;

@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 
+import pyarrow
 import pytest
 
 pytest.importorskip("pyx12")
@@ -12,7 +13,7 @@ pytest.importorskip("pyx12")
 import oxedi
 from oxedi.pyx12 import validate
 
-from conftest import SAMPLES, path_of, read
+from conftest import ALL_FILES, NO_ISA, SAMPLES, path_of, read
 
 EYEMED = "edi835_test_eyemed.RMT"
 LEGACY = "united_healthcare_legacy_sample.txt"
@@ -788,3 +789,107 @@ def test_the_crafted_findings_name_their_loops():
 def test_a_failure_names_the_loops_at_its_segment():
     (failure,) = validate(read("multi_claim_sample.txt"))
     assert failure.path == "interchange#1"
+
+
+MASK_KEY = b"k" * 16
+
+
+def flagged_values(data):
+    """Every non-empty original value of a column the spec flags as patient
+    data, read from the unmasked tables of ``data``; dates as ``CCYYMMDD``
+    and, for a 4010 file, also as ``YYMMDD``."""
+    result = oxedi.parse(data)
+    spec = json.loads(result.spec.to_json())
+    legacy = b"004010" in data
+    values = set()
+    for table, definition in spec["tables"].items():
+        columns = [c for c, source in definition["columns"].items() if "phi" in source]
+        if not columns:
+            continue
+        for row in pyarrow.table(result.tables[table]).to_pylist():
+            for column in columns:
+                value = row[column]
+                if value is None:
+                    continue
+                if isinstance(value, bytes):
+                    text = value.decode("latin-1")
+                    if text:
+                        values.add(text)
+                else:
+                    values.add(value.strftime("%Y%m%d"))
+                    if legacy:
+                        values.add(value.strftime("%y%m%d"))
+    return values
+
+
+def place(d):
+    return (d.code, d.level, d.segment, d.element, d.component, d.path)
+
+
+WITH_ISA = [name for name in ALL_FILES if name not in NO_ISA]
+
+
+@pytest.mark.parametrize("dates", ["year", "shift"])
+@pytest.mark.parametrize("name", WITH_ISA)
+def test_a_masked_validation_keeps_every_finding_and_quotes_no_patient_value(name, dates):
+    assert_masked_like_plain(name, read(name), dates)
+
+
+def assert_masked_like_plain(name, data, dates):
+    plain = validate(data)
+    masked = validate(data, mask=oxedi.Mask(MASK_KEY, dates=dates))
+    assert [place(d) for d in masked] == [place(d) for d in plain]
+    originals = [value for value in flagged_values(data) if len(value) >= 3]
+    for finding in masked:
+        quoted = finding.datum.decode("latin-1") + "\n" + finding.rule
+        leaked = [value for value in originals if value in quoted]
+        assert not leaked, (name, place(finding), leaked)
+    return plain, masked
+
+
+# Edits of the balanced 5010 fixture, in memory, that make pyx12 report
+# findings on places flagged columns read.
+ON_FLAGGED = {
+    "claim id too long": (b"CLP*CLM1001*", b"CLP*CLM1001" + b"X" * 35 + b"    *"),
+    "claim date invalid": (b"DTM*232*20240105", b"DTM*232*20240230"),
+    "claim date too short": (b"DTM*232*20240105", b"DTM*232*240105"),
+    "patient name not ASCII": (b"NM1*QC*1*", b"NM1*QC*1*D\xe9OE"),
+    "line control number too long": (b"REF*6R*", b"REF*6R*" + b"Q" * 60),
+}
+
+
+@pytest.mark.parametrize("dates", ["year", "shift"])
+@pytest.mark.parametrize("case", sorted(ON_FLAGGED))
+def test_a_masked_validation_hides_findings_on_flagged_places(case, dates):
+    before, after = ON_FLAGGED[case]
+    data = balanced_5010().replace(before, after, 1)
+    plain, masked = assert_masked_like_plain(case, data, dates)
+    assert any(p.datum != m.datum for p, m in zip(plain, masked)), case
+
+
+def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():
+    data = balanced_5010()
+    result = oxedi.parse(data)
+    document = result.document
+    index = next(i for i in range(len(document)) if document[i].id == b"CLP")
+    claim = bytes(document[index].elements[0])
+    message = f"Invalid value '{claim.decode()}' in CLP01"
+    finding = oxedi._core._external_diagnostic(
+        "pyx12", message, 2, code="8", segment=index, element=1, datum=claim
+    )
+    findings = [finding]
+    mask = oxedi.Mask(MASK_KEY)
+
+    (masked,) = oxedi._core._mask_findings(findings, document, mask, result.spec)
+
+    assert findings == [finding] and findings[0] is finding
+    assert finding.datum == claim and claim.decode() in finding.rule
+    assert masked.datum != claim and len(masked.datum) == 16
+    assert claim.decode() not in masked.rule
+    assert f"Invalid value '{masked.datum.decode()}' in CLP01" in masked.rule
+    assert place(masked) == place(finding)
+
+
+def test_a_mask_that_is_not_a_mask_is_refused():
+    with pytest.raises(TypeError, match="validate: mask must be an oxedi.Mask or None, not str"):
+        validate(balanced_5010(), mask="nope")

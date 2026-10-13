@@ -29,6 +29,7 @@ __all__ = [
     "WriteFinding",
     "_external_diagnostic",
     "_loop_paths",
+    "_mask_findings",
     "_write",
     "parse",
     "stream",
@@ -551,6 +552,18 @@ def _loop_paths(result: Result, segments: typing.Sequence[builtins.int]) -> buil
     Internal: adapters to external validators call it to place their
     findings; it is not part of the public API. An index past the last
     segment is a `ValueError` naming it.
+    """
+
+def _mask_findings(diagnostics: typing.Sequence[Diagnostic], document: Document, mask: Mask, spec: Spec) -> builtins.list[Diagnostic]:
+    r"""
+    Copies of `diagnostics`, findings an external validator raised about
+    `document`, with the datum of each one at a place a column `spec` flags
+    as patient data masked by `mask`, as `parse` masks its own diagnostics,
+    and the original datum replaced in the message. The inputs are left as
+    they are.
+    
+    Internal: adapters to external validators call it; it is not part of the
+    public API.
     """
 
 def _write(tables: Tables | collections.abc.Mapping[builtins.str, typing.Any], envelope: Envelope, spec: typing.Optional[Spec] = None, allow_findings: builtins.bool = False) -> tuple[bytes, builtins.list[WriteFinding]]:
