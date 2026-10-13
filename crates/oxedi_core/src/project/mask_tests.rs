@@ -142,3 +142,29 @@ fn mask_found_replaces_every_occurrence_of_a_one_character_datum() {
     let token = String::from_utf8_lossy(&token).into_owned();
     assert_eq!(message(&found[0]), format!("{token} of {token}"));
 }
+
+#[test]
+fn mask_found_replaces_a_datum_quoted_as_latin_1_text() {
+    let spec = Spec::builtin_835();
+    let document = Document::parse(SAMPLE).unwrap();
+    let mask = mask();
+    let projector = Projector::new(&spec, document.delimiters()).with_mask(&mask);
+    let (index, _) = find(&document, b"NM1", Some(b"QC"));
+    let datum = b"D\xe9OE";
+    let mut found = vec![external(
+        "contains an invalid character(D\u{e9}OE)".into(),
+        Some(index),
+        3,
+        datum,
+    )];
+
+    projector.mask_found(&mut found, &document);
+
+    let token = mask.text(Phi::Name, datum);
+    assert_eq!(found[0].datum, token.to_vec());
+    let token = String::from_utf8_lossy(&token).into_owned();
+    assert_eq!(
+        message(&found[0]),
+        format!("contains an invalid character({token})")
+    );
+}

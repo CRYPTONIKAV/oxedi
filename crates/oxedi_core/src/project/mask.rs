@@ -24,8 +24,8 @@
 //! segment, but its datum is an `R` amount, which no flagged column reads.
 //! Findings another validator raised about a document are matched the same
 //! way, by the segment their index names in it, and an external finding whose
-//! datum is masked has every occurrence of the original datum in its message
-//! replaced by the masked one.
+//! datum is masked has every occurrence of the original datum in its message,
+//! read as UTF-8 or as Latin-1, replaced by the masked one.
 
 use crate::column::{civil_from_days, parse_dt};
 use crate::diagnostic::{Diagnostic, Rule};
@@ -91,11 +91,7 @@ impl<'s> DatumMask<'s> {
             {
                 let original = std::mem::replace(&mut diagnostic.datum, masked);
                 if let Rule::External { message, .. } = &mut diagnostic.rule {
-                    let original = String::from_utf8_lossy(&original);
-                    if !original.is_empty() {
-                        let masked = String::from_utf8_lossy(&diagnostic.datum);
-                        *message = message.replace(original.as_ref(), masked.as_ref());
-                    }
+                    *message = unquoted(message, &original, &diagnostic.datum);
                 }
             }
         }
@@ -151,8 +147,9 @@ impl<'s> Projector<'s> {
     /// Masks the datums of diagnostics another validator raised about
     /// `document`, as this projector masks its own: each is matched by the
     /// segment its index names. An external finding whose datum is masked
-    /// also has every occurrence of the original datum in its message
-    /// replaced by the masked one. Without a mask it does nothing.
+    /// also has every occurrence of the original datum in its message, read
+    /// as UTF-8 or as Latin-1, replaced by the masked one. Without a mask it
+    /// does nothing.
     pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
         let Some(datums) = &self.datums else {
             return;
@@ -213,6 +210,25 @@ impl<'s> Projector<'s> {
             Slot::Bytes(start, end) if end > start => source.bytes.get(*start..*end),
             _ => None,
         }
+    }
+}
+
+/// `message` with every occurrence of `original` replaced by `masked`. The
+/// datum is bytes and the message text, so the datum is looked for read as
+/// UTF-8 and, when that differs, read as Latin-1 (one character per byte), the
+/// way a validator that decodes its input as Latin-1 quotes it.
+fn unquoted(message: &str, original: &[u8], masked: &[u8]) -> String {
+    if original.is_empty() {
+        return message.to_string();
+    }
+    let masked = String::from_utf8_lossy(masked);
+    let utf8 = String::from_utf8_lossy(original);
+    let message = message.replace(utf8.as_ref(), masked.as_ref());
+    let latin1: String = original.iter().copied().map(char::from).collect();
+    if latin1 == utf8 {
+        message
+    } else {
+        message.replace(&latin1, masked.as_ref())
     }
 }
 
