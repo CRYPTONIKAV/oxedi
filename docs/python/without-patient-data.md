@@ -34,9 +34,10 @@ of the value, keyed with your key. Two consequences follow:
 
 An empty value stays empty, and a missing value stays null.
 
-The diagnostics are masked too. The value a finding quotes is masked when it comes from one of
-those segments: `DTM02`, `REF02`, `NM1` elements 3, 4 and 9, and `CLP`. That holds even for a
-finding that has nothing to do with a patient, such as a balancing error that quotes a `CLP01`.
+The diagnostics are masked too. The value a finding quotes is masked when it comes from `DTM02`,
+`REF02`, `NM1` elements 3, 4 and 9, `CLP01` or `CLP07`. This covers every segment of those types,
+so it also hides the value of a finding about the payer, the payee or a provider, such as one
+about a `DTM*405` date or a payer `REF02`. Amounts a finding quotes stay as they are.
 A `LengthOutOfRange` finding still states the length of the original value. With
 `dates="shift"`, a date inside a diagnostic is reduced to its year.
 
@@ -125,8 +126,10 @@ rows = con.execute(
   payee and the rendering provider are not patient data and stay as they are.
 - **Findings from `oxedi.pyx12.validate`.** They quote pyx12's own text and are not masked.
 
-This follows the HIPAA Safe Harbor identifiers that appear in the tables: names, member and claim
-numbers, and dates. It is not a legal de-identification determination. Free text, rare
+With the default `dates="year"`, this follows the HIPAA Safe Harbor identifiers that appear in the
+tables: names, member and claim numbers, and dates reduced to the year. `"shift"` and `"keep"`
+do not remove dates the way Safe Harbor requires. It is not a legal de-identification
+determination. Free text, rare
 combinations of values and the data you add yourself are still yours to review.
 
 ## Make synthetic test files

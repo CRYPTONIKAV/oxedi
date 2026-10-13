@@ -103,7 +103,10 @@ async function start() {
     onClear: clearViews,
   });
 
-  mask.addEventListener('change', () => loader.reparse());
+  mask.addEventListener('change', () => {
+    $('mask-note').hidden = !mask.checked;
+    loader.reparse();
+  });
 
   const input = $('file');
   input.addEventListener('change', () => {

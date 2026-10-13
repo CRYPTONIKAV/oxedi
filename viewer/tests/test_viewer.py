@@ -277,3 +277,12 @@ def test_hide_patient_data_masks_cells_and_csv_and_restores(viewer, tmp_path):
     viewer.page.uncheck("#mask")
     viewer.tab("tables")
     assert "DOE" in text_of(viewer, "#panel-tables")
+
+
+def test_the_toggle_warns_that_the_text_view_is_not_masked(viewer):
+    viewer.open()
+    assert viewer.page.is_hidden("#mask-note")
+    viewer.page.check("#mask")
+    assert "original file" in text_of(viewer, "#mask-note")
+    viewer.page.uncheck("#mask")
+    assert viewer.page.is_hidden("#mask-note")

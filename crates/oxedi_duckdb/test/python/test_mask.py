@@ -72,3 +72,29 @@ def test_a_masked_diagnostic_does_not_quote_the_patient(con, tmp_path) -> None: 
     ).fetchall()
     assert rows
     assert not any(member.decode() in (row[0] or "") for row in rows)
+
+
+def test_a_parameter_a_variable_and_a_macro_give_the_literal_keys_cells(con) -> None:  # noqa: F811
+    path = pathlib.Path(__file__).resolve().parents[3] / "oxedi_core/tests/fixtures/balanced_5010_sample.txt"
+    quoted = str(path).replace("'", "''")
+    literal = con.execute(
+        f"SELECT * FROM read_835('{quoted}', binary := true, mask_key := '{KEY}', mask_dates := 'shift')"
+    ).fetchall()
+    assert literal
+    parameter = con.execute(
+        "SELECT * FROM read_835(?, binary := true, mask_key := ?, mask_dates := ?)",
+        [str(path), KEY, "shift"],
+    ).fetchall()
+    assert parameter == literal
+    con.execute("SET VARIABLE test_mask_key = ?", [KEY])
+    variable = con.execute(
+        f"SELECT * FROM read_835('{quoted}', binary := true, "
+        "mask_key := getvariable('test_mask_key'), mask_dates := 'shift')"
+    ).fetchall()
+    assert variable == literal
+    con.execute(
+        "CREATE OR REPLACE MACRO masked_claims(p) AS TABLE "
+        "SELECT * FROM read_835(p, binary := true, mask_key := getvariable('test_mask_key'), "
+        "mask_dates := 'shift')"
+    )
+    assert con.execute("SELECT * FROM masked_claims(?)", [str(path)]).fetchall() == literal
