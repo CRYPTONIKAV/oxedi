@@ -18,7 +18,8 @@ impl SizeError {
 
     /// `Ok` when an input of `len` bytes can be indexed.
     pub(super) const fn check(len: usize) -> Result<(), SizeError> {
-        if len > Self::LIMIT {
+        // Compared as u64 so the check is meaningful where usize is 32 bits wide too.
+        if len as u64 > Self::LIMIT as u64 {
             Err(SizeError { len })
         } else {
             Ok(())

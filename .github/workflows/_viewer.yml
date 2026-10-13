@@ -27,6 +27,8 @@ jobs:
           node-version: 24
       - name: wasm-bindgen CLI (the version Cargo.lock resolves) and wasm-opt
         uses: ./.github/actions/wasm-tools
+      - name: Clippy on the WebAssembly target
+        run: cargo clippy -p oxedi_core -p oxedi_wasm --target wasm32-unknown-unknown --locked -- -D warnings
       - name: Build the module
         run: make wasm
       - name: Size
