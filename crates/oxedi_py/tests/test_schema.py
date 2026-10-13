@@ -3,8 +3,10 @@ import sys
 import pyarrow as pa
 import pytest
 
+import oxedi
 from conftest import ALL_FILES, parse_named
 from oxedi import Spec
+from test_write import CLEAN, envelope
 
 PARENT = b"oxedi.parent"
 
@@ -91,3 +93,18 @@ def test_a_missing_pyarrow_is_named(monkeypatch):
         'install it with: pip install "oxedi[pandas]"'
     )
     assert isinstance(info.value.__cause__, ImportError)
+
+
+@pytest.mark.parametrize("name", CLEAN)
+def test_tables_cast_to_the_schema_write_like_the_parsed_tables(name):
+    tables = parse_named(name).tables
+    schemas = tables.spec.schema()
+    cast = {
+        table: pa.table(tables[table]).cast(schemas[table])
+        for table in tables.keys()
+    }
+    for table, frame in cast.items():
+        assert frame.schema.equals(schemas[table], check_metadata=True), table
+    assert oxedi.write(cast, envelope(), spec=tables.spec) == oxedi.write(
+        tables, envelope()
+    )

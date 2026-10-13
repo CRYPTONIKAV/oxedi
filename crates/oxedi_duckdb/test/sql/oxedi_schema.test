@@ -285,3 +285,11 @@ query I
 SELECT count(*) FROM schema_of('4010') WHERE table_name = 'claims';
 ----
 28
+
+statement ok
+CREATE MACRO schema_eq(v) AS TABLE SELECT * FROM oxedi_schema(version = v);
+
+query I
+SELECT count(*) FROM schema_eq('4010') WHERE table_name = 'claims';
+----
+28

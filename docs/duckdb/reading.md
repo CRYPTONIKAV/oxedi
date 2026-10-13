@@ -89,9 +89,9 @@ FROM oxedi_schema(version := '5010', binary := false);
 | `parent` | `VARCHAR` | For a reference column (`payment`, `claim`, `service`), the table whose `row` it holds; `NULL` otherwise. |
 | `position` | `INTEGER` | The column's place in its table, from 1. |
 
-`version` and `binary` mean what they mean for `read_835`: `version` picks the built-in spec
-(`'5010'` when left out or `NULL`), and `binary := true` turns text columns into `BLOB`. The
-types are the ones `DESCRIBE` gives for `read_835` with the same `version` and `binary`.
+`version` picks the built-in spec, `'5010'` or `'4010'`; left out or `NULL`, it is `'5010'`.
+`binary := true` turns text columns into `BLOB`; `binary` must not be `NULL`. The types are the
+ones `DESCRIBE` gives for `read_835` with the same `version` and `binary`.
 
 ```sql
 SELECT table_name, column_name, parent
