@@ -15,11 +15,13 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 - `oxedi.Mask(key, dates="year")` and the `mask=` argument of `parse`, `parse_file` and `stream`:
   the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
   reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
-  quote them. The spec marks them with the new `phi` and `phi_seed` keys; besides the patient
-  and subscriber names, ids and dates, `provider_adjustments.reference_id` is flagged as an `id`,
-  so a `PLB` reference that equals a claim number gets the same token as
-  `claims.claim_id`. The raw document is never masked. A key under 16 bytes raises `ValueError`. A spec that flags a column reading an
-  envelope control number or count (`ST02`, `SE01`, `GS06`, ...) is refused.
+  quote them. The spec marks them with the new `phi` and `phi_seed` keys. The built-in spec
+  flags the patient's name and id, the claim number, the payer control number, the group number,
+  the statement and service dates, the line item control number and
+  `provider_adjustments.reference_id`; a `PLB` reference that equals a claim number gets the same
+  token as `claims.claim_id`. The raw document is never masked. A key under 16 bytes raises
+  `ValueError`. A spec that flags a column reading an envelope control number or count (`ST02`,
+  `SE01`, `GS06`, ...) is refused.
 - `oxedi.pyx12.validate` accepts `mask=` and `spec=`. With `mask=`, a finding about a place a
   column flagged as patient data reads has its value masked as `parse` masks its diagnostics, in
   its datum and in pyx12's message, and the flagged values of its segment that the message quotes
