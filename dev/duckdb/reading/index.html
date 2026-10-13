@@ -1082,6 +1082,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#see-the-columns-without-a-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See the columns without a file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#read-the-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1943,6 +1954,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#see-the-columns-without-a-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See the columns without a file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#read-the-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2089,8 +2111,69 @@ so <code>read_835</code> refuses it when the macro is created.</p>
 <p>To see the columns of a table, describe it on any file:</p>
 <div class="highlight"><pre><span></span><code><span class="k">DESCRIBE</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'claims'</span><span class="p">);</span>
 </code></pre></div>
-<p><a href="../../reference/tables/">Tables and columns</a> lists them all. A schema that does not need a file
-is tracked in <a href="https://github.com/javillegasna/oxedi/issues/138">#138</a>.</p>
+<p><a href="../../reference/tables/">Tables and columns</a> lists them all.</p>
+<h2 id="see-the-columns-without-a-file">See the columns without a file<a class="headerlink" href="#see-the-columns-without-a-file" title="Permanent link">&para;</a></h2>
+<p><code>oxedi_schema</code> lists every table <code>read_835</code> returns, one row per column, without a file:</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="n">oxedi_schema</span><span class="p">(</span><span class="k">version</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'5010'</span><span class="p">,</span><span class="w"> </span><span class="nb">binary</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="k">false</span><span class="p">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table_name</code></td>
+<td><code>VARCHAR</code></td>
+<td>The table, as <code>table_name :=</code> names it. <code>diagnostics</code> comes last.</td>
+</tr>
+<tr>
+<td><code>column_name</code></td>
+<td><code>VARCHAR</code></td>
+<td>The column.</td>
+</tr>
+<tr>
+<td><code>column_type</code></td>
+<td><code>VARCHAR</code></td>
+<td>The type <code>read_835</code> gives it, as <code>DESCRIBE</code> writes it.</td>
+</tr>
+<tr>
+<td><code>parent</code></td>
+<td><code>VARCHAR</code></td>
+<td>For a reference column (<code>payment</code>, <code>claim</code>, <code>service</code>), the table whose <code>row</code> it holds; <code>NULL</code> otherwise.</td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td><code>INTEGER</code></td>
+<td>The column's place in its table, from 1.</td>
+</tr>
+</tbody>
+</table>
+<p><code>version</code> picks the built-in spec, <code>'5010'</code> or <code>'4010'</code>; left out or <code>NULL</code>, it is <code>'5010'</code>.
+<code>binary := true</code> turns text columns into <code>BLOB</code>; <code>binary</code> must not be <code>NULL</code>. The types are the
+ones <code>DESCRIBE</code> gives for <code>read_835</code> with the same <code>version</code> and <code>binary</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="k">table_name</span><span class="p">,</span><span class="w"> </span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="n">parent</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">oxedi_schema</span><span class="p">()</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="k">table_name</span><span class="p">,</span><span class="w"> </span><span class="k">position</span><span class="p">;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>┌──────────────────────┬─────────────┬──────────┐
+│      table_name      │ column_name │  parent  │
+│       varchar        │   varchar   │ varchar  │
+├──────────────────────┼─────────────┼──────────┤
+│ adjustments          │ payment     │ payments │
+│ adjustments          │ claim       │ claims   │
+│ adjustments          │ service     │ services │
+│ claims               │ payment     │ payments │
+│ provider_adjustments │ payment     │ payments │
+│ services             │ payment     │ payments │
+│ services             │ claim       │ claims   │
+└──────────────────────┴─────────────┴──────────┘
+</code></pre></div>
+<p><code>diagnostics</code> is listed because <code>read_835</code> returns it; <code>COPY</code> does not take it.</p>
 <h2 id="read-the-diagnostics">Read the diagnostics<a class="headerlink" href="#read-the-diagnostics" title="Permanent link">&para;</a></h2>
 <p><code>table_name := 'diagnostics'</code> returns the findings of the parse, one row each:</p>
 <div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="k">level</span><span class="p">,</span><span class="w"> </span><span class="n">kind</span><span class="p">,</span><span class="w"> </span><span class="n">datum</span>

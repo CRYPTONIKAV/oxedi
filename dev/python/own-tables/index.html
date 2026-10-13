@@ -2005,26 +2005,51 @@ same <code>segment</code> are written in one <code>PLB</code>. Without it, all t
 one <code>PLB</code>.</p>
 </div>
 <h2 id="see-the-columns-a-table-needs">See the columns a table needs<a class="headerlink" href="#see-the-columns-a-table-needs" title="Permanent link">&para;</a></h2>
-<p>Parse any file and look at its tables. <a href="../../reference/tables/">Tables and columns</a> lists them
-all.</p>
+<p>Ask the spec. No file is needed, and a patched spec describes its own columns.
+<a href="../../reference/tables/">Tables and columns</a> lists the built-in ones.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python</label><label for="__tabbed_1_2">SQL</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
+<p><code>Spec.schema()</code> maps each table name to a <code>pyarrow.Schema</code>, with the Arrow types <code>parse</code>
+gives that table. A reference column (<code>payment</code>, <code>claim</code>, <code>service</code>) holds the <code>row</code> of
+another table, and its field metadata names that table under <code>oxedi.parent</code>. It needs
+pyarrow.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">oxedi</span>
 
-<span class="n">result</span> <span class="o">=</span> <span class="n">oxedi</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="s2">"remittance.835"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="s2">"claims"</span><span class="p">]</span><span class="o">.</span><span class="n">to_polars</span><span class="p">()</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+<span class="n">schemas</span> <span class="o">=</span> <span class="n">oxedi</span><span class="o">.</span><span class="n">Spec</span><span class="o">.</span><span class="n">builtin</span><span class="p">()</span><span class="o">.</span><span class="n">schema</span><span class="p">()</span>
+<span class="n">claims</span> <span class="o">=</span> <span class="n">schemas</span><span class="p">[</span><span class="s2">"claims"</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">claims</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">"charge_amount"</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">claims</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">"payment"</span><span class="p">)</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
 </code></pre></div>
+<div class="highlight"><pre><span></span><code>decimal128(38, 2)
+{b'oxedi.parent': b'payments'}
+</code></pre></div>
+<p>Pass the spec you write with, such as <code>Spec.builtin("4010")</code> or a patched one.</p>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="k">DESCRIBE</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">read_835</span><span class="p">(</span><span class="s1">'remittance.835'</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'claims'</span><span class="p">);</span>
+<p><code>oxedi_schema()</code> returns one row per column, with the type <code>read_835</code> gives it. <code>parent</code>
+names the table a reference column points at.</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="n">column_type</span><span class="p">,</span><span class="w"> </span><span class="n">parent</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">oxedi_schema</span><span class="p">(</span><span class="k">version</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s1">'5010'</span><span class="p">)</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'claims'</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="k">position</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
 </code></pre></div>
+<div class="highlight"><pre><span></span><code>┌───────────────┬───────────────┬──────────┐
+│  column_name  │  column_type  │  parent  │
+│    varchar    │    varchar    │ varchar  │
+├───────────────┼───────────────┼──────────┤
+│ row           │ BIGINT        │ NULL     │
+│ segment       │ BIGINT        │ NULL     │
+│ payment       │ BIGINT        │ payments │
+│ charge_amount │ DECIMAL(38,2) │ NULL     │
+└───────────────┴───────────────┴──────────┘
+</code></pre></div>
+<p>It also lists the <code>diagnostics</code> table, which <code>read_835</code> can return but <code>COPY</code> does not
+write. See <a href="../../duckdb/reading/#see-the-columns-without-a-file">Reading with SQL</a>.</p>
 </div>
 </div>
 </div>
-<p><code>result.tables["claims"].columns</code> gives the names alone. A schema that does not need a file is
-tracked in
-<a href="https://github.com/javillegasna/oxedi/issues/138">#138</a>.</p>
+<p>Neither says which columns a valid file requires: the writer reports a missing required element
+by table, row and column.</p>
 <h2 id="translate-your-keys">Translate your keys<a class="headerlink" href="#translate-your-keys" title="Permanent link">&para;</a></h2>
 <p>The examples take five tables of your own:</p>
 <ul>

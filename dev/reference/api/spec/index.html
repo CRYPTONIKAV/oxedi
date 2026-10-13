@@ -1601,6 +1601,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oxedi.Spec.schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oxedi.Spec.loops" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1999,6 +2010,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oxedi.Spec.schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#oxedi.Spec.loops" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2172,6 +2194,31 @@ raises <code>SpecError</code> when the result is not valid.</p>
     <div class="doc doc-contents ">
 
         <p>The spec as JSON text.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="oxedi.Spec.schema" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">schema</span>
+
+
+<a href="#oxedi.Spec.schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">schema</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">builtins</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="n">builtins</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">pyarrow</span><span class="o">.</span><span class="n">Schema</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The schema of every table of the spec, by name, in table order: one
+<code>pyarrow.Schema</code> per table, with the column names and Arrow types the
+tables of a parse with this spec have. A reference column (such as
+<code>claim</code> in <code>services</code>) holds the <code>row</code> of a row in another table, and
+its field metadata names that table under the key <code>oxedi.parent</code>.
+Needs pyarrow.</p>
 
 
     </div>
