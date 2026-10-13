@@ -168,3 +168,86 @@ fn mask_found_replaces_a_datum_quoted_as_latin_1_text() {
         format!("contains an invalid character({token})")
     );
 }
+
+#[test]
+fn mask_found_masks_flagged_values_a_segment_level_message_quotes() {
+    let spec = Spec::builtin_835();
+    let document = Document::parse(SAMPLE).unwrap();
+    let mask = mask();
+    let projector = Projector::new(&spec, document.delimiters()).with_mask(&mask);
+    let (index, id) = find(&document, b"CLP", None);
+    let text = String::from_utf8(id.clone()).unwrap();
+    let mut found = vec![Diagnostic::new(
+        Rule::External {
+            origin: "pyx12".into(),
+            code: Some("1".into()),
+            message: format!("Segment CLP*{text} not found."),
+            level: SnipLevel::L2,
+        },
+        Some(index),
+        None,
+        None,
+        vec![],
+        b"CLP".to_vec(),
+    )];
+
+    projector.mask_found(&mut found, &document);
+
+    let token = String::from_utf8_lossy(&mask.text(Phi::Id, &id)).into_owned();
+    assert_eq!(found[0].datum, b"CLP".to_vec());
+    assert_eq!(
+        message(&found[0]),
+        format!("Segment CLP*{token} not found.")
+    );
+}
+
+#[test]
+fn mask_found_rewrites_a_message_once_when_the_datum_and_the_segment_quote_values() {
+    let spec = Spec::builtin_835();
+    let document = Document::parse(SAMPLE).unwrap();
+    let mask = mask();
+    let projector = Projector::new(&spec, document.delimiters()).with_mask(&mask);
+    let (index, id) = find(&document, b"CLP", None);
+    let text = String::from_utf8(id.clone()).unwrap();
+    let mut found = vec![external(
+        format!("1 is not CLP*{text}"),
+        Some(index),
+        1,
+        b"1",
+    )];
+
+    projector.mask_found(&mut found, &document);
+
+    let one = String::from_utf8_lossy(&mask.text(Phi::Id, b"1")).into_owned();
+    let token = String::from_utf8_lossy(&mask.text(Phi::Id, &id)).into_owned();
+    assert_eq!(message(&found[0]), format!("{one} is not CLP*{token}"));
+}
+
+#[test]
+fn mask_found_leaves_values_of_another_segment_in_the_message_as_written() {
+    let spec = Spec::builtin_835();
+    let document = Document::parse(SAMPLE).unwrap();
+    let mask = mask();
+    let projector = Projector::new(&spec, document.delimiters()).with_mask(&mask);
+    let (_, id) = find(&document, b"CLP", None);
+    let (index, _) = find(&document, b"TRN", None);
+    let text = String::from_utf8(id).unwrap();
+    let original = Diagnostic::new(
+        Rule::External {
+            origin: "pyx12".into(),
+            code: Some("1".into()),
+            message: format!("Segment CLP*{text} not found."),
+            level: SnipLevel::L2,
+        },
+        Some(index),
+        None,
+        None,
+        vec![],
+        b"TRN".to_vec(),
+    );
+    let mut found = vec![original.clone()];
+
+    projector.mask_found(&mut found, &document);
+
+    assert_eq!(found, vec![original]);
+}

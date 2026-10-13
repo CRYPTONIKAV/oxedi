@@ -855,7 +855,16 @@ ON_FLAGGED = {
     "claim date too short": (b"DTM*232*20240105", b"DTM*232*240105"),
     "patient name not ASCII": (b"NM1*QC*1*", b"NM1*QC*1*D\xe9OE"),
     "line control number too long": (b"REF*6R*", b"REF*6R*" + b"Q" * 60),
+    "claim out of place": (
+        b"TRN*1*CHK100234*1512345678~",
+        b"TRN*1*CHK100234*1512345678~CLP*SECRETPCN77*1*10*10~",
+    ),
 }
+
+# Cases whose finding names no element: its datum is the segment id and stays
+# as written, the flagged value is quoted in the message only, and it is not
+# in any table, so the case names it.
+QUOTED_ONLY = {"claim out of place": "SECRETPCN77"}
 
 
 @pytest.mark.parametrize("dates", ["year", "shift"])
@@ -864,7 +873,13 @@ def test_a_masked_validation_hides_findings_on_flagged_places(case, dates):
     before, after = ON_FLAGGED[case]
     data = balanced_5010().replace(before, after, 1)
     plain, masked = assert_masked_like_plain(case, data, dates)
-    assert any(p.datum != m.datum for p, m in zip(plain, masked)), case
+    if case in QUOTED_ONLY:
+        value = QUOTED_ONLY[case]
+        assert any(value in p.rule for p in plain), case
+        assert not any(value in m.rule for m in masked), case
+        assert any(p.rule != m.rule for p, m in zip(plain, masked)), case
+    else:
+        assert any(p.datum != m.datum for p, m in zip(plain, masked)), case
 
 
 def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():

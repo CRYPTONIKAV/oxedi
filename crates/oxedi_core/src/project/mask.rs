@@ -23,13 +23,17 @@
 //! fed when the diagnostic is about it; a balancing finding names an earlier
 //! segment, but its datum is an `R` amount, which no flagged column reads.
 //! Findings another validator raised about a document are matched the same
-//! way, by the segment their index names in it, and an external finding whose
-//! datum is masked has every occurrence of the original datum in its message,
-//! read as UTF-8 or as Latin-1, replaced by the masked one.
+//! way, by the segment their index names in it. The message of such a finding
+//! may quote values of that segment whatever element it names, or none, so
+//! every occurrence in it of the original datum, when the datum was masked,
+//! and of each value the segment holds at a flagged place is replaced by its
+//! masked form. Values are read as UTF-8 or as Latin-1, and the message is
+//! rewritten in one pass, so a masked form is never rewritten again.
 
 use crate::column::{civil_from_days, parse_dt};
 use crate::diagnostic::{Diagnostic, Rule};
 use crate::document::Document;
+use crate::element::Element;
 use crate::mask::{DateMode, Mask, Phi};
 use crate::segment::Segment;
 use crate::spec::Spec;
@@ -64,37 +68,84 @@ impl<'s> DatumMask<'s> {
     }
 
     /// Masks the datum of each diagnostic about a flagged place; `current`
-    /// is the segment being fed, if any.
+    /// is the segment being fed, if any. An external finding about `current`
+    /// also has its message rewritten: the original datum, when it was
+    /// masked, and the value of every flagged place of `current` are replaced
+    /// by their masked forms.
     pub(super) fn apply(&self, diagnostics: &mut [Diagnostic], current: Option<&Segment<'_>>) {
         for diagnostic in diagnostics {
-            if diagnostic.datum.is_empty() {
-                continue;
+            let mut quoted = Vec::new();
+            if let Some(masked) = self.masked_datum(diagnostic, current) {
+                let original = std::mem::replace(&mut diagnostic.datum, masked.clone());
+                quoted.push((original, masked));
             }
-            let Some(element) = diagnostic.element else {
-                continue;
-            };
-            let id = match diagnostic.rule.segment_id() {
-                Some(id) => id,
-                None => match current {
-                    Some(segment) if diagnostic.segment == Some(segment.index) => segment.id,
-                    _ => continue,
-                },
-            };
-            let component = diagnostic.component;
-            let found = self.places.iter().find(|(at, position, part, _)| {
-                *at == id
-                    && *position == element
-                    && (part.is_none() || component.is_none() || *part == component)
-            });
-            if let Some(&(.., kind)) = found
-                && let Some(masked) = self.datum(kind, &diagnostic.datum)
-            {
-                let original = std::mem::replace(&mut diagnostic.datum, masked);
-                if let Rule::External { message, .. } = &mut diagnostic.rule {
-                    *message = unquoted(message, &original, &diagnostic.datum);
+            let about = current.filter(|segment| diagnostic.segment == Some(segment.index));
+            if let Rule::External { message, .. } = &mut diagnostic.rule {
+                if let Some(segment) = about {
+                    quoted.extend(self.values(segment));
+                }
+                if !quoted.is_empty() {
+                    *message = unquoted(message, &quoted);
                 }
             }
         }
+    }
+
+    /// The masked form of the datum of `diagnostic` when the place it names
+    /// is flagged, or `None` when the datum stays as written.
+    fn masked_datum(
+        &self,
+        diagnostic: &Diagnostic,
+        current: Option<&Segment<'_>>,
+    ) -> Option<Vec<u8>> {
+        if diagnostic.datum.is_empty() {
+            return None;
+        }
+        let element = diagnostic.element?;
+        let id = match diagnostic.rule.segment_id() {
+            Some(id) => id,
+            None => match current {
+                Some(segment) if diagnostic.segment == Some(segment.index) => segment.id,
+                _ => return None,
+            },
+        };
+        let component = diagnostic.component;
+        let &(.., kind) = self.places.iter().find(|(at, position, part, _)| {
+            *at == id
+                && *position == element
+                && (part.is_none() || component.is_none() || *part == component)
+        })?;
+        self.datum(kind, &diagnostic.datum)
+    }
+
+    /// Each non-empty value `segment` holds at a flagged place, with its
+    /// masked form; a place read whole gives every component of a composite.
+    fn values(&self, segment: &Segment<'_>) -> Vec<(Vec<u8>, Vec<u8>)> {
+        let mut values = Vec::new();
+        for &(id, element, component, kind) in &self.places {
+            if id != segment.id {
+                continue;
+            }
+            let read: Vec<&[u8]> = match (component, segment.element(element)) {
+                (Some(component), _) => {
+                    segment.leaf(element, Some(component)).into_iter().collect()
+                }
+                (None, Some(Element::Simple(value))) => vec![value.as_ref()],
+                (None, Some(Element::Composite(parts))) => {
+                    parts.iter().map(AsRef::as_ref).collect()
+                }
+                (None, None) => Vec::new(),
+            };
+            for value in read {
+                if value.is_empty() {
+                    continue;
+                }
+                if let Some(masked) = self.datum(kind, value) {
+                    values.push((value.to_vec(), masked));
+                }
+            }
+        }
+        values
     }
 
     /// The masked form of a datum, or `None` when it stays as written.
@@ -146,9 +197,10 @@ impl<'s> Projector<'s> {
 
     /// Masks the datums of diagnostics another validator raised about
     /// `document`, as this projector masks its own: each is matched by the
-    /// segment its index names. An external finding whose datum is masked
-    /// also has every occurrence of the original datum in its message, read
-    /// as UTF-8 or as Latin-1, replaced by the masked one. Without a mask it
+    /// segment its index names. An external finding also has every
+    /// occurrence in its message of the original datum, when the datum is
+    /// masked, and of each value that segment holds at a flagged place, read
+    /// as UTF-8 or as Latin-1, replaced by its masked form. Without a mask it
     /// does nothing.
     pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
         let Some(datums) = &self.datums else {
@@ -213,23 +265,46 @@ impl<'s> Projector<'s> {
     }
 }
 
-/// `message` with every occurrence of `original` replaced by `masked`. The
-/// datum is bytes and the message text, so the datum is looked for read as
-/// UTF-8 and, when that differs, read as Latin-1 (one character per byte), the
-/// way a validator that decodes its input as Latin-1 quotes it.
-fn unquoted(message: &str, original: &[u8], masked: &[u8]) -> String {
-    if original.is_empty() {
-        return message.to_string();
+/// `message` with every occurrence of each original of `quoted` replaced by
+/// its masked form. An original is bytes and the message text, so it is
+/// looked for read as UTF-8 and, when that differs, read as Latin-1 (one
+/// character per byte), the way a validator that decodes its input as
+/// Latin-1 quotes it. The message is read once from left to right, taking
+/// the longest original that starts at each place, so a masked form already
+/// written is never searched again.
+fn unquoted(message: &str, quoted: &[(Vec<u8>, Vec<u8>)]) -> String {
+    let mut patterns: Vec<(String, String)> = Vec::new();
+    for (original, masked) in quoted {
+        if original.is_empty() {
+            continue;
+        }
+        let masked = String::from_utf8_lossy(masked).into_owned();
+        let utf8 = String::from_utf8_lossy(original).into_owned();
+        let latin1: String = original.iter().copied().map(char::from).collect();
+        if latin1 != utf8 {
+            patterns.push((latin1, masked.clone()));
+        }
+        patterns.push((utf8, masked));
     }
-    let masked = String::from_utf8_lossy(masked);
-    let utf8 = String::from_utf8_lossy(original);
-    let message = message.replace(utf8.as_ref(), masked.as_ref());
-    let latin1: String = original.iter().copied().map(char::from).collect();
-    if latin1 == utf8 {
-        message
-    } else {
-        message.replace(&latin1, masked.as_ref())
+    let mut out = String::with_capacity(message.len());
+    let mut rest = message;
+    while !rest.is_empty() {
+        let hit = patterns
+            .iter()
+            .filter_map(|(from, to)| Some((rest.strip_prefix(from.as_str())?, from.len(), to)))
+            .max_by_key(|&(_, len, _)| len);
+        if let Some((after, _, to)) = hit {
+            out.push_str(to);
+            rest = after;
+        } else {
+            let mut chars = rest.chars();
+            if let Some(c) = chars.next() {
+                out.push(c);
+            }
+            rest = chars.as_str();
+        }
     }
+    out
 }
 
 /// A date of a flagged column under `dates`, with the row's `shift` in days
