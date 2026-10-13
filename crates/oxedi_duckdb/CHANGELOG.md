@@ -8,6 +8,10 @@ and the extension has its own version.
 ## [Unreleased]
 
 ### Added
+- `read_835(..., mask_key := ..., mask_dates := 'year' | 'shift' | 'keep')` hides patient data:
+  the columns the spec flags are replaced by keyed 16-character tokens or coarser dates, and the
+  diagnostics are masked the same way. A NULL or short key is refused, and `mask_dates` without
+  `mask_key` is an error.
 - The table function `oxedi_schema(version := '5010', binary := false)`: every table `read_835`
   returns (`diagnostics` included), one row per column with `table_name`, `column_name`,
   `column_type` (the type `DESCRIBE` gives for `read_835` with the same `version` and `binary`),

@@ -104,6 +104,7 @@ nav:
       - Reading: python/reading.md
       - Large files: python/large-files.md
       - Diagnostics: python/diagnostics.md
+      - Without patient data: python/without-patient-data.md
       - Writing: python/writing.md
       - Writing from your tables: python/own-tables.md
       - When the writer refuses: python/when-write-refuses.md

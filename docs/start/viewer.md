@@ -26,6 +26,12 @@ in five views:
 | Text | The original file, one segment per line. |
 | Loops | The loop structure, which you can fold. |
 
+Tick **Hide patient data** to replace the patient's name, ids and dates with tokens and years.
+The tables, the diagnostics and the CSV export show the masked values; the Text and Loops views
+still show the original file, so do not share a screenshot of them. The key is random, made when
+the page loads and never leaves it, so tokens match within one visit only. Untick it to see the
+original values again.
+
 A diagnostic links to its segment in the Text view, with the element it names highlighted. A
 `segment` cell in a table does the same. Every byte of the file is shown, including line breaks
 after a terminator and a last segment that has none.

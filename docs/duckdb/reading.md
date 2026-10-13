@@ -53,6 +53,8 @@ COPY (SELECT * FROM read_835('remits/*.835', table_name := 'claims')) TO 'claims
 | `version` | the file's own | force the built-in spec, `'5010'` or `'4010'`. By default each file uses the version it declares (5010 if none) |
 | `binary` | `false` | return text columns as `BLOB` (the raw bytes) instead of `VARCHAR` |
 | `ignore_errors` | `false` | report a file that is not an X12 interchange as a `diagnostics` row and go on |
+| `mask_key` | none | hide patient data: a key of at least 16 bytes. NULL is refused. See [Sharing data without patient information](../python/without-patient-data.md) |
+| `mask_dates` | `'year'` | with `mask_key`, how masked dates change: `'year'`, `'shift'` or `'keep'`. An error without `mask_key` |
 
 !!! note "Forwarding a macro parameter"
     Inside a macro with a literal path, forward the parameter with `=`, as in

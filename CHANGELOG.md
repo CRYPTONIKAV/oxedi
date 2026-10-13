@@ -10,6 +10,12 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 ## [Unreleased]
 
 ### Added
+- `oxedi.Mask(key, dates="year")` and the `mask=` argument of `parse`, `parse_file` and `stream`:
+  the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
+  reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
+  quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
+  never masked. A key under 16 bytes raises `ValueError`.
+- A "Hide patient data" switch in the browser viewer.
 - A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.
 - The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a

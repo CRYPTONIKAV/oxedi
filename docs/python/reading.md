@@ -36,6 +36,9 @@ ACME HEALTH PLAN SUNRISE CLINIC
 `parse`, `parse_file` and `stream` read the version the file declares and use the matching
 built-in spec. To choose another one or extend it, see [the spec](../customize/spec.md).
 
+To share a file's tables without the patient's name, ids and dates, pass `mask=` to any of them.
+See [Sharing data without patient information](without-patient-data.md).
+
 ## Use the tables
 
 Every parse gives the same five tables:
