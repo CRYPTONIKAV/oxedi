@@ -19,6 +19,7 @@ from ._core import (
     Diagnostic,
     Document,
     Envelope,
+    Mask,
     ParseError,
     Result,
     Segment,
@@ -41,6 +42,7 @@ __all__ = [
     "Diagnostic",
     "Document",
     "Envelope",
+    "Mask",
     "ParseError",
     "Result",
     "Segment",
@@ -63,8 +65,9 @@ def parse_file(
     path: Union[str, "os.PathLike[str]"],
     spec: Optional[Spec] = None,
     delimiters: Optional[Delimiters] = None,
+    mask: Optional[Mask] = None,
 ) -> Result:
     """Reads the file at ``path`` in binary mode and parses it."""
     with open(path, "rb") as handle:
         data = handle.read()
-    return parse(data, spec=spec, delimiters=delimiters)
+    return parse(data, spec=spec, delimiters=delimiters, mask=mask)

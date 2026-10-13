@@ -12,6 +12,7 @@ use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pyme
 
 use crate::diagnostic;
 use crate::document::{self, PyDelimiters, PyDocument};
+use crate::mask::PyMask;
 use crate::native::{self, Role};
 use crate::spec::{self, PySpec};
 use crate::tables::PyTables;
@@ -160,24 +161,30 @@ fn organization<'py>(
 /// Parses a whole file: indexes every segment, runs the loop engine, the
 /// envelope checker and the projector, and returns the document, the
 /// tables and every diagnostic. Without `spec`, the built-in spec of the
-/// version the file declares is used, else the default one.
+/// version the file declares is used, else the default one. With `mask`, the
+/// patient data of the tables and diagnostics is hidden.
 #[gen_stub_pyfunction]
 #[pyfunction]
-#[pyo3(signature = (data, spec = None, delimiters = None))]
+#[pyo3(signature = (data, spec = None, delimiters = None, mask = None))]
 pub fn parse(
     py: Python<'_>,
     #[gen_stub(override_type(type_repr = "typing_extensions.Buffer", imports = ("typing_extensions",)))]
     data: &Bound<'_, PyAny>,
     spec: Option<&Bound<'_, PySpec>>,
     delimiters: Option<&Bound<'_, PyDelimiters>>,
+    mask: Option<&Bound<'_, PyMask>>,
 ) -> PyResult<PyParseResult> {
     let bytes = copy_input("parse", data)?;
     let given = spec::given(spec);
     let delimiters = delimiters.map(|d| d.get().inner);
+    let mask = mask.map(|mask| mask.get().inner.clone());
     let (document, tables, diagnostics) = py.detach(|| -> PyResult<_> {
         let document = document::index(bytes, delimiters)?;
         let spec = spec::given_or_selected(given, document.segments());
-        let (tables, diagnostics) = Processor::run(&spec, &document);
+        let (tables, diagnostics) = match &mask {
+            Some(mask) => Processor::run_masked(&spec, &document, mask),
+            None => Processor::run(&spec, &document),
+        };
         Ok((document, PyTables::projected(tables, spec), diagnostics))
     })?;
     let diagnostics = diagnostic::to_list(py, diagnostics)?;

@@ -198,3 +198,10 @@ def writes(result: Result, frames: dict[str, polars.DataFrame]) -> bytes:
 
 
 version: str = oxedi.__version__
+
+
+def masked(data: bytes) -> Result:
+    mask: oxedi.Mask = oxedi.Mask(b"0123456789abcdef", dates="shift")
+    batches: Stream = oxedi.stream(data, mask=oxedi.Mask("0123456789abcdef"))
+    assert batches
+    return oxedi.parse(data, mask=mask)
