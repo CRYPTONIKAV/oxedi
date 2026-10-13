@@ -311,8 +311,12 @@ def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
     the built-in spec of the file's version, the one ``parse(source)``
     selects: ``validate``
     takes no spec, so columns only a patched spec flags are not masked
-    here. pyx12 still reads the original file: the mask hides what
-    ``validate`` returns, not what pyx12 is given. ``mask`` of any other
+    here. A failure finding for an exception inside pyx12, whose text no
+    flagged place points at, keeps the exception's type and drops its
+    text: ``could not finish validating: ValueError (its message is not
+    shown with a mask); ...``, or ``its error tree could not be read
+    (ValueError)``. pyx12 still reads the original file: the mask hides
+    what ``validate`` returns, not what pyx12 is given. ``mask`` of any other
     type than ``oxedi.Mask`` or ``None`` raises ``TypeError``.
     """
     if mask is not None and not isinstance(mask, Mask):
@@ -322,21 +326,33 @@ def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
     _import_pyx12()
     data = _read(source)
     result = parse(data)
-    findings = _findings(data, result)
+    findings = _findings(data, result, masked=mask is not None)
     if mask is None:
         return findings
     return _mask_findings(findings, result.document, mask, result.spec)
 
 
-def _findings(data: bytes, result: Any) -> list[Diagnostic]:
-    """pyx12's findings about ``data``, whose parse is ``result``."""
+def _reason(err: BaseException, masked: bool) -> str:
+    """How a failure finding names the exception pyx12 raised: its type and
+    its text, or only its type when ``masked``, as the text may quote a
+    value of the file that no flagged place can point at."""
+    if masked:
+        return type(err).__name__
+    return f"{type(err).__name__}: {err}"
+
+
+def _findings(data: bytes, result: Any, masked: bool) -> list[Diagnostic]:
+    """pyx12's findings about ``data``, whose parse is ``result``; with
+    ``masked``, failure findings leave out the text of pyx12's exception."""
     document = result.document
     base = data.find(b"ISA")
     text = data[max(base, 0):].decode("latin-1")
     positions = _Positions.build(document, max(base, 0), text)
     run = _run(text)
     if run.failure is not None:
-        reason = f"{type(run.failure).__name__}: {run.failure}"
+        reason = _reason(run.failure, masked)
+        if masked:
+            reason += " (its message is not shown with a mask)"
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if run.handler is None:
         failure = _failure("pyx12 built no error handler", run.track, positions, document)
@@ -344,7 +360,7 @@ def _findings(data: bytes, result: Any) -> list[Diagnostic]:
     try:
         found = collect(run.handler)
     except Exception as err:  # pyx12's tree is not ours: report it, do not raise
-        reason = f"its error tree could not be read ({type(err).__name__}: {err})"
+        reason = f"its error tree could not be read ({_reason(err, masked)})"
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if not found and not run.ok and not run.track:
         return _finish(result, [_rejection(text, positions, document)])

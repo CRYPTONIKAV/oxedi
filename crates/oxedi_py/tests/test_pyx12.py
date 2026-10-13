@@ -258,6 +258,63 @@ def test_an_exception_inside_pyx12_becomes_one_failure(monkeypatch):
     assert failure.datum == bytes(document[5].id)
 
 
+def breaks_at_the_sixth_segment(monkeypatch):
+    """Makes pyx12 raise at the sixth segment it reads; clearing the list it
+    returns starts the count again."""
+    import pyx12.x12n_document
+
+    real = pyx12.x12n_document.apply_segment_errors
+    calls = []
+
+    def breaks(node, seg, errh):
+        calls.append(seg)
+        if len(calls) == 6:
+            raise ValueError("SECRETNAME")
+        return real(node, seg, errh)
+
+    monkeypatch.setattr(pyx12.x12n_document, "apply_segment_errors", breaks)
+    return calls
+
+
+def test_a_masked_failure_keeps_the_exception_type_and_drops_its_text(monkeypatch):
+    calls = breaks_at_the_sixth_segment(monkeypatch)
+    data = read(EYEMED)
+    (plain,) = validate(data)
+    calls.clear()
+    (masked,) = validate(data, mask=oxedi.Mask(MASK_KEY))
+    where = "it was processing segment #5; the last it completed is #4 (reported by pyx12)"
+    assert plain.rule == f"could not finish validating: ValueError: SECRETNAME; {where}"
+    assert masked.rule == (
+        "could not finish validating: ValueError (its message is not shown with a mask);"
+        f" {where}"
+    )
+    assert "SECRETNAME" not in masked.rule
+    assert place(masked) == place(plain)
+
+
+def test_a_masked_error_tree_failure_keeps_the_exception_type_and_drops_its_text(monkeypatch):
+    import oxedi.pyx12._validate as module
+
+    def reshaped(handler):
+        raise ValueError("SECRETNAME")
+
+    monkeypatch.setattr(module, "collect", reshaped)
+    data = read(EYEMED)
+    (plain,) = validate(data)
+    (masked,) = validate(data, mask=oxedi.Mask(MASK_KEY))
+    last = len(oxedi.parse(data).document) - 1
+    where = f"it had read every segment; the last it completed is #{last} (reported by pyx12)"
+    assert plain.rule == (
+        "could not finish validating: its error tree could not be read"
+        f" (ValueError: SECRETNAME); {where}"
+    )
+    assert masked.rule == (
+        f"could not finish validating: its error tree could not be read (ValueError); {where}"
+    )
+    assert "SECRETNAME" not in masked.rule
+    assert place(masked) == place(plain)
+
+
 def logger_state():
     import logging
 

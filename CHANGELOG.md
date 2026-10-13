@@ -44,6 +44,9 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   message only where it stands apart (quoted, between separators or spaces, or at an edge), so
   the message's own words and numbers keep their letters; flagged values that overlap in the
   message are replaced together, so no character of either stays.
+- With `mask=`, a `validate` finding for an exception inside pyx12 keeps the exception's type
+  and leaves out its text (`could not finish validating: ValueError (its message is not shown
+  with a mask); ...`), since that text could quote any value of the file.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in
