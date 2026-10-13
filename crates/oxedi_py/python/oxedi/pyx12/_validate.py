@@ -7,7 +7,7 @@ import os
 from bisect import bisect_right
 from typing import Any, BinaryIO, Optional, Union
 
-from .. import Diagnostic, Mask, parse
+from .. import Diagnostic, Mask, Spec, parse
 from .._core import _external_diagnostic, _loop_paths, _mask_findings
 from . import _capture
 from ._tree import Finding, collect
@@ -251,7 +251,9 @@ def _finish(result: Any, drafts: list[Draft]) -> list[Diagnostic]:
     ]
 
 
-def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
+def validate(
+    source: Source, mask: Optional[Mask] = None, spec: Optional[Spec] = None
+) -> list[Diagnostic]:
     """Validates an 835 file with pyx12 and returns what it finds.
 
     ``source`` is the file's bytes, a path, or a file object open in binary
@@ -308,24 +310,31 @@ def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
     separators or spaces, or at an edge of the message), and values that
     overlap are replaced together. Every other attribute, and the findings'
     number and order, stay as without it. The flagged places are those of
-    the built-in spec of the file's version, the one ``parse(source)``
-    selects: ``validate``
-    takes no spec, so columns only a patched spec flags are not masked
-    here. A failure finding for an exception inside pyx12, whose text no
+    the spec the parse uses: ``spec``, an ``oxedi.Spec``, or the built-in
+    spec of the file's version when it is ``None``, so a patched spec that
+    flags more columns masks them here as ``parse(source, spec=spec,
+    mask=mask)`` does. The same spec locates the findings' loop paths, as
+    in ``parse(source, spec=spec)``. A failure finding for an exception
+    inside pyx12, whose text no
     flagged place points at, keeps the exception's type and drops its
     text: ``could not finish validating: ValueError (its message is not
     shown with a mask); ...``, or ``its error tree could not be read
     (ValueError)``. pyx12 still reads the original file: the mask hides
     what ``validate`` returns, not what pyx12 is given. ``mask`` of any other
-    type than ``oxedi.Mask`` or ``None`` raises ``TypeError``.
+    type than ``oxedi.Mask`` or ``None`` raises ``TypeError``, and so does
+    ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
     """
     if mask is not None and not isinstance(mask, Mask):
         raise TypeError(
             f"validate: mask must be an oxedi.Mask or None, not {type(mask).__name__}"
         )
+    if spec is not None and not isinstance(spec, Spec):
+        raise TypeError(
+            f"validate: spec must be an oxedi.Spec or None, not {type(spec).__name__}"
+        )
     _import_pyx12()
     data = _read(source)
-    result = parse(data)
+    result = parse(data, spec=spec)
     findings = _findings(data, result, masked=mask is not None)
     if mask is None:
         return findings

@@ -983,3 +983,53 @@ def test_a_mask_that_is_not_a_mask_is_refused():
     with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), mask="nope")
     assert str(exc.value) == "validate: mask must be an oxedi.Mask or None, not str"
+
+
+def payer_name_spec():
+    return oxedi.Spec.builtin().patch(
+        {"tables": {"payments": {"columns": {"payer_name": {"phi": "name"}}}}}
+    )
+
+
+def payer_name_with_bad_character():
+    return balanced_5010().replace(b"N1*PR*ACME HEALTH PLAN", b"N1*PR*ACME H\xe9ALTH PLAN", 1)
+
+
+def test_a_patched_spec_masks_the_finding_it_flags_only_when_validate_gets_it():
+    data = payer_name_with_bad_character()
+    original = "ACME H\xe9ALTH PLAN".encode("latin-1")
+    mask = oxedi.Mask(MASK_KEY)
+
+    def on_payer_name(findings):
+        (found,) = [d for d in findings if d.code == "6"]
+        return found
+
+    without = on_payer_name(validate(data, mask=mask))
+    with_spec = on_payer_name(validate(data, mask=mask, spec=payer_name_spec()))
+
+    assert without.datum == original and original.decode("latin-1") in without.rule
+    assert with_spec.datum != original and len(with_spec.datum) == 16
+    assert original.decode("latin-1") not in with_spec.rule
+    assert f"character({with_spec.datum.decode()})" in with_spec.rule
+    assert place(with_spec) == place(without)
+
+
+def test_validate_with_a_spec_names_the_loops_parse_names_with_it():
+    spec = payer_name_spec()
+    data = payer_name_with_bad_character()
+    found = validate(data, spec=spec)
+    segments = [d.segment for d in found]
+    assert segments and None not in segments
+    result = oxedi.parse(data, spec=spec)
+    expected = [
+        "/".join(f"{name}#{number}" for name, number in path)
+        for path in oxedi._core._loop_paths(result, segments)
+    ]
+    assert [d.path for d in found] == expected
+    assert found[-1].path == "interchange#1/group#1/transaction#1/1000A#1"
+
+
+def test_a_spec_that_is_not_a_spec_is_refused():
+    with pytest.raises(TypeError) as exc:
+        validate(balanced_5010(), spec="nope")
+    assert str(exc.value) == "validate: spec must be an oxedi.Spec or None, not str"

@@ -16,6 +16,8 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
   never masked. A key under 16 bytes raises `ValueError`. A spec that flags a column reading an
   envelope control number or count (`ST02`, `SE01`, `GS06`, ...) is refused.
+- `oxedi.pyx12.validate` accepts `spec=`, used to locate the findings' loops and to mask the
+  columns a patched spec flags.
 - `oxedi.pyx12.validate` accepts `mask=`: a finding about a place a column flagged as patient
   data reads has its value masked as `parse` masks its diagnostics, in its datum and in pyx12's
   message, and the flagged values of its segment that the message quotes are masked too. pyx12

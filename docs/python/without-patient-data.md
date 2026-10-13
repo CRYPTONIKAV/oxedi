@@ -91,9 +91,10 @@ the finding names no element (pyx12's "Segment CLP*... not found" quotes the cla
 under 4 characters is replaced only where it stands apart (quoted, between separators or
 spaces, or at an edge of the message), so a name `D` leaves the word `Data` as written; values
 that overlap in the message are replaced together, with no character of either left. The
-findings, their order and where they point stay the same as without the mask. `validate` takes no
-spec: it masks the places the built-in spec of the file's version flags, so a column only a patched
-spec flags is masked by `parse(..., spec=patched, mask=)` but not by `validate`. This example
+findings, their order and where they point stay the same as without the mask. `validate` takes
+`spec=` too: it masks the places that spec flags (the built-in spec of the file's version when it
+is omitted), so a column only a patched spec flags is masked by `validate(..., mask=, spec=patched)`
+as by `parse(..., spec=patched, mask=)`; the same spec gives the findings' loop paths. This example
 writes an invalid claim date into the example file:
 
 ```python
