@@ -1,0 +1,67 @@
+# name: test/sql/read_835_macros.test
+# description: read_835 inside table macros: a macro parameter forwarded to table_name or version
+# group: [oxedi]
+
+require oxedi
+
+# A bare macro parameter given with := reaches the bind as its qualified name, not a value.
+# The macro cannot be created, and the error says what to write instead.
+
+statement error
+CREATE MACRO one(tbl) AS TABLE
+SELECT * FROM read_835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', table_name := tbl);
+----
+read_835: table_name must be a constant string; a table macro passed its parameter "tbl" as "0_macro_parametersone.tbl"; write table_name := tbl::VARCHAR, or make the path a macro parameter too, as in read_835(path, table_name := tbl)
+
+statement error
+CREATE MACRO pinned(v) AS TABLE
+SELECT * FROM read_835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', version := v);
+----
+read_835: version must be a constant string; a table macro passed its parameter "v" as "0_macro_parameterspinned.v"; write version := v::VARCHAR, or make the path a macro parameter too, as in read_835(path, version := v)
+
+# The cast makes the argument an expression, so DuckDB binds it when the macro is called.
+
+statement ok
+CREATE MACRO one(tbl) AS TABLE
+SELECT * FROM read_835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', table_name := tbl::VARCHAR);
+
+query I
+SELECT count(*) FROM one('claims');
+----
+82
+
+query I
+SELECT count(*) FROM one('payments');
+----
+1
+
+statement error
+SELECT count(*) FROM one('nope');
+----
+read_835: unknown table "nope"
+
+statement ok
+CREATE MACRO pinned(v) AS TABLE
+SELECT * FROM read_835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', version := v::VARCHAR);
+
+query I
+SELECT count(*) FROM pinned('4010');
+----
+82
+
+# With the path as a macro parameter too, the whole call is bound when the macro is called.
+
+statement ok
+CREATE MACRO t835(path, tbl) AS TABLE SELECT * FROM read_835(path, table_name := tbl);
+
+query I
+SELECT count(*) FROM t835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', 'services');
+----
+414
+
+# A literal that happens to start like a macro parameter is still an unknown table.
+
+statement error
+SELECT * FROM read_835('../oxedi_core/tests/samples/edi835_test_eyemed.RMT', table_name := '0_macro_parameters');
+----
+read_835: unknown table "0_macro_parameters"

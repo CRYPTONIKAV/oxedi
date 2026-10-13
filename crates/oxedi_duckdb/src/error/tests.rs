@@ -43,6 +43,20 @@ fn empty_path_list() {
 }
 
 #[test]
+fn macro_parameter() {
+    assert_eq!(
+        text(ReadError::MacroParameter {
+            name: "table_name",
+            parameter: "tbl".to_owned(),
+            value: "0_macro_parametersone.tbl".to_owned(),
+        }),
+        "read_835: table_name must be a constant string; a table macro passed its parameter \
+         \"tbl\" as \"0_macro_parametersone.tbl\"; write table_name := tbl::VARCHAR, or make \
+         the path a macro parameter too, as in read_835(path, table_name := tbl)"
+    );
+}
+
+#[test]
 fn unknown_table() {
     assert_eq!(
         text(ReadError::UnknownTable {

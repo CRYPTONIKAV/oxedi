@@ -75,12 +75,12 @@ impl Options {
             table_name: match named("table_name") {
                 Named::Absent => DEFAULT_TABLE.to_owned(),
                 Named::Null => return Err(ReadError::NullOption { name: "table_name" }),
-                Named::Given(value) => value.text(),
+                Named::Given(value) => constant("table_name", value.text())?,
             },
             filename: flag("filename")?,
             version: match named("version") {
                 Named::Absent | Named::Null => None,
-                Named::Given(value) => Some(value.text()),
+                Named::Given(value) => Some(constant("version", value.text())?),
             },
             binary: flag("binary")?,
             ignore_errors: flag("ignore_errors")?,
@@ -107,6 +107,36 @@ unsafe fn named(info: ffi::duckdb_bind_info, name: &str) -> Named {
     match unsafe { Value::owned(raw) } {
         Some(value) => Named::Given(value),
         None => Named::Null,
+    }
+}
+
+/// The prefix of the name DuckDB gives a table macro's parameters while it
+/// binds the macro's body.
+const MACRO_PARAMETERS: &str = "0_macro_parameters";
+
+/// The text of the named parameter `name`, refused when it is a table
+/// macro's parameter rather than a value.
+///
+/// When a table macro is created, DuckDB binds its body once. A table
+/// function argument that refers to a macro parameter normally defers that
+/// bind to the macro's call, but a bare parameter given to a named parameter
+/// with `:=` or `=>` is not recognized: DuckDB passes its qualified name,
+/// `0_macro_parameters<macro>.<parameter>`, as a string constant. The C API
+/// hands the bind only that string, and a bind error cannot ask DuckDB to
+/// defer, so the prefix is the only sign that the value is not a constant.
+/// A real table name or version never starts with it.
+fn constant(name: &'static str, text: String) -> Result<String, ReadError> {
+    let parameter = text
+        .strip_prefix(MACRO_PARAMETERS)
+        .and_then(|qualified| qualified.rsplit_once('.'))
+        .map(|(_, parameter)| parameter.to_owned());
+    match parameter {
+        Some(parameter) => Err(ReadError::MacroParameter {
+            name,
+            parameter,
+            value: text,
+        }),
+        None => Ok(text),
     }
 }
 
@@ -140,3 +170,6 @@ fn paths_of(value: &Value) -> Result<Vec<String>, ReadError> {
         }),
     }
 }
+
+#[cfg(test)]
+mod tests;
