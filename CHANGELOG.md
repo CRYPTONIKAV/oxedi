@@ -16,12 +16,11 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
   never masked. A key under 16 bytes raises `ValueError`. A spec that flags a column reading an
   envelope control number or count (`ST02`, `SE01`, `GS06`, ...) is refused.
-- `oxedi.pyx12.validate` accepts `spec=`, used to locate the findings' loops and to mask the
-  columns a patched spec flags.
-- `oxedi.pyx12.validate` accepts `mask=`: a finding about a place a column flagged as patient
-  data reads has its value masked as `parse` masks its diagnostics, in its datum and in pyx12's
-  message, and the flagged values of its segment that the message quotes are masked too. pyx12
-  still reads the original file.
+- `oxedi.pyx12.validate` accepts `mask=` and `spec=`. With `mask=`, a finding about a place a
+  column flagged as patient data reads has its value masked as `parse` masks its diagnostics, in
+  its datum and in pyx12's message, and the flagged values of its segment that the message quotes
+  are masked too; pyx12 still reads the original file. `spec=` locates the findings' loops and
+  sets the columns masked, so a patched spec masks here what it flags in `parse`.
 - A "Hide patient data" switch in the browser viewer.
 - A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
   reference, recipes and every example run in CI); the README is now its front page.
@@ -42,13 +41,17 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   `SpecError`, with or without a mask.
 - `provider_adjustments.reference_id` is flagged as an `id`, so a `PLB` reference that equals a
   claim number gets the same token as `claims.claim_id`.
-- With `mask=`, `oxedi.pyx12.validate` replaces a flagged value under 4 characters in pyx12's
-  message only where it stands apart (quoted, between separators or spaces, or at an edge), so
-  the message's own words and numbers keep their letters; flagged values that overlap in the
-  message are replaced together, so no character of either stays.
+- With `mask=`, `oxedi.pyx12.validate` replaces a flagged value of 4 characters or more wherever
+  pyx12's message quotes it, and a shorter one only where it stands apart: next to the message's
+  edge, a character that is not an ASCII letter or digit, or another replaced value. Short values
+  that overlap or touch are replaced as one group when the group stands apart. The message's own
+  words and numbers keep their letters, but a short value glued to letters that are not flagged
+  values stays (with `XAB` and `ABYZ` flagged, `QXABYZ` keeps `QX`), and two short values that
+  together spell a word of the message replace it.
 - With `mask=`, a `validate` finding for an exception inside pyx12 keeps the exception's type
   and leaves out its text (`could not finish validating: ValueError (its message is not shown
-  with a mask); ...`), since that text could quote any value of the file.
+  with a mask); ...`, also when pyx12's error tree cannot be read), since that text could quote
+  any value of the file.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in
