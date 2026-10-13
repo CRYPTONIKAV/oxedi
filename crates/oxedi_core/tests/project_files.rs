@@ -362,20 +362,19 @@ fn filling_some_tables_of_a_patched_spec_gives_each_the_rows_of_a_full_run() {
         four.merge_patch(patch).unwrap(),
     );
     each_table_alone_equals_the_full_run(&five, &four);
-    let any_dates = common::all_files().into_iter().any(|(_, bytes, delims)| {
+    let (mut any_dates, mut any_amount) = (false, false);
+    for (_, bytes, delims) in common::all_files() {
         let spec = common::select(&five, &four, &bytes, delims);
         let document = Document::with_delimiters(&bytes[..], delims).unwrap();
         let (whole, _) = Processor::run(spec, &document);
-        whole
+        any_dates |= whole
             .get("claim_dates")
-            .is_some_and(|table| table.len() > 0)
-            && whole
-                .get("claims")
-                .unwrap()
-                .column("first_amount")
-                .is_some()
-    });
+            .is_some_and(|table| !table.is_empty());
+        let amounts = whole.get("claims").unwrap().column("first_amount").unwrap();
+        any_amount |= amounts.null_count() < amounts.len();
+    }
     assert!(any_dates, "no file fills the new table");
+    assert!(any_amount, "no file fills the new column");
 }
 
 fn each_table_alone_equals_the_full_run(five: &Spec, four: &Spec) {
