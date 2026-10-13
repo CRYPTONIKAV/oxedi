@@ -65,6 +65,8 @@ mod carry;
 mod check;
 mod fill;
 mod mask;
+#[cfg(test)]
+mod mask_tests;
 mod plan;
 mod schema;
 #[cfg(test)]

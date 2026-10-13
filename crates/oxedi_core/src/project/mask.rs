@@ -22,9 +22,14 @@
 //! masked too. The segment id is the one the rule names, or the segment being
 //! fed when the diagnostic is about it; a balancing finding names an earlier
 //! segment, but its datum is an `R` amount, which no flagged column reads.
+//! Findings another validator raised about a document are matched the same
+//! way, by the segment their index names in it, and an external finding whose
+//! datum is masked has every occurrence of the original datum in its message
+//! replaced by the masked one.
 
 use crate::column::{civil_from_days, parse_dt};
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, Rule};
+use crate::document::Document;
 use crate::mask::{DateMode, Mask, Phi};
 use crate::segment::Segment;
 use crate::spec::Spec;
@@ -84,7 +89,14 @@ impl<'s> DatumMask<'s> {
             if let Some(&(.., kind)) = found
                 && let Some(masked) = self.datum(kind, &diagnostic.datum)
             {
-                diagnostic.datum = masked;
+                let original = std::mem::replace(&mut diagnostic.datum, masked);
+                if let Rule::External { message, .. } = &mut diagnostic.rule {
+                    let original = String::from_utf8_lossy(&original);
+                    if !original.is_empty() {
+                        let masked = String::from_utf8_lossy(&diagnostic.datum);
+                        *message = message.replace(original.as_ref(), masked.as_ref());
+                    }
+                }
             }
         }
     }
@@ -133,6 +145,21 @@ impl<'s> Projector<'s> {
     ) {
         if let Some(datums) = &self.datums {
             datums.apply(diagnostics, current);
+        }
+    }
+
+    /// Masks the datums of diagnostics another validator raised about
+    /// `document`, as this projector masks its own: each is matched by the
+    /// segment its index names. An external finding whose datum is masked
+    /// also has every occurrence of the original datum in its message
+    /// replaced by the masked one. Without a mask it does nothing.
+    pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
+        let Some(datums) = &self.datums else {
+            return;
+        };
+        for diagnostic in diagnostics {
+            let current = diagnostic.segment.and_then(|index| document.segment(index));
+            datums.apply(std::slice::from_mut(diagnostic), current.as_ref());
         }
     }
 
