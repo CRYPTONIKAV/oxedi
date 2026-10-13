@@ -40,6 +40,10 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   `SpecError`, with or without a mask.
 - `provider_adjustments.reference_id` is flagged as an `id`, so a `PLB` reference that equals a
   claim number gets the same token as `claims.claim_id`.
+- With `mask=`, `oxedi.pyx12.validate` replaces a flagged value under 4 characters in pyx12's
+  message only where it stands apart (quoted, between separators or spaces, or at an edge), so
+  the message's own words and numbers keep their letters; flagged values that overlap in the
+  message are replaced together, so no character of either stays.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in

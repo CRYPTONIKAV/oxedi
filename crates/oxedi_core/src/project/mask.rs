@@ -25,10 +25,16 @@
 //! Findings another validator raised about a document are matched the same
 //! way, by the segment their index names in it. The message of such a finding
 //! may quote values of that segment whatever element it names, or none, so
-//! every occurrence in it of the original datum, when the datum was masked,
-//! and of each value the segment holds at a flagged place is replaced by its
-//! masked form. Values are read as UTF-8 or as Latin-1, and the message is
-//! rewritten in one pass, so a masked form is never rewritten again.
+//! the original datum, when the datum was masked, and each value the segment
+//! holds at a flagged place are replaced by their masked forms wherever the
+//! message quotes them. Values are read as UTF-8 or as Latin-1. A value of
+//! 4 characters or more is replaced wherever it occurs; a shorter one only
+//! where it stands apart, between the message's edges, characters that are
+//! not ASCII letters or digits, or other replaced values, so the words and
+//! numbers of the message keep their letters. Values that overlap or touch
+//! are replaced together by their masked forms in the order they start, so
+//! no character of either stays, and the message is rewritten in one pass,
+//! so a masked form is never rewritten again.
 
 use crate::column::{civil_from_days, parse_dt};
 use crate::diagnostic::{Diagnostic, Rule};
@@ -197,11 +203,12 @@ impl<'s> Projector<'s> {
 
     /// Masks the datums of diagnostics another validator raised about
     /// `document`, as this projector masks its own: each is matched by the
-    /// segment its index names. An external finding also has every
-    /// occurrence in its message of the original datum, when the datum is
-    /// masked, and of each value that segment holds at a flagged place, read
-    /// as UTF-8 or as Latin-1, replaced by its masked form. Without a mask it
-    /// does nothing.
+    /// segment its index names. An external finding also has the original
+    /// datum, when the datum is masked, and each value that segment holds at
+    /// a flagged place, read as UTF-8 or as Latin-1, replaced by its masked
+    /// form where its message quotes them, a value under 4 characters only
+    /// where it stands apart from the message's words and numbers. Without
+    /// a mask it does nothing.
     pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
         let Some(datums) = &self.datums else {
             return;
@@ -265,14 +272,23 @@ impl<'s> Projector<'s> {
     }
 }
 
-/// `message` with every occurrence of each original of `quoted` replaced by
-/// its masked form. An original is bytes and the message text, so it is
-/// looked for read as UTF-8 and, when that differs, read as Latin-1 (one
-/// character per byte), the way a validator that decodes its input as
-/// Latin-1 quotes it. The message is read once from left to right, taking
-/// the longest original that starts at each place, so a masked form already
-/// written is never searched again.
-fn unquoted(message: &str, quoted: &[(Vec<u8>, Vec<u8>)]) -> String {
+/// Values shorter than this many characters are matched only where they
+/// stand apart from the words and numbers around them.
+const SHORT: usize = 4;
+
+/// `message` with the originals of `quoted` it holds replaced by their
+/// masked forms. An original is bytes and the message text, so it is looked
+/// for read as UTF-8 and, when that differs, read as Latin-1 (one character
+/// per byte), the way a validator that decodes its input as Latin-1 quotes
+/// it. An original of 4 characters or more matches anywhere. A shorter one
+/// matches only where the character on each side is the edge of the
+/// message, a character that is not an ASCII letter or digit, or part of
+/// another match, so a short value is not replaced inside an unrelated word
+/// or number. A match held in a longer one is dropped; matches that overlap
+/// or touch form one span, written as the masked forms of its matches in the
+/// order they start, so no character of an original stays. Each place of
+/// the message is written once, so a masked form is never searched again.
+pub(super) fn unquoted(message: &str, quoted: &[(Vec<u8>, Vec<u8>)]) -> String {
     let mut patterns: Vec<(String, String)> = Vec::new();
     for (original, masked) in quoted {
         if original.is_empty() {
@@ -286,25 +302,80 @@ fn unquoted(message: &str, quoted: &[(Vec<u8>, Vec<u8>)]) -> String {
         }
         patterns.push((utf8, masked));
     }
-    let mut out = String::with_capacity(message.len());
-    let mut rest = message;
-    while !rest.is_empty() {
-        let hit = patterns
-            .iter()
-            .filter_map(|(from, to)| Some((rest.strip_prefix(from.as_str())?, from.len(), to)))
-            .max_by_key(|&(_, len, _)| len);
-        if let Some((after, _, to)) = hit {
-            out.push_str(to);
-            rest = after;
-        } else {
-            let mut chars = rest.chars();
-            if let Some(c) = chars.next() {
-                out.push(c);
+    let mut matches: Vec<Match<'_>> = Vec::new();
+    let mut pending: Vec<Match<'_>> = Vec::new();
+    for (start, _) in message.char_indices() {
+        let Some(rest) = message.get(start..) else {
+            continue;
+        };
+        for (from, to) in &patterns {
+            if rest.starts_with(from.as_str()) {
+                let found = Match {
+                    start,
+                    end: start + from.len(),
+                    to,
+                };
+                if from.chars().count() < SHORT {
+                    pending.push(found);
+                } else {
+                    matches.push(found);
+                }
             }
-            rest = chars.as_str();
         }
     }
+    loop {
+        let (apart, rest): (Vec<_>, Vec<_>) = pending
+            .into_iter()
+            .partition(|found| found.stands_apart(message, &matches));
+        pending = rest;
+        if apart.is_empty() {
+            break;
+        }
+        matches.extend(apart);
+    }
+    matches.sort_by(|a, b| a.start.cmp(&b.start).then(b.end.cmp(&a.end)));
+    let mut out = String::with_capacity(message.len());
+    let mut written = 0;
+    for found in matches {
+        if found.end <= written {
+            continue;
+        }
+        if found.start > written {
+            out.push_str(message.get(written..found.start).unwrap_or_default());
+        }
+        out.push_str(found.to);
+        written = found.end;
+    }
+    out.push_str(message.get(written..).unwrap_or_default());
     out
+}
+
+/// One place of a message where an original starts, as byte offsets, with
+/// its masked form.
+struct Match<'p> {
+    start: usize,
+    end: usize,
+    to: &'p str,
+}
+
+impl Match<'_> {
+    /// Whether the character on each side of this match is the edge of
+    /// `message`, not an ASCII letter or digit, or held in one of `matches`.
+    fn stands_apart(&self, message: &str, matches: &[Match<'_>]) -> bool {
+        let held = |at: usize| matches.iter().any(|m| m.start <= at && at < m.end);
+        let before = message.get(..self.start).and_then(|head| {
+            let c = head.chars().next_back()?;
+            Some((self.start - c.len_utf8(), c))
+        });
+        let after = message
+            .get(self.end..)
+            .and_then(|tail| tail.chars().next())
+            .map(|c| (self.end, c));
+        [before, after].into_iter().all(|side| match side {
+            None => true,
+            Some((at, c)) => !c.is_ascii_alphanumeric() || held(at),
+        })
+    }
 }
 
 /// A date of a flagged column under `dates`, with the row's `shift` in days

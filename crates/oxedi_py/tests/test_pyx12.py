@@ -882,6 +882,23 @@ def test_a_masked_validation_hides_findings_on_flagged_places(case, dates):
         assert any(p.datum != m.datum for p, m in zip(plain, masked)), case
 
 
+def test_a_masked_validation_leaves_words_holding_a_short_flagged_value_as_written():
+    # The patient's last name is "D": "Data" in pyx12's message is not it.
+    data = balanced_5010().replace(b"NM1*QC*1*DOE*JANE", b"NM1*QC*1*D*J\xe9", 1)
+    plain, masked = assert_masked_like_plain("short name", data, "year")
+    ((before, after),) = [
+        (p, m) for p, m in zip(plain, masked) if p.datum == "J\xe9".encode("latin-1")
+    ]
+    assert before.rule == (
+        'Data element "Patient First Name" (NM104) is type AN, contains an invalid'
+        " character(J\xe9) (reported by pyx12, code 6)"
+    )
+    assert after.rule == (
+        'Data element "Patient First Name" (NM104) is type AN, contains an invalid'
+        f" character({after.datum.decode()}) (reported by pyx12, code 6)"
+    )
+
+
 def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():
     data = balanced_5010()
     result = oxedi.parse(data)

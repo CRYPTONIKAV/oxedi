@@ -301,12 +301,15 @@ def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
 
     With ``mask``, an ``oxedi.Mask``, the datum of a finding at a place a
     column flags as patient data reads is masked as ``parse`` masks its own
-    diagnostics with that mask. In the finding's message, every occurrence
-    of the original datum, and of each value its segment holds at such a
-    place, is replaced by the masked form, whether or not the finding names
-    an element; every other attribute, and the findings' number and order,
-    stay as without it. The flagged places are those of the built-in spec
-    of the file's version, the one ``parse(source)`` selects: ``validate``
+    diagnostics with that mask. In the finding's message, the original
+    datum and each value its segment holds at such a place are replaced by
+    their masked forms, whether or not the finding names an element; a
+    value under 4 characters only where it stands apart (quoted, between
+    separators or spaces, or at an edge of the message), and values that
+    overlap are replaced together. Every other attribute, and the findings'
+    number and order, stay as without it. The flagged places are those of
+    the built-in spec of the file's version, the one ``parse(source)``
+    selects: ``validate``
     takes no spec, so columns only a patched spec flags are not masked
     here. pyx12 still reads the original file: the mask hides what
     ``validate`` returns, not what pyx12 is given. ``mask`` of any other
