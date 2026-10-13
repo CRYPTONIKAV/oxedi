@@ -16,7 +16,7 @@ fn json_error_displays_the_parser_message() {
         err.to_string(),
         "invalid spec JSON: EOF while parsing an object at line 1 column 1"
     );
-    assert!(std::error::Error::source(&err).is_some());
+    assert!(std::error::Error::source(&err).is_none());
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn schema_error_displays_the_loop_and_the_serde_message() {
         err.to_string(),
         "loop \"2100\" does not match the schema: invalid type: integer `1`, expected a loop object"
     );
-    assert!(std::error::Error::source(&err).is_some());
+    assert!(std::error::Error::source(&err).is_none());
 }
 
 #[test]
@@ -56,11 +56,7 @@ fn patch_error_displays_the_inner_error_once() {
         err.to_string(),
         "applying patch: loop \"a\" has an empty segment id at end"
     );
-    let source = std::error::Error::source(&err).map(ToString::to_string);
-    assert_eq!(
-        source.as_deref(),
-        Some("loop \"a\" has an empty segment id at end")
-    );
+    assert!(std::error::Error::source(&err).is_none());
 }
 
 #[test]
@@ -313,7 +309,7 @@ fn table_schema_errors_display_the_table_the_column_and_the_serde_message() {
         in_column.to_string(),
         "table \"claims\" column \"charge\" does not match the schema: invalid type: integer `1`, expected a column object"
     );
-    assert!(std::error::Error::source(&in_column).is_some());
+    assert!(std::error::Error::source(&in_column).is_none());
     let in_table = SpecError::TableSchema {
         table: "claims".into(),
         column: None,

@@ -176,9 +176,10 @@ impl fmt::Display for WriteError {
 
 impl std::error::Error for WriteError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        // `Io` prints the I/O error in full, so the chain stops here
+        // instead of printing it a second time.
         match self {
-            WriteError::Io(e) => Some(e),
-            WriteError::DelimiterInValue { .. } => None,
+            WriteError::Io(_) | WriteError::DelimiterInValue { .. } => None,
         }
     }
 }

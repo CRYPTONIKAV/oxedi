@@ -129,11 +129,7 @@ fn a_patch_that_breaks_a_reference_says_it_came_from_the_patch() {
         err.to_string(),
         "applying patch: loop \"2100\" names unknown parent \"2000\""
     );
-    let source = std::error::Error::source(&err).map(ToString::to_string);
-    assert_eq!(
-        source.as_deref(),
-        Some("loop \"2100\" names unknown parent \"2000\"")
-    );
+    assert!(std::error::Error::source(&err).is_none());
 }
 
 #[test]

@@ -280,7 +280,7 @@ fn balance_errors_display_their_full_text() {
 }
 
 #[test]
-fn spec_errors_of_a_rule_display_the_rule_and_chain_their_source() {
+fn spec_errors_of_a_rule_display_the_rule_and_do_not_chain_their_source() {
     let bad = SpecError::BadBalance {
         rule: "r".into(),
         reason: Box::new(BalanceError::EmptyName),
@@ -298,7 +298,7 @@ fn spec_errors_of_a_rule_display_the_rule_and_chain_their_source() {
         schema.to_string(),
         "balancing rule \"r\" does not match the schema: invalid type: integer `1`, expected a balancing rule object"
     );
-    assert!(std::error::Error::source(&schema).is_some());
+    assert!(std::error::Error::source(&schema).is_none());
 }
 
 #[test]

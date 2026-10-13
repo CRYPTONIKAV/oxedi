@@ -324,5 +324,5 @@ fn segment_schema_error_displays_the_segment_and_the_serde_message() {
         err.to_string(),
         "segment \"CLP\" does not match the schema: invalid type: integer `1`, expected a segment object"
     );
-    assert!(std::error::Error::source(&err).is_some());
+    assert!(std::error::Error::source(&err).is_none());
 }

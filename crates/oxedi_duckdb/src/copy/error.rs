@@ -314,10 +314,8 @@ impl FromPanic for CopyError {
 
 impl std::error::Error for CopyError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            CopyError::Row(source) => Some(source),
-            CopyError::Write(source) => Some(source),
-            _ => None,
-        }
+        // `Row` and `Write` print their inner error in full, so the chain
+        // stops here instead of printing it a second time.
+        None
     }
 }

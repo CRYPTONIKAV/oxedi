@@ -12,6 +12,8 @@ and the extension has its own version.
   path is fixed now fails with an error that says the value must be a constant string and to write
   the argument with `=` (`table_name = tbl`), which forwards the parameter, instead of naming
   DuckDB's internal identifier as an unknown table or version.
+- A refused `COPY` no longer shows the writer's or the row's error text twice: the errors that
+  print their inner error no longer chain it as their `source()`.
 
 ## [0.2.0] - 2026-10-12
 

@@ -61,9 +61,10 @@ impl fmt::Display for DocumentError {
 
 impl std::error::Error for DocumentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        // Both variants print their inner error in full, so the chain stops
+        // here instead of printing it a second time.
         match self {
-            DocumentError::Isa(e) => Some(e),
-            DocumentError::Size(e) => Some(e),
+            DocumentError::Isa(_) | DocumentError::Size(_) => None,
         }
     }
 }

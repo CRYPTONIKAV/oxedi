@@ -490,14 +490,8 @@ impl fmt::Display for SpecError {
 
 impl std::error::Error for SpecError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            SpecError::Json(e)
-            | SpecError::Schema { source: e, .. }
-            | SpecError::SegmentSchema { source: e, .. }
-            | SpecError::TableSchema { source: e, .. }
-            | SpecError::BalanceSchema { source: e, .. } => Some(e),
-            SpecError::Patch { source } => Some(source.as_ref()),
-            _ => None,
-        }
+        // Every variant that holds an inner error prints it in full, so the
+        // chain stops here instead of printing it a second time.
+        None
     }
 }
