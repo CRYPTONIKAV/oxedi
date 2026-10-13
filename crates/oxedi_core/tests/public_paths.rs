@@ -44,7 +44,12 @@ mod by_module {
     use oxedi_core::frame::next_frame;
     use oxedi_core::process::Output;
     use oxedi_core::process::Processor;
+    use oxedi_core::project::ColumnSchema;
     use oxedi_core::project::Projector;
+    use oxedi_core::project::TableSchema;
+    use oxedi_core::project::spec_schema;
+    use oxedi_core::project::table_columns;
+    use oxedi_core::project::table_schema;
     use oxedi_core::segment::Segment;
     use oxedi_core::segment::WriteError;
     use oxedi_core::spec::AnchorChains;
@@ -93,6 +98,7 @@ use oxedi_core::{
     Bitmap, Cell, CellError, Column, ColumnData, ColumnType, RowError, Table, Tables, parse_dt,
     parse_n, parse_r, parse_tm,
 };
+use oxedi_core::{ColumnSchema, TableSchema, spec_schema};
 use oxedi_core::{Delimiters, IsaError};
 use oxedi_core::{Diagnostic, LoopRef, Rule, SnipLevel};
 use oxedi_core::{Document, DocumentError, Segments, SizeError, Span, Spans};
