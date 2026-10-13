@@ -229,5 +229,6 @@ The spec decides the columns, so a patched spec can add some. To list them:
     DESCRIBE SELECT * FROM read_835('remittance.835', table_name := 'services');
     ```
 
-A schema that does not need a file is tracked in
-[#138](https://github.com/javillegasna/oxedi/issues/138).
+Without a file, ask the spec: `Spec.schema()` in Python and `oxedi_schema()` in SQL give each
+table's columns, types and references. See
+[See the columns a table needs](../python/own-tables.md#see-the-columns-a-table-needs).

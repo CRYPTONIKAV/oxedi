@@ -7,6 +7,12 @@ and the extension has its own version.
 
 ## [Unreleased]
 
+### Added
+- The table function `oxedi_schema(version := '5010', binary := false)`: every table `read_835`
+  returns (`diagnostics` included), one row per column with `table_name`, `column_name`,
+  `column_type` (the type `DESCRIBE` gives for `read_835` with the same `version` and `binary`),
+  `parent` (the table a reference column points at, else NULL) and `position`, without a file.
+
 ### Changed
 - `read_835` fills only the table it reads instead of every table of the spec and then keeping
   one, so each scan of one table takes about a fifth less time (900 files, 127 MB, one thread:

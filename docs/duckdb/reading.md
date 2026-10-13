@@ -71,8 +71,51 @@ To see the columns of a table, describe it on any file:
 DESCRIBE SELECT * FROM read_835('remittance.835', table_name := 'claims');
 ```
 
-[Tables and columns](../reference/tables.md) lists them all. A schema that does not need a file
-is tracked in [#138](https://github.com/javillegasna/oxedi/issues/138).
+[Tables and columns](../reference/tables.md) lists them all.
+
+## See the columns without a file
+
+`oxedi_schema` lists every table `read_835` returns, one row per column, without a file:
+
+```sql
+FROM oxedi_schema(version := '5010', binary := false);
+```
+
+| Column | Type | Meaning |
+|---|---|---|
+| `table_name` | `VARCHAR` | The table, as `table_name :=` names it. `diagnostics` comes last. |
+| `column_name` | `VARCHAR` | The column. |
+| `column_type` | `VARCHAR` | The type `read_835` gives it, as `DESCRIBE` writes it. |
+| `parent` | `VARCHAR` | For a reference column (`payment`, `claim`, `service`), the table whose `row` it holds; `NULL` otherwise. |
+| `position` | `INTEGER` | The column's place in its table, from 1. |
+
+`version` and `binary` mean what they mean for `read_835`: `version` picks the built-in spec
+(`'5010'` when left out or `NULL`), and `binary := true` turns text columns into `BLOB`. The
+types are the ones `DESCRIBE` gives for `read_835` with the same `version` and `binary`.
+
+```sql
+SELECT table_name, column_name, parent
+FROM oxedi_schema()
+WHERE parent IS NOT NULL
+ORDER BY table_name, position;
+```
+
+```text
+┌──────────────────────┬─────────────┬──────────┐
+│      table_name      │ column_name │  parent  │
+│       varchar        │   varchar   │ varchar  │
+├──────────────────────┼─────────────┼──────────┤
+│ adjustments          │ payment     │ payments │
+│ adjustments          │ claim       │ claims   │
+│ adjustments          │ service     │ services │
+│ claims               │ payment     │ payments │
+│ provider_adjustments │ payment     │ payments │
+│ services             │ payment     │ payments │
+│ services             │ claim       │ claims   │
+└──────────────────────┴─────────────┴──────────┘
+```
+
+`diagnostics` is listed because `read_835` returns it; `COPY` does not take it.
 
 ## Read the diagnostics
 

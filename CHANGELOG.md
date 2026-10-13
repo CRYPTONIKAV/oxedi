@@ -18,6 +18,10 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 - A viewer in the browser at <https://javillegas.dev/oxedi/viewer/>: drop an 835 file to see its
   summary, tables, diagnostics, text and loops. The parser runs as WebAssembly in the page, and
   the page cannot open network connections.
+- `Spec.schema()`: the schema of every table of a spec (built-in or patched) without a file, as a
+  mapping of table name to `pyarrow.Schema` with the Arrow types `parse` gives each table. The
+  field metadata of a reference column (`payment`, `claim`, `service`) names the table it points
+  at under `oxedi.parent`. It needs pyarrow.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in
