@@ -1944,7 +1944,9 @@
 
 
 <a href="#oxedi.pyx12.validate" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Source</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate</span><span class="p">(</span>
+    <span class="n">source</span><span class="p">:</span> <span class="n">Source</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mask</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -1991,6 +1993,18 @@ after the last segment names the last segment it completed. A file
 with no <abbr title="Interchange control header segment">ISA</abbr> to read the delimiters from raises <code>oxedi.ParseError</code>,
 as <code>oxedi.parse</code> does. Nothing is written to disk and no
 acknowledgement is generated.</p>
+<p>With <code>mask</code>, an <code>oxedi.Mask</code>, the datum of a finding at a place a
+column flags as patient data reads is masked as <code>parse</code> masks its own
+diagnostics with that mask. In the finding's message, every occurrence
+of the original datum, and of each value its segment holds at such a
+place, is replaced by the masked form, whether or not the finding names
+an element; every other attribute, and the findings' number and order,
+stay as without it. The flagged places are those of the built-in spec
+of the file's version, the one <code>parse(source)</code> selects: <code>validate</code>
+takes no spec, so columns only a patched spec flags are not masked
+here. pyx12 still reads the original file: the mask hides what
+<code>validate</code> returns, not what pyx12 is given. <code>mask</code> of any other
+type than <code>oxedi.Mask</code> or <code>None</code> raises <code>TypeError</code>.</p>
 
 
     </div>

@@ -875,6 +875,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#validate-with-pyx12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate with pyx12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#use-it-in-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1995,6 +2006,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#validate-with-pyx12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate with pyx12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#use-it-in-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2122,7 +2144,9 @@ so a token can be reproduced from the key. Two consequences follow:</p>
 </ul>
 <p>An empty value stays empty, and a missing value stays null.</p>
 <p>The diagnostics are masked too. The value a finding quotes is masked when it comes from <code>DTM02</code>,
-<code>REF02</code>, <code>NM1</code> elements 3, 4 and 9, <code>CLP01</code> or <code>CLP07</code>. This covers every segment of those types,
+<code>REF02</code>, <code>NM1</code> elements 3, 4 and 9, <code>CLP01</code>, <code>CLP07</code> or the reference of a <code>PLB</code> adjustment
+(the second component of each adjustment identifier, read into
+<code>provider_adjustments.reference_id</code>). This covers every segment of those types,
 so it also hides the value of a finding about the payer, the payee or a provider, such as one
 about a <code>DTM*405</code> date or a payer <code>REF02</code>. Amounts a finding quotes stay as they are.
 A <code>LengthOutOfRange</code> finding still states the length of the original value. With
@@ -2170,6 +2194,27 @@ never exists by accident.</p>
 <p>Keep the key out of the files you share, and reuse it when you need the same token for the same
 patient in another run.</p>
 <p><code>oxedi.parse</code>, <code>oxedi.parse_file</code> and <code>oxedi.stream</code> all take <code>mask=</code> and mask the same way.</p>
+<h2 id="validate-with-pyx12">Validate with pyx12<a class="headerlink" href="#validate-with-pyx12" title="Permanent link">&para;</a></h2>
+<p><code>oxedi.pyx12.validate</code> takes <code>mask=</code> too. A finding about a place the masked columns read gets
+its value masked as <code>parse</code> masks its own diagnostics. In pyx12's message, that value and every
+masked value of the segment the finding points at are replaced by their masked forms, also when
+the finding names no element (pyx12's "Segment <abbr title="Claim payment information segment">CLP</abbr>*... not found" quotes the claim id). The
+findings, their order and where they point stay the same as without the mask. <code>validate</code> takes no
+spec: it masks the places the built-in spec of the file's version flags, so a column only a patched
+spec flags is masked by <code>parse(..., spec=patched, mask=)</code> but not by <code>validate</code>. This example
+writes an invalid claim date into the example file:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">oxedi.pyx12</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"remittance.835"</span><span class="p">)</span><span class="o">.</span><span class="n">read_bytes</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">b</span><span class="s2">"DTM*232*20240105"</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"DTM*232*20240230"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">oxedi</span><span class="o">.</span><span class="n">Mask</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">datum</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">rule</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>10 b'005010X221A1' Data element "Implementation Convention Reference" (ST03) is marked as Not Used (reported by pyx12, code 10)
+8 b'46891844d3db70db' Data element "Claim Date" (DTM02) contains an invalid date (46891844d3db70db) (reported by pyx12, code 8)
+</code></pre></div>
+<p>pyx12 still reads the original file: the mask hides what <code>validate</code> returns, not what pyx12 is
+given. A pyx12 message about a length still states the length of the original value.</p>
 <h2 id="use-it-in-sql">Use it in SQL<a class="headerlink" href="#use-it-in-sql" title="Permanent link">&para;</a></h2>
 <p><code>read_835</code> takes <code>mask_key</code> and <code>mask_dates</code> (<code>'year'</code>, <code>'shift'</code> or <code>'keep'</code>). A NULL key is
 refused, and <code>mask_dates</code> without <code>mask_key</code> is an error.</p>
@@ -2209,7 +2254,6 @@ parameter instead, so it never enters the SQL text:</p>
   never changes them. Do not share <code>result.document.write()</code>.</li>
 <li><strong>Payer, payee and provider data.</strong> Names, addresses and identification codes of the payer, the
   payee and the rendering provider are not patient data and stay as they are.</li>
-<li><strong>Findings from <code>oxedi.pyx12.validate</code>.</strong> They quote pyx12's own text and are not masked.</li>
 </ul>
 <p>With the default <code>dates="year"</code>, this follows the HIPAA Safe Harbor identifiers that appear in the
 tables: names, member and claim numbers, and dates reduced to the year. <code>"shift"</code> and <code>"keep"</code>
