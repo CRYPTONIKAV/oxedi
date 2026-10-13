@@ -43,7 +43,10 @@ public planning page is `docs/roadmap.md` on the site.
   re-exports and lists what each file holds.
 - P10: every error or diagnostic names the rule that failed, where (loop and key as written
   for specs; segment index, byte range, element/component position and loop path for files)
-  and the offending datum; one full-text `Display` test per variant; `source()` chains.
+  and the offending datum; one full-text `Display` test per variant; `Display` is
+  self-explanatory on its own and prints any inner error in full, and `source()` returns an
+  inner error only when `Display` does not print it (one `source()` test per error type pins
+  which).
 - Gates on every commit: `cargo test --workspace --locked`, `cargo clippy --workspace
   --all-targets --locked -- -D warnings`, `cargo fmt --all -- --check`,
   `cargo bench --workspace --no-run --locked`. CI runs the same.
