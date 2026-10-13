@@ -359,7 +359,7 @@ fn row_errors_display_the_table_and_the_column() {
         cell.to_string(),
         "table \"claims\" column \"charge\": a decimal128(38, 2) column cannot hold a binary value (\"ab\")"
     );
-    assert!(std::error::Error::source(&cell).is_some());
+    assert!(std::error::Error::source(&cell).is_none());
 }
 
 #[test]

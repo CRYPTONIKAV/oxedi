@@ -130,7 +130,7 @@ fn read() {
 }
 
 #[test]
-fn parse_names_the_file_and_chains_the_core_error() {
+fn parse_names_the_file_and_does_not_chain_the_core_error() {
     let Err(source) = Document::parse(b"not an interchange".to_vec()) else {
         panic!("the input has no ISA");
     };
@@ -143,7 +143,7 @@ fn parse_names_the_file_and_chains_the_core_error() {
         error.to_string(),
         format!("read_835: \"a.835\" is not an X12 interchange: {core}")
     );
-    assert_eq!(error.source().map(ToString::to_string), Some(core));
+    assert!(error.source().is_none());
 }
 
 #[test]
@@ -205,7 +205,7 @@ fn internal() {
 }
 
 #[test]
-fn only_parse_has_a_source() {
+fn no_read_error_has_a_source() {
     assert!(ReadError::EmptyPathList.source().is_none());
 }
 

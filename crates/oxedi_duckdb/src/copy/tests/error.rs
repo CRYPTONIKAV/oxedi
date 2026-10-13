@@ -186,7 +186,7 @@ fn unknown_table_reads_as_python() {
         "edi835: table \"nope\" is not a table of the spec, whose tables are \"claims\", \
          \"payments\""
     );
-    assert!(error.source().is_some());
+    assert!(error.source().is_none());
 }
 
 #[test]
@@ -243,7 +243,7 @@ fn value() {
 }
 
 #[test]
-fn row_chains_its_source() {
+fn row_does_not_chain_its_source() {
     let error = CopyError::Row(RowError::Cell {
         table: "claims".to_owned(),
         column: "claim_id".to_owned(),
@@ -256,11 +256,11 @@ fn row_chains_its_source() {
         "edi835: table \"claims\" column \"claim_id\": a binary column holds at most 2147483647 \
          bytes; this value would bring it to 2147483648"
     );
-    assert!(error.source().is_some());
+    assert!(error.source().is_none());
 }
 
 #[test]
-fn write_chains_its_source() {
+fn write_does_not_chain_its_source() {
     let error = CopyError::Write(WriteError::UnknownColumn {
         table: "claims".to_owned(),
         column: "nope".to_owned(),
@@ -271,7 +271,7 @@ fn write_chains_its_source() {
         "edi835: table \"claims\" has no column \"nope\" in the spec; its columns are \"row\", \
          \"segment\""
     );
-    assert!(error.source().is_some());
+    assert!(error.source().is_none());
 }
 
 #[test]

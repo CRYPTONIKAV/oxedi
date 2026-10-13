@@ -182,7 +182,7 @@ fn delimiter_in_value_displays_where_the_byte_is() {
 fn io_error_displays_the_sink_failure() {
     let err = WriteError::Io(io::Error::other("disk full"));
     assert_eq!(err.to_string(), "write failed: disk full");
-    assert!(std::error::Error::source(&err).is_some());
+    assert!(std::error::Error::source(&err).is_none());
 }
 
 #[test]

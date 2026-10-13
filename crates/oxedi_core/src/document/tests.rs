@@ -267,7 +267,7 @@ fn size_error_names_the_rule_the_length_and_the_limit() {
 }
 
 #[test]
-fn document_error_shows_the_isa_error_and_chains_it() {
+fn document_error_shows_the_isa_error_and_does_not_chain_it() {
     use std::error::Error;
     let error = DocumentError::from(IsaError::NotIsa {
         found: b"ST*835~".to_vec(),
@@ -278,14 +278,11 @@ fn document_error_shows_the_isa_error_and_chains_it() {
         error.to_string(),
         "input does not start with an ISA segment (found bytes [53 54 2a 38 33 35 7e])"
     );
-    assert_eq!(
-        error.source().map(ToString::to_string),
-        Some(error.to_string())
-    );
+    assert!(error.source().is_none());
 }
 
 #[test]
-fn document_error_shows_the_size_error_and_chains_it() {
+fn document_error_shows_the_size_error_and_does_not_chain_it() {
     use std::error::Error;
     let error = DocumentError::from(SizeError { len: 4_294_967_296 });
     assert_eq!(
@@ -293,10 +290,7 @@ fn document_error_shows_the_size_error_and_chains_it() {
         "input of 4294967296 bytes exceeds the document size limit of 4294967295 bytes \
          (segment offsets are stored as 32-bit integers)"
     );
-    assert_eq!(
-        error.source().map(ToString::to_string),
-        Some(error.to_string())
-    );
+    assert!(error.source().is_none());
 }
 
 #[test]

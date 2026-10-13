@@ -50,8 +50,9 @@ impl fmt::Display for RowError {
 impl std::error::Error for RowError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            RowError::Arity { .. } => None,
-            RowError::Cell { source, .. } => Some(source),
+            // `Cell` prints the cell error in full, so the chain stops here
+            // instead of printing it a second time.
+            RowError::Arity { .. } | RowError::Cell { .. } => None,
         }
     }
 }

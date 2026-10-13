@@ -356,10 +356,9 @@ impl fmt::Display for ReadError {
 
 impl std::error::Error for ReadError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            ReadError::Parse { source, .. } => Some(source),
-            _ => None,
-        }
+        // `Parse` prints the core error in full, so the chain stops here
+        // instead of printing it a second time.
+        None
     }
 }
 
