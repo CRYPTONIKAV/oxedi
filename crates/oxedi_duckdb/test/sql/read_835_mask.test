@@ -123,3 +123,17 @@ statement error
 SELECT * FROM read_835('../oxedi_core/tests/fixtures/balanced_5010_sample.txt', mask_key := 'oxedi-test-key-0', mask_dates := NULL);
 ----
 read_835: mask_dates must not be NULL; leave it out to use its default
+
+# Findings on flagged places: five rows, each datum a token.
+
+query II
+SELECT count(*), bool_and(regexp_matches(datum, '^[0-9a-f]{16}$'))
+FROM read_835('../oxedi_core/tests/fixtures/masked_findings_5010_sample.txt', table_name := 'diagnostics', mask_key := 'oxedi-test-key-0');
+----
+5	true
+
+query II
+SELECT count(*), bool_and(regexp_matches(datum, '^[0-9a-f]{16}$'))
+FROM read_835('../oxedi_core/tests/fixtures/masked_findings_4010_sample.txt', table_name := 'diagnostics', mask_key := 'oxedi-test-key-0');
+----
+5	true

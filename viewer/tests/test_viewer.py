@@ -293,3 +293,23 @@ def test_the_toggle_warns_that_the_text_view_is_not_masked(viewer):
     assert "original file" in text_of(viewer, "#mask-note")
     viewer.page.uncheck("#mask")
     assert viewer.page.is_hidden("#mask-note")
+
+
+def test_findings_on_flagged_places_are_masked_in_the_diagnostics_list(viewer):
+    path = FIXTURES / "masked_findings_5010_sample.txt"
+    plain = [d.datum for d in oxedi.parse(path.read_bytes()).diagnostics]
+    assert len(plain) == 5
+    viewer.open()
+    viewer.load(path.name, path.read_bytes())
+    viewer.wait_loaded()
+    viewer.tab("diagnostics")
+    assert "20241341" in text_of(viewer, "#panel-diagnostics .diag-list")
+
+    viewer.page.check("#mask")
+    panel = viewer.page.locator("#panel-diagnostics .diag-list")
+    expect(panel).not_to_contain_text("20241341")
+    viewer.tab("diagnostics")
+    shown = text_of(viewer, "#panel-diagnostics .diag-list")
+    for datum in plain:
+        assert (datum.decode() if isinstance(datum, bytes) else datum) not in shown
+    assert len(re.findall(r'datum "[0-9a-f]{16}"', shown)) == 5

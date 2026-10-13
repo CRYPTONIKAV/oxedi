@@ -248,3 +248,40 @@ fn no_original_survives(dates: DateMode) {
         }
     });
 }
+
+/// The fixtures built to carry findings on flagged places: one finding each on
+/// a claim id, a member id, a group number, a statement date and a line item
+/// control number, under both versions.
+#[test]
+fn a_finding_on_a_flagged_place_has_its_datum_replaced() {
+    let (five, four) = common::builtins();
+    for dates in [DateMode::Year, DateMode::Shift] {
+        let mask = Mask::new(KEY, dates).unwrap();
+        for name in [
+            "masked_findings_5010_sample.txt",
+            "masked_findings_4010_sample.txt",
+        ] {
+            let bytes = common::load_fixture(name);
+            let delims = oxedi_core::Delimiters::from_isa(&bytes).unwrap();
+            let spec = common::select(&five, &four, &bytes, delims);
+            let document = Document::with_delimiters(&bytes[..], delims).unwrap();
+            let (_, plain) = Processor::run(spec, &document);
+            let (_, masked) = Processor::run_masked(spec, &document, &mask);
+            let datums = |found: &[Diagnostic]| -> Vec<String> {
+                found
+                    .iter()
+                    .map(|d| String::from_utf8_lossy(&d.datum).into_owned())
+                    .collect()
+            };
+            let plain = datums(&plain);
+            let masked = datums(&masked);
+            assert_eq!(plain.len(), 5, "{name}: {plain:?}");
+            assert_eq!(masked.len(), plain.len(), "{name}");
+            assert!(plain.iter().any(|d| d == "20241341"), "{name}");
+            for (was, now) in plain.iter().zip(&masked) {
+                assert_ne!(was, now, "{name} {dates:?}");
+                assert!(is_token(now), "{name} {dates:?}: {now:?}");
+            }
+        }
+    }
+}

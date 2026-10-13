@@ -46,6 +46,8 @@ pub fn all_files() -> Vec<(String, Vec<u8>, oxedi_core::Delimiters)> {
         "balanced_4010_sample.txt",
         "edge_cases_5010_sample.txt",
         "edge_cases_4010_sample.txt",
+        "masked_findings_5010_sample.txt",
+        "masked_findings_4010_sample.txt",
     ];
     let samples = [
         "edi835_test_davisvision.RMT",

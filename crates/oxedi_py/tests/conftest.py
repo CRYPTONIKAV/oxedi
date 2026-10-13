@@ -22,6 +22,8 @@ FIXTURES = [
     "balanced_4010_sample.txt",
     "edge_cases_5010_sample.txt",
     "edge_cases_4010_sample.txt",
+    "masked_findings_5010_sample.txt",
+    "masked_findings_4010_sample.txt",
 ]
 SAMPLES = [
     "edi835_test_davisvision.RMT",
