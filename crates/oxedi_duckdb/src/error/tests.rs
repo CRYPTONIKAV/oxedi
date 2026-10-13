@@ -57,6 +57,35 @@ fn macro_parameter() {
 }
 
 #[test]
+fn macro_parameter_that_needs_quoting() {
+    assert_eq!(
+        text(ReadError::MacroParameter {
+            name: "version",
+            parameter: "My \"Ver\"".to_owned(),
+            value: "0_macro_parametersone.My \"Ver\"".to_owned(),
+        }),
+        "read_835: version must be a constant string; a table macro passed its parameter \
+         \"My \\\"Ver\\\"\" as \"0_macro_parametersone.My \\\"Ver\\\"\"; DuckDB does not \
+         substitute a macro parameter given with := or =>, so write version = \"My \"\"Ver\"\"\""
+    );
+}
+
+#[test]
+fn identifier_quoting() {
+    assert_eq!(super::identifier("tbl_2"), "tbl_2");
+    assert_eq!(super::identifier("_x"), "_x");
+    for needs_quotes in ["Tbl", "my table", "a.b", "2x", "", "select\"", "ünï"] {
+        assert!(
+            super::identifier(needs_quotes).starts_with('"'),
+            "{needs_quotes}"
+        );
+    }
+    assert_eq!(super::identifier("a\"b"), "\"a\"\"b\"");
+    assert_eq!(super::identifier("order"), "\"order\"");
+    assert_eq!(super::identifier("ordering"), "ordering");
+}
+
+#[test]
 fn unknown_table() {
     assert_eq!(
         text(ReadError::UnknownTable {

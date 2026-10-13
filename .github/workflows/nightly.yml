@@ -36,3 +36,7 @@ jobs:
   viewer:
     name: Viewer
     uses: ./.github/workflows/_viewer.yml
+
+  workflows:
+    name: Workflows
+    uses: ./.github/workflows/_lint.yml

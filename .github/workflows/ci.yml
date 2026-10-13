@@ -1,12 +1,12 @@
 name: CI
 
-# Runs each area (Rust, Python, DuckDB, Docs, Viewer) only when files it depends on changed: on a
-# pull request against its base, on a push against the previous commit of the branch. A draft
-# pull request runs Rust only; the rest runs once it is ready for review. nightly.yml runs every
-# area on master. Runs of a pull request share a group and a new push cancels the running one;
-# each push to a branch has its own group, so no push is replaced by a later one. `CI result` is
-# the one check to require: it fails when any area failed or was cancelled and passes when each
-# one passed or was not needed.
+# Runs each area (Rust, Python, DuckDB, Docs, Viewer, Workflows) only when files it depends on
+# changed: on a pull request against its base, on a push against the previous commit of the
+# branch. A draft pull request runs Rust only; the rest runs once it is ready for review.
+# nightly.yml runs every area on master. Runs of a pull request share a group and a new push
+# cancels the running one; each push to a branch has its own group, so no push is replaced by a
+# later one. `CI result` is the one check to require: it fails when any area failed or was
+# cancelled and passes when each one passed or was not needed.
 on:
   push:
     branches: [main, master]
@@ -33,6 +33,7 @@ jobs:
       duckdb: ${{ steps.filter.outputs.duckdb }}
       docs: ${{ steps.filter.outputs.docs }}
       viewer: ${{ steps.filter.outputs.viewer }}
+      workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -110,6 +111,10 @@ jobs:
               - '.github/actions/**'
               - '.github/workflows/ci.yml'
               - '.github/workflows/_viewer.yml'
+              - '.github/scripts/publish-viewer.sh'
+            workflows:
+              - '.github/workflows/**'
+              - '.github/scripts/**'
 
   rust:
     name: Rust
@@ -144,9 +149,15 @@ jobs:
     if: needs.changes.outputs.viewer == 'true' && !github.event.pull_request.draft
     uses: ./.github/workflows/_viewer.yml
 
+  workflows:
+    name: Workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true' && !github.event.pull_request.draft
+    uses: ./.github/workflows/_lint.yml
+
   ci-result:
     name: CI result
-    needs: [changes, rust, python, duckdb, docs, viewer]
+    needs: [changes, rust, python, duckdb, docs, viewer, workflows]
     if: always()
     runs-on: ubuntu-latest
     steps:

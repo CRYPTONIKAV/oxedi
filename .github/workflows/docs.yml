@@ -2,22 +2,29 @@ name: Docs deploy
 
 # Publishes the site to the gh-pages branch with mike: `dev` from every push to master that
 # changes what the site or the viewer is built from (the paths below), and `X.Y` plus the
-# `latest` alias from every final v* tag (pre-releases and duckdb-v* tags do not publish; path
-# filters do not apply to tags). A manual run with a `version` (X.Y) publishes that version and
-# moves `latest`, for a release made before this workflow existed. Pull requests only build the
-# site, in the Docs job that ci.yml calls (_docs.yml).
+# `latest` alias from every final vX.Y.Z tag (the tag patterns below keep pre-releases such as
+# v0.5.0rc1 and the duckdb-v* tags from starting the workflow; path filters do not apply to
+# tags). `latest` moves only when X.Y is the highest version on gh-pages, counting X.Y itself, so
+# a patch of an older minor deploys its own folder and leaves `latest` alone. A manual run with
+# a `version` (X.Y) is a release deploy under the same rule, for a release made before this
+# workflow existed. Pull requests only build the site and dry-run the deploy, in the jobs that
+# ci.yml calls (_docs.yml, _viewer.yml).
 #
 # The browser viewer is published next to the versions, in `viewer/` of gh-pages (the latest
-# release) and `viewer/dev/` (master), outside the folders mike manages.
+# release, so it is refreshed only when `latest` moves) and `viewer/dev/` (master), outside the
+# folders mike manages.
 #
 # Releases and master pushes queue separately (see `concurrency`), so a release is never replaced
 # by a later master push, and the two can run at the same time. Both push to gh-pages, so every
-# push goes through .github/scripts/retry-gh-pages.sh, which redoes a rejected push on top of the
-# current origin/gh-pages, up to 3 times.
+# push goes through .github/scripts/retry-gh-pages.sh, which redoes a push rejected because
+# gh-pages moved on top of the current origin/gh-pages, up to 3 times. The last step checks what
+# the run was meant to publish and fails naming what is missing, so a release deploy that did
+# not happen shows as a failed run.
 on:
   push:
     branches: [master]
-    tags: ["v*"]
+    # Filter patterns, not regular expressions: only vX.Y.Z matches.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths:
       - "docs/**"
       - "mkdocs.yml"
@@ -34,15 +41,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Minor version to publish, as X.Y (also moves latest), e.g. 0.5"
+        description: "Minor version to publish, as X.Y (moves latest when it is the highest), e.g. 0.5"
         required: true
         type: string
 
 # Two groups. Master pushes queue in the dev group: a newer push replaces one that is waiting.
-# Tag and manual runs queue in the release group, where GitHub keeps one pending run, so a
-# second tag or manual run started while a release deploy waits replaces it; re-run "Docs
-# deploy" by hand for that version if that happens. Nothing is cancelled once running. Pushes
-# to gh-pages from the two groups are retried when rejected.
+# Final tag and manual runs queue in the release group (pre-release tags never start a run),
+# where GitHub keeps one pending run, so a second tag or manual run started while a release
+# deploy waits replaces it; the replaced run shows as cancelled, and re-running "Docs deploy"
+# by hand for that version publishes it. Nothing is cancelled once running. Pushes to gh-pages
+# from the two groups are retried when rejected.
 concurrency:
   group: ${{ (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && 'docs-deploy-release' || 'docs-deploy-dev' }}
   cancel-in-progress: false
@@ -135,8 +143,19 @@ jobs:
         env:
           NO_MKDOCS_2_WARNING: "true"
         run: .github/scripts/retry-gh-pages.sh mike deploy --push --title "dev (unreleased)" dev
-      - name: Deploy release and move latest
+      - name: Does latest move
+        id: latest
         if: steps.target.outputs.kind == 'release'
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          moves=$({ git show origin/gh-pages:versions.json 2>/dev/null || echo '[]'; } | .github/scripts/is-latest-minor.sh "$VERSION")
+          echo "moves=$moves" >> "$GITHUB_OUTPUT"
+          echo "Version $VERSION: latest moves = $moves"
+      - name: Deploy release and move latest
+        if: steps.target.outputs.kind == 'release' && steps.latest.outputs.moves == 'true'
         env:
           NO_MKDOCS_2_WARNING: "true"
           VERSION: ${{ steps.target.outputs.version }}
@@ -146,10 +165,19 @@ jobs:
           .github/scripts/retry-gh-pages.sh bash -ec '
             mike deploy --push --update-aliases "$VERSION" latest
             mike set-default --push latest'
+      - name: Deploy release and keep latest
+        if: steps.target.outputs.kind == 'release' && steps.latest.outputs.moves != 'true'
+        env:
+          NO_MKDOCS_2_WARNING: "true"
+          VERSION: ${{ steps.target.outputs.version }}
+        run: |
+          # The inner shell expands VERSION from the environment.
+          # shellcheck disable=SC2016
+          .github/scripts/retry-gh-pages.sh bash -ec 'mike deploy --push "$VERSION"'
       - name: Publish the viewer
-        # `viewer/` for a release (keeping `viewer/dev/`), `viewer/dev/` for master. Nothing else
-        # on gh-pages is touched.
-        if: steps.target.outputs.kind != 'skip'
+        # `viewer/` for a release that moves latest (keeping `viewer/dev/`), `viewer/dev/` for
+        # master. Nothing else on gh-pages is touched.
+        if: steps.target.outputs.kind == 'dev' || steps.latest.outputs.moves == 'true'
         env:
           KIND: ${{ steps.target.outputs.kind }}
           VERSION: ${{ steps.target.outputs.version }}
@@ -168,18 +196,31 @@ jobs:
           git show origin/gh-pages:versions.json | jq -r '.[].aliases[]' | while read -r alias; do
             has "$alias"
           done
+          # A release deploy must have published its own folder and, when latest was meant to
+          # move, the alias on it.
+          if [ "$KIND" = "release" ]; then
+            has "$VERSION/index.html"
+            if [ "$MOVES" = "true" ]; then
+              git show origin/gh-pages:versions.json | jq -e --arg v "$VERSION" 'any(.[]; .version == $v and (.aliases | index("latest")))' > /dev/null \
+                || { echo "gh-pages versions.json does not list latest among the aliases of $VERSION"; exit 1; }
+            fi
+          fi
           # A viewer that was there before the run must still be there (mike does not touch it);
           # this run's own viewer must have been published.
-          if [ "$KIND" = "release" ] || [ "$RELEASE_BEFORE" = "true" ]; then has viewer/index.html; has viewer/pkg/index.js; fi
+          if { [ "$KIND" = "release" ] && [ "$MOVES" = "true" ]; } || [ "$RELEASE_BEFORE" = "true" ]; then has viewer/index.html; has viewer/pkg/index.js; fi
           if [ "$KIND" = "dev" ] || [ "$DEV_BEFORE" = "true" ]; then has viewer/dev/index.html; has viewer/dev/pkg/index.js; fi
           for dir in viewer viewer/dev; do
             if git cat-file -e "origin/gh-pages:$dir/pkg/oxedi_bg.wasm" 2>/dev/null; then echo "gh-pages holds $dir/pkg/oxedi_bg.wasm, which the page never loads"; exit 1; fi
           done
           # The published page must carry the policy that forbids network connections.
-          page=viewer/index.html
-          if [ "$KIND" = "dev" ]; then page=viewer/dev/index.html; fi
-          git show "origin/gh-pages:$page" | grep -q "connect-src 'none'" || { echo "gh-pages $page lacks the Content-Security-Policy (connect-src 'none')"; exit 1; }
+          for page in viewer/index.html viewer/dev/index.html; do
+            if git cat-file -e "origin/gh-pages:$page" 2>/dev/null; then
+              git show "origin/gh-pages:$page" | grep -q "connect-src 'none'" || { echo "gh-pages $page lacks the Content-Security-Policy (connect-src 'none')"; exit 1; }
+            fi
+          done
         env:
           KIND: ${{ steps.target.outputs.kind }}
+          VERSION: ${{ steps.target.outputs.version }}
+          MOVES: ${{ steps.latest.outputs.moves }}
           RELEASE_BEFORE: ${{ steps.before.outputs.release }}
           DEV_BEFORE: ${{ steps.before.outputs.dev }}

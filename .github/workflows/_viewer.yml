@@ -62,3 +62,14 @@ jobs:
         run: .venv-docs/bin/playwright install-deps chromium
       - name: Unit checks, oracle and browser tests
         run: make viewer-test
+      # The publish script on a temporary worktree of origin/gh-pages, committing but never
+      # pushing, so a broken viewer deploy shows on the pull request.
+      - name: Viewer publish (dry run, no push)
+        env:
+          PUSH: "false"
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          KIND=release VERSION=0.0 .github/scripts/publish-viewer.sh
+          KIND=dev .github/scripts/publish-viewer.sh

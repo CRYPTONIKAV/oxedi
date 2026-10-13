@@ -2,7 +2,8 @@
 # One attempt at publishing the viewer to gh-pages: builds a worktree from the current
 # origin/gh-pages, replaces the viewer's folder, commits and pushes. Nothing else on gh-pages is
 # touched. Run it through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
-# Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA.
+# Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH=false to stop
+# after the commit in the temporary worktree (a dry run that never pushes).
 set -euo pipefail
 
 git fetch origin gh-pages
@@ -30,5 +31,9 @@ if git diff --cached --quiet; then
   echo "The viewer on gh-pages is already up to date."
 else
   git commit -m "Viewer $label from ${GITHUB_SHA::7}"
-  git push origin HEAD:gh-pages
+  if [ "${PUSH:-true}" = "true" ]; then
+    git push origin HEAD:gh-pages
+  else
+    echo "PUSH=false: committed $(git rev-parse --short HEAD) locally, nothing pushed."
+  fi
 fi

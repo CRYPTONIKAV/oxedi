@@ -1,0 +1,22 @@
+name: Workflows
+
+# actionlint on the workflows, shellcheck on the scripts they run and those scripts' own tests,
+# with the tool versions pinned in scripts/install-lint-tools.sh. Called by ci.yml and
+# nightly.yml; locally: .github/scripts/lint.sh.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint workflows and scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: actionlint and shellcheck
+        run: .github/scripts/install-lint-tools.sh
+      - name: Lint
+        run: .github/scripts/lint.sh
