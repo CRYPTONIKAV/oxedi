@@ -56,6 +56,17 @@ impl<'s> Processor<'s> {
         }
     }
 
+    /// A processor whose projector fills only the tables named in `names`;
+    /// see [`Projector::with_tables`]. The events and the diagnostics are
+    /// those of [`Processor::new`], except a text value too large to store
+    /// in a table left out, which is not reported.
+    pub fn with_tables(spec: &'s Spec, delimiters: &Delimiters, names: &[&str]) -> Self {
+        Self {
+            projector: Projector::with_tables(spec, delimiters, names),
+            ..Self::new(spec, delimiters)
+        }
+    }
+
     /// Consumes one segment. The output is valid until the next call.
     pub fn feed(&mut self, segment: &Segment<'_>) -> &Output {
         self.output.events.clear();
@@ -121,6 +132,21 @@ impl<'s> Processor<'s> {
         }
         diagnostics.extend_from_slice(processor.finish().diagnostics());
         (processor.take_tables(), diagnostics)
+    }
+
+    /// Processes a whole document as [`Processor::run`] does, filling only
+    /// the tables named in `names` and collecting no diagnostics. Each table
+    /// it returns holds the rows `run` gives that table.
+    pub fn run_tables(spec: &Spec, document: &Document<'_>, names: &[&str]) -> Tables {
+        let mut processor = Processor::with_tables(spec, document.delimiters(), names);
+        let mut segment = Segment::empty();
+        let mut index = 0;
+        while document.segment_into(index, &mut segment) {
+            processor.feed(&segment);
+            index += 1;
+        }
+        processor.finish();
+        processor.take_tables()
     }
 }
 

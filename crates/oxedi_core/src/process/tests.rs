@@ -1,6 +1,6 @@
 use super::*;
 use crate::delimiters::test_support::plain as delimiters;
-use crate::{SnipLevel, Tokenizer};
+use crate::{Cell, SnipLevel, Tokenizer};
 
 const ISA: &str = "ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *240101*1200*^*00501*000000001*0*P*>~";
 
@@ -154,4 +154,43 @@ fn tables_drained_after_each_transaction_add_up_to_one_run() {
             .collect::<Vec<_>>(),
         vec![1, 1, 1, 0]
     );
+}
+
+#[test]
+fn a_processor_with_some_tables_fills_those_with_the_rows_of_a_full_run() {
+    let spec = Spec::builtin_835();
+    let input = interchange(&[
+        CLAIM,
+        "BPR*I*0*C*CHK************20240101~TRN*1*2*1234567890~ZZZ~",
+        CLAIM,
+    ]);
+    let document = Document::with_delimiters(input.as_bytes(), delimiters()).unwrap();
+    let (whole, diagnostics) = Processor::run(&spec, &document);
+
+    let mut processor = Processor::with_tables(&spec, &delimiters(), &["services", "nowhere"]);
+    let mut by_hand = Vec::new();
+    for segment in Tokenizer::with_delimiters(input.as_bytes(), delimiters()) {
+        by_hand.extend_from_slice(processor.feed(&segment).diagnostics());
+    }
+    by_hand.extend_from_slice(processor.finish().diagnostics());
+    assert_eq!(by_hand, diagnostics, "every element is still checked");
+    let some = processor.take_tables();
+    let names: Vec<&str> = some.iter().map(|table| table.name()).collect();
+    assert_eq!(names, vec!["services"], "an unknown name is ignored");
+    assert_eq!(some.get("services"), whole.get("services"));
+    let services = some.get("services").unwrap();
+    assert_eq!(services.len(), 2);
+    let claim = |row| services.column("claim").and_then(|c| c.get(row));
+    assert_eq!(
+        (claim(0), claim(1)),
+        (Some(Cell::Int64(0)), Some(Cell::Int64(1))),
+        "a service refers to its claim's row although claims is not filled"
+    );
+
+    let only = Processor::run_tables(&spec, &document, &["claims", "payments"]);
+    assert_eq!(only.len(), 2);
+    for name in ["claims", "payments"] {
+        assert_eq!(only.get(name), whole.get(name), "{name}");
+    }
+    assert!(Processor::run_tables(&spec, &document, &[]).is_empty());
 }
