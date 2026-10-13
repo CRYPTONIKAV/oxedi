@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 description = "WebAssembly binding of the oxedi core for the browser viewer"
 publish = false
 

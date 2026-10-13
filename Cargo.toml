@@ -8,6 +8,8 @@ edition = "2024"
 license = "MIT"
 authors = ["javillegasna <javillegasna@gmail.com>"]
 repository = "https://github.com/javillegasna/oxedi"
+homepage = "https://javillegas.dev/oxedi/"
+documentation = "https://javillegas.dev/oxedi/latest/"
 
 [workspace.lints.clippy]
 # Project-wide lint posture; CI enforces with -D warnings.

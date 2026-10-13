@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 description = "Python binding of the oxedi EDI 835 parser core"
 publish = false
 
