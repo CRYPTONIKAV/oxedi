@@ -34,42 +34,49 @@ pub fn load_sample(name: &str) -> Vec<u8> {
     std::fs::read(&path).unwrap_or_else(|e| panic!("failed to read sample {}: {e}", path.display()))
 }
 
-/// The nine synthetic fixtures and six anonymized samples, each with the
-/// delimiters to tokenize it (the ISA-less fragment gets caller delimiters).
+/// The synthetic fixtures that open with an ISA, in the order the goldens list them.
+pub const FIXTURES: &[&str] = &[
+    "emedny_sample.txt",
+    "united_healthcare_legacy_sample.txt",
+    "multi_claim_sample.txt",
+    "trizetto_sample.rmt",
+    "balanced_5010_sample.txt",
+    "balanced_4010_sample.txt",
+    "edge_cases_5010_sample.txt",
+    "edge_cases_4010_sample.txt",
+    "masked_findings_5010_sample.txt",
+    "masked_findings_4010_sample.txt",
+];
+
+/// The synthetic fixture with no ISA, which takes the delimiters from the caller.
+pub const NO_ISA_FIXTURE: &str = "blue_cross_nc_sample.txt";
+
+/// The anonymized real samples.
+pub const SAMPLES: &[&str] = &[
+    "edi835_test_davisvision.RMT",
+    "edi835_test_eyemed.RMT",
+    "edi835_test_file.RMT",
+    "edi835_test_not_available_claim_id.RMT",
+    "edi835_test_united.rmt",
+    "edi835_test_versant.RMT",
+];
+
+/// Every fixture and sample with the delimiters to tokenize it (the
+/// ISA-less fragment gets caller delimiters).
 pub fn all_files() -> Vec<(String, Vec<u8>, oxedi_core::Delimiters)> {
-    let fixtures = [
-        "emedny_sample.txt",
-        "united_healthcare_legacy_sample.txt",
-        "multi_claim_sample.txt",
-        "trizetto_sample.rmt",
-        "balanced_5010_sample.txt",
-        "balanced_4010_sample.txt",
-        "edge_cases_5010_sample.txt",
-        "edge_cases_4010_sample.txt",
-        "masked_findings_5010_sample.txt",
-        "masked_findings_4010_sample.txt",
-    ];
-    let samples = [
-        "edi835_test_davisvision.RMT",
-        "edi835_test_eyemed.RMT",
-        "edi835_test_file.RMT",
-        "edi835_test_not_available_claim_id.RMT",
-        "edi835_test_united.rmt",
-        "edi835_test_versant.RMT",
-    ];
     let mut files = Vec::new();
-    for name in fixtures {
+    for &name in FIXTURES {
         let bytes = load_fixture(name);
         let delims = oxedi_core::Delimiters::from_isa(&bytes).expect(name);
         files.push((name.to_string(), bytes, delims));
     }
-    let blue = load_fixture("blue_cross_nc_sample.txt");
+    let blue = load_fixture(NO_ISA_FIXTURE);
     files.push((
-        "blue_cross_nc_sample.txt".to_string(),
+        NO_ISA_FIXTURE.to_string(),
         blue,
         oxedi_core::Delimiters::new(b'*', b':', b'~'),
     ));
-    for name in samples {
+    for &name in SAMPLES {
         let bytes = load_sample(name);
         let delims = oxedi_core::Delimiters::from_isa(&bytes).expect(name);
         files.push((name.to_string(), bytes, delims));

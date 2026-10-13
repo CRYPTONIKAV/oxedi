@@ -144,26 +144,46 @@ fn masked_cells_depend_on_the_key_only() {
     }
 }
 
+/// An original value of a flagged column, as the file writes it, and the
+/// first place it was read at.
+struct Original {
+    kind: Phi,
+    text: String,
+    table: String,
+    column: String,
+    row: usize,
+}
+
 /// Every non-empty value of a flagged column, as the file writes it: text as
 /// is, dates as `CCYYMMDD`, and dates also as tables render them unless
-/// masking leaves them unchanged (already January 1).
-fn originals(spec: &Spec, plain: &Tables) -> Vec<(Phi, String)> {
+/// masking leaves them unchanged (already January 1). A value read at
+/// several places is listed once, at the first.
+fn originals(spec: &Spec, plain: &Tables) -> Vec<Original> {
     let mut found = Vec::new();
     for table in plain {
         for (column, data) in table.columns() {
             let Some(kind) = flag(spec, table, column) else {
                 continue;
             };
+            let mut push = |text: String, row: usize| {
+                found.push(Original {
+                    kind,
+                    text,
+                    table: table.name().to_string(),
+                    column: column.to_string(),
+                    row,
+                });
+            };
             for row in 0..table.len() {
                 match data.get(row) {
                     Some(Cell::Binary(value)) if !value.is_empty() => {
-                        found.push((kind, String::from_utf8_lossy(value).into_owned()));
+                        push(String::from_utf8_lossy(value).into_owned(), row);
                     }
                     Some(Cell::Date32(days)) => {
                         let rendered = data.render(row).unwrap();
-                        found.push((kind, rendered.replace('-', "")));
+                        push(rendered.replace('-', ""), row);
                         if Mask::year_start(days) != days {
-                            found.push((kind, rendered));
+                            push(rendered, row);
                         }
                     }
                     _ => {}
@@ -171,8 +191,8 @@ fn originals(spec: &Spec, plain: &Tables) -> Vec<(Phi, String)> {
             }
         }
     }
-    found.sort_by(|a, b| a.1.cmp(&b.1));
-    found.dedup();
+    found.sort_by(|a, b| a.text.cmp(&b.text));
+    found.dedup_by(|later, first| later.kind == first.kind && later.text == first.text);
     found
 }
 
@@ -184,31 +204,90 @@ fn is_token(text: &str) -> bool {
             .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
+/// A place whose values equal values of a flagged column in the data itself:
+/// the cell is not masked and reads the same without a mask, so the masking
+/// did not put it there. It names the file, the table and column of the
+/// originals, and the table and column of the cell.
+struct Coincidence {
+    file: &'static str,
+    original: (&'static str, &'static str),
+    cell: (&'static str, &'static str),
+    reason: &'static str,
+}
+
+/// The known coincidences of the anonymized files. Every other original is
+/// searched in every cell it can leak into, and a cell of these columns
+/// counts only when it reads the same as in the unmasked output. A test fails
+/// when an entry no longer occurs, so the list cannot outlive the data it
+/// describes.
+const COINCIDENCES: &[Coincidence] = &[
+    Coincidence {
+        file: "united_healthcare_legacy_sample.txt",
+        original: ("claims", "patient_id"),
+        cell: ("payments", "payer_identifier"),
+        reason: "a nine-digit patient id is a prefix of the ten-digit payer identifier",
+    },
+    Coincidence {
+        file: "united_healthcare_legacy_sample.txt",
+        original: ("claims", "patient_id"),
+        cell: ("payments", "trace_number"),
+        reason: "a nine-digit patient id is a prefix of the ten-digit trace number",
+    },
+    Coincidence {
+        file: "edi835_test_eyemed.RMT",
+        original: ("claims", "patient_last_name"),
+        cell: ("claims", "rendering_provider_name"),
+        reason: "a rendering provider is named like a patient",
+    },
+    Coincidence {
+        file: "edi835_test_united.rmt",
+        original: ("claims", "patient_last_name"),
+        cell: ("claims", "rendering_provider_name"),
+        reason: "rendering providers are named like patients",
+    },
+];
+
+/// The shortest id searched in a cell of a column the spec does not flag.
+const ID_MIN: usize = 6;
+
+/// The shortest name searched in a cell of a column the spec does not flag.
+const NAME_MIN: usize = 3;
+
 /// A masked cell leaks an original of its own kind when it holds it; a
 /// token is hex, so a short original made of hex digits can appear in one by
 /// chance, and a token leaks only by being the original. A diagnostic's text
 /// also holds positions and counts, so an original shorter than six bytes
 /// leaks there only as a whole quoted datum.
 ///
-/// Every cell of every table is scanned, flagged or not, for an `id`
-/// original of six or more characters (a patient control number can
-/// ride in an unflagged column, such as a provider adjustment reference): no
-/// cell contains it, except that a token leaks only by being the original
-/// and an unflagged cell holds a shorter original only as the whole cell (an
-/// anonymized sample has a nine-digit patient id that is a prefix of a
-/// ten-digit provider identifier).
-/// A `name` and a shorter `id` original are checked against flagged cells
-/// only: a surname is short and common, and provider data can equal it by
-/// coincidence (a rendering provider named like a patient), which is not a
-/// leak.
+/// Every cell of every table, flagged or not, is scanned for an `id`
+/// original of six or more characters and a `name` original of three or more
+/// (a patient control number can ride in an unflagged column, such as a
+/// provider adjustment reference): no cell contains it, but for the entries
+/// of [`COINCIDENCES`]. A shorter `id` or `name` is checked against flagged
+/// cells only, where its kind of data is. Dates are compared with flagged
+/// cells when they reduce to the year, and by row in
+/// [`shifted_dates_equal_their_own_date_plus_the_rows_offset`] when they shift.
 #[test]
 fn no_original_value_of_a_flagged_column_survives_masking() {
+    let mut used = std::collections::BTreeSet::new();
     for dates in [DateMode::Year, DateMode::Shift] {
-        no_original_survives(dates);
+        no_original_survives(dates, &mut used);
+    }
+    for (index, entry) in COINCIDENCES.iter().enumerate() {
+        assert!(
+            used.contains(&index),
+            "{}: {}.{} no longer coincides with a cell of {}.{} ({})",
+            entry.file,
+            entry.original.0,
+            entry.original.1,
+            entry.cell.0,
+            entry.cell.1,
+            entry.reason
+        );
     }
 }
 
-fn no_original_survives(dates: DateMode) {
+fn no_original_survives(dates: DateMode, used: &mut std::collections::BTreeSet<usize>) {
     runs(dates, |name, spec, (plain, _), (masked, diagnostics)| {
         let originals = originals(spec, plain);
         assert!(!originals.is_empty(), "{name} has patient data to mask");
@@ -216,37 +295,155 @@ fn no_original_survives(dates: DateMode) {
         for table in masked {
             for (column, data) in table.columns() {
                 let kind = flag(spec, table, column);
-                cells.extend((0..table.len()).filter_map(|row| Some((kind, data.render(row)?))));
+                cells.extend((0..table.len()).filter_map(|row| {
+                    Some((kind, data.render(row)?, table.name(), column.as_str(), row))
+                }));
             }
         }
         let texts: Vec<String> = diagnostics.iter().map(ToString::to_string).collect();
-        for (kind, original) in &originals {
-            let is_date = *kind == Phi::Date;
-            // A shifted date can land on the original date of another row, so
-            // dates are compared in cells only when they reduce to the year.
-            let in_cells = !(is_date && dates == DateMode::Shift);
-            for (own, cell) in cells.iter().filter(|(own, _)| {
-                in_cells
-                    && match own {
+        for original in &originals {
+            let is_date = original.kind == Phi::Date;
+            // A shifted date can land on the original date of another row.
+            if !(is_date && dates == DateMode::Shift) {
+                for (own, cell, table, column, row) in &cells {
+                    let searched = match own {
                         Some(own) => (*own == Phi::Date) == is_date,
-                        None => *kind == Phi::Id && original.len() >= 6,
+                        None => match original.kind {
+                            Phi::Id => original.text.len() >= ID_MIN,
+                            Phi::Name => original.text.len() >= NAME_MIN,
+                            Phi::Date => false,
+                        },
+                    };
+                    let leaks = searched
+                        && if is_token(cell) {
+                            *cell == original.text
+                        } else {
+                            cell.contains(original.text.as_str())
+                        };
+                    if !leaks {
+                        continue;
                     }
-            }) {
-                let leaks = if is_token(cell) || (own.is_none() && original.len() < 10) {
-                    cell == original
-                } else {
-                    cell.contains(original.as_str())
-                };
-                assert!(!leaks, "{name}: {original:?} leaks in cell {cell:?}");
+                    let known = COINCIDENCES.iter().position(|entry| {
+                        entry.file == name
+                            && entry.original == (&*original.table, &*original.column)
+                            && entry.cell == (*table, *column)
+                    });
+                    match known {
+                        Some(index)
+                            if rendered(plain, table, column, *row) == Some(cell.clone()) =>
+                        {
+                            used.insert(index);
+                        }
+                        _ => panic!(
+                            "{name}: {:?} read at {}.{} row {} leaks in {table}.{column} row {row} cell {cell:?}",
+                            original.text, original.table, original.column, original.row
+                        ),
+                    }
+                }
             }
-            let quoted = format!("{original:?}");
+            let quoted = format!("{:?}", original.text);
             for text in &texts {
                 let leaks = text.contains(&quoted)
-                    || (original.len() >= 6 && text.contains(original.as_str()));
-                assert!(!leaks, "{name}: {original:?} leaks in {text:?}");
+                    || (original.text.len() >= 6 && text.contains(original.text.as_str()));
+                assert!(!leaks, "{name}: {:?} leaks in {text:?}", original.text);
             }
         }
     });
+}
+
+/// The text of the cell of `column` in `row` of the table `table`.
+fn rendered(tables: &Tables, table: &str, column: &str, row: usize) -> Option<String> {
+    named(tables, table)
+        .columns()
+        .iter()
+        .find(|(name, _)| name == column)?
+        .1
+        .render(row)
+}
+
+/// The table named `name`.
+fn named<'t>(tables: &'t Tables, name: &str) -> &'t Table {
+    tables
+        .iter()
+        .find(|table| table.name() == name)
+        .unwrap_or_else(|| panic!("no table {name}"))
+}
+
+/// The cell of `column` in `row` of `table`.
+fn cell_at<'t>(table: &'t Table, column: &str, row: usize) -> Option<Cell<'t>> {
+    table
+        .columns()
+        .iter()
+        .find(|(name, _)| name == column)?
+        .1
+        .get(row)
+}
+
+/// The unmasked seed of `row` of the table `index` of the spec: its own seed
+/// column, or that of the nearest table above it that has one, read at the
+/// row the reference column points to.
+fn seed<'t>(spec: &Spec, plain: &'t Tables, index: usize, row: usize) -> Option<&'t [u8]> {
+    let tables = spec.tables();
+    let table = named(plain, &tables[index].name);
+    let (owner, owner_row) = match tables[index].phi_seed() {
+        Some(_) => (index, row),
+        None => {
+            let above = tables[index]
+                .ancestors
+                .iter()
+                .rev()
+                .copied()
+                .find(|&above| tables[above].phi_seed().is_some())?;
+            let Some(Cell::Int64(at)) = cell_at(table, &tables[above].reference, row) else {
+                return None;
+            };
+            (above, usize::try_from(at).ok()?)
+        }
+    };
+    let column = &tables[owner].columns[tables[owner].phi_seed()?].0;
+    match cell_at(named(plain, &tables[owner].name), column, owner_row)? {
+        Cell::Binary(value) if !value.is_empty() => Some(value),
+        _ => None,
+    }
+}
+
+/// In `shift` mode every masked date of a flagged column is its unmasked date
+/// plus the days its row's seed gives, or January 1 of its year when the row
+/// has no seed.
+#[test]
+fn shifted_dates_equal_their_own_date_plus_the_rows_offset() {
+    let mask = Mask::new(KEY, DateMode::Shift).unwrap();
+    let mut seeded = 0;
+    runs(DateMode::Shift, |name, spec, (plain, _), (masked, _)| {
+        for (index, def) in spec.tables().iter().enumerate() {
+            let (before, after) = (named(plain, &def.name), named(masked, &def.name));
+            for (column, _) in before.columns() {
+                if flag(spec, before, column) != Some(Phi::Date) {
+                    continue;
+                }
+                for row in 0..before.len() {
+                    let (Some(Cell::Date32(was)), Some(Cell::Date32(now))) =
+                        (cell_at(before, column, row), cell_at(after, column, row))
+                    else {
+                        continue;
+                    };
+                    let expected = match seed(spec, plain, index, row) {
+                        Some(seed) => {
+                            seeded += 1;
+                            was + mask.shift_days(seed)
+                        }
+                        None => Mask::year_start(was),
+                    };
+                    assert_eq!(
+                        now, expected,
+                        "{name} {}.{column} row {row}: the date moved by the wrong amount",
+                        def.name
+                    );
+                }
+            }
+        }
+    });
+    assert!(seeded > 0, "some row has a seed to shift its dates by");
 }
 
 /// The fixtures built to carry findings on flagged places: one finding each on
