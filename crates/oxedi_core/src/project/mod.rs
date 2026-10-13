@@ -63,6 +63,7 @@ mod plan;
 mod source_tests;
 #[cfg(test)]
 mod tests;
+mod unknown;
 #[cfg(test)]
 mod unread_tests;
 
@@ -78,6 +79,7 @@ use check::Checked;
 use fill::append;
 pub use plan::table_columns;
 use plan::{Candidate, ElementPlan, Plans, column_type};
+pub use unknown::UnknownTable;
 
 /// A column value of a row being collected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -251,18 +253,28 @@ impl<'s> Projector<'s> {
     }
 
     /// A projector that fills only the tables named in `names`; a name the
-    /// spec does not define is ignored. The rows of the kept tables, their
-    /// numbers and their parent references are those [`Projector::new`]
-    /// gives, and every element is still checked, so the diagnostics are the
-    /// same except for a text value too large to store, which is reported
-    /// only for a kept table. [`Projector::take_tables`] returns the kept
-    /// tables only.
-    pub fn with_tables(spec: &'s Spec, delimiters: &Delimiters, names: &[&str]) -> Self {
+    /// spec does not define is an [`UnknownTable`]. The rows of the kept
+    /// tables, their numbers and their parent references are those
+    /// [`Projector::new`] gives, and every element is still checked, so the
+    /// diagnostics are the same except for a text value too large to store,
+    /// which is reported only for a kept table. [`Projector::take_tables`]
+    /// returns the kept tables only.
+    pub fn with_tables(
+        spec: &'s Spec,
+        delimiters: &Delimiters,
+        names: &[&str],
+    ) -> Result<Self, UnknownTable> {
+        if let Some(name) = names
+            .iter()
+            .find(|name| !spec.tables().iter().any(|def| def.name == **name))
+        {
+            return Err(UnknownTable::new(spec, name));
+        }
         let mut projector = Self::new(spec, delimiters);
         for (state, def) in projector.tables.iter_mut().zip(spec.tables()) {
             state.kept = names.contains(&def.name.as_str());
         }
-        projector
+        Ok(projector)
     }
 
     /// Consumes the events the engine returned for `segment` and returns the
@@ -302,7 +314,8 @@ impl<'s> Projector<'s> {
         &self.diagnostics
     }
 
-    /// Moves every appended row out, leaving the tables empty. Rows still
+    /// Moves every appended row of the kept tables out, leaving them empty,
+    /// and returns those tables only. Rows still
     /// being collected stay, and keep their numbers. A text column holds at
     /// most `i32::MAX` bytes until it is drained; draining per transaction
     /// stays far below that (see the module notes for what happens past it).

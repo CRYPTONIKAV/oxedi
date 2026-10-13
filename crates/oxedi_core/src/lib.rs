@@ -61,7 +61,7 @@ pub use element::{Element, Value};
 pub use engine::{Event, LoopEngine};
 pub use frame::{Frame, next_frame};
 pub use process::{Output, Processor};
-pub use project::Projector;
+pub use project::{Projector, UnknownTable};
 pub use segment::{Segment, WriteError};
 pub use spec::{
     AnchorChains, AnchorPositions, BalanceError, BalanceRule, BalanceTerm, ColumnSource, Control,

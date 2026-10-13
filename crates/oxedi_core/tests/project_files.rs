@@ -348,12 +348,12 @@ fn filling_some_tables_gives_each_the_rows_of_a_full_run() {
         let (whole, diagnostics) = Processor::run(spec, &document);
         let names: Vec<&str> = spec.tables().iter().map(|t| t.name.as_str()).collect();
         assert_eq!(
-            Processor::run_tables(spec, &document, &names),
+            Processor::run_tables(spec, &document, &names).unwrap(),
             whole,
             "{name}"
         );
         for table in &whole {
-            let one = Processor::run_tables(spec, &document, &[table.name()]);
+            let one = Processor::run_tables(spec, &document, &[table.name()]).unwrap();
             assert_eq!(one.len(), 1, "{name}: {}", table.name());
             assert_eq!(
                 one.get(table.name()),
@@ -362,7 +362,7 @@ fn filling_some_tables_gives_each_the_rows_of_a_full_run() {
                 table.name()
             );
 
-            let mut processor = Processor::with_tables(spec, &delims, &[table.name()]);
+            let mut processor = Processor::with_tables(spec, &delims, &[table.name()]).unwrap();
             let mut seen = Vec::new();
             for segment in Tokenizer::with_delimiters(&bytes, delims) {
                 seen.extend_from_slice(processor.feed(&segment).diagnostics());

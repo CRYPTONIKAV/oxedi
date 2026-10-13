@@ -201,6 +201,9 @@ fn project(
     file: &str,
 ) -> Result<Table, ReadError> {
     Processor::run_tables(&builtin.spec, document, &[name])
+        .map_err(|error| ReadError::Internal {
+            message: format!("{file:?}: {error}"),
+        })?
         .remove(name)
         .ok_or_else(|| ReadError::Internal {
             message: format!("{file:?}: the parsed file has no table {name:?}"),
