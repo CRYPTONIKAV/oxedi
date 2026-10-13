@@ -14,7 +14,8 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
   reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
   quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
-  never masked. A key under 16 bytes raises `ValueError`.
+  never masked. A key under 16 bytes raises `ValueError`. A spec that flags a column reading an
+  envelope control number or count (`ST02`, `SE01`, `GS06`, ...) is refused.
 - `oxedi.pyx12.validate` accepts `mask=`: a finding about a place a column flagged as patient
   data reads has its value masked as `parse` masks its diagnostics, in its datum and in pyx12's
   message. pyx12 still reads the original file.

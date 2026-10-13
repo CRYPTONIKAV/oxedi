@@ -177,6 +177,51 @@ fn a_segment_index_and_an_undefined_element_are_judged_by_the_spec() {
     );
 }
 
+fn control_spec(segment: &str, element: usize) -> Result<Spec, SpecError> {
+    Spec::from_json(&format!(
+        r#"{{"name":"t","loops":{{
+            "GS":{{"trigger":{{"segment":"GS"}},"end":"GE","control":{{"opener_element":6,"closer_element":2,"count_element":1,"count":"children"}}}},
+            "ST":{{"parent":"GS","trigger":{{"segment":"ST"}},"end":"SE","control":{{"opener_element":2,"closer_element":2,"count_element":1,"count":"segments"}}}}}},
+            "tables":{{"t":{{"loops":["{}"],"columns":{{"ctl":{{"segment":"{segment}","element":{element},"phi":"id"}}}}}}}}}}"#,
+        if segment.starts_with('G') { "GS" } else { "ST" }
+    ))
+}
+
+#[test]
+fn envelope_control_elements_cannot_be_flagged() {
+    for (segment, element) in [
+        ("ST", 2),
+        ("SE", 1),
+        ("SE", 2),
+        ("GS", 6),
+        ("GE", 1),
+        ("GE", 2),
+    ] {
+        let Err(SpecError::BadTable { column, reason, .. }) = control_spec(segment, element) else {
+            panic!("{segment}{element} was accepted");
+        };
+        assert_eq!(column.as_deref(), Some("ctl"));
+        assert_eq!(
+            reason,
+            TableDefError::PhiOnControlElement {
+                segment: segment.into(),
+                element
+            }
+        );
+    }
+    assert!(control_spec("ST", 1).is_ok());
+    assert!(control_spec("GS", 1).is_ok());
+}
+
+#[test]
+fn a_control_element_error_is_displayed_in_full() {
+    let error = control_spec("ST", 2).unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "table \"t\" column \"ctl\": \"phi\" cannot flag ST02: it is an envelope control number or count, and those elements cannot be flagged because the envelope checks them against the original value; remove \"phi\" from this column"
+    );
+}
+
 fn flagged(spec: &Spec) -> Vec<String> {
     let mut found = Vec::new();
     for table in spec.tables() {

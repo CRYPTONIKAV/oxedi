@@ -56,6 +56,35 @@ impl Spec {
     }
 }
 
+/// The segment id and 1-based element `source` reads when an envelope loop
+/// uses that element as a control number or count.
+fn control_element(
+    spec: &Spec,
+    table: &TableDef,
+    source: &ColumnSource,
+) -> Option<(String, usize)> {
+    let (segment, element) = match source {
+        ColumnSource::Element {
+            segment, element, ..
+        } => (segment, *element),
+        ColumnSource::GroupElement { offset, .. } => {
+            let repeat = table.repeat?;
+            (table.segment.as_ref()?, repeat.from.checked_add(*offset)?)
+        }
+        ColumnSource::SegmentIndex { .. } => return None,
+    };
+    let reads = |id: &[u8], position: usize| id == segment.as_slice() && position == element;
+    let controlled = spec.loops().iter().any(|def| {
+        def.control.is_some_and(|control| {
+            reads(&def.trigger.segment, control.opener_element)
+                || def.end.as_deref().is_some_and(|end| {
+                    reads(end, control.closer_element) || reads(end, control.count_element)
+                })
+        })
+    });
+    controlled.then(|| (String::from_utf8_lossy(segment).into_owned(), element))
+}
+
 /// Fills `table.phi` from the `phi` word each column wrote (parallel to
 /// `table.columns`) and `table.phi_seed` from the `phi_seed` column name.
 pub(super) fn compile_phi(
@@ -83,6 +112,12 @@ pub(super) fn compile_phi(
                 },
             ));
         };
+        if let Some((segment, element)) = control_element(spec, table, source) {
+            return Err(fail(
+                Some(name),
+                TableDefError::PhiOnControlElement { segment, element },
+            ));
+        }
         let found = spec.column_kind(table, source);
         let reason = match (kind, found) {
             (Phi::Date, ColumnKind::Element(Some(ElementType::Dt)))
