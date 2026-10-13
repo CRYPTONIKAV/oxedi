@@ -1016,8 +1016,10 @@ def test_a_patched_spec_masks_the_finding_it_flags_only_when_validate_gets_it():
 
 
 def test_validate_with_a_spec_names_the_loops_parse_names_with_it():
-    spec = payer_name_spec()
-    data = payer_name_with_bad_character()
+    spec = oxedi.Spec.builtin().patch(
+        {"loops": {"ZZ": {"parent": "1000A", "trigger": {"segment": "N3"}}}}
+    )
+    data = balanced_5010().replace(b"N3*100 MAIN ST", b"N3*100 MA\xe9N ST", 1)
     found = validate(data, spec=spec)
     segments = [d.segment for d in found]
     assert segments and None not in segments
@@ -1027,7 +1029,11 @@ def test_validate_with_a_spec_names_the_loops_parse_names_with_it():
         for path in oxedi._core._loop_paths(result, segments)
     ]
     assert [d.path for d in found] == expected
-    assert found[-1].path == "interchange#1/group#1/transaction#1/1000A#1"
+    (on_address,) = [d for d in found if d.code == "6"]
+    assert on_address.path == "interchange#1/group#1/transaction#1/1000A#1/ZZ#1"
+    (builtin,) = [d for d in validate(data) if d.code == "6"]
+    assert builtin.path == "interchange#1/group#1/transaction#1/1000A#1"
+    assert (builtin.segment, builtin.element) == (on_address.segment, on_address.element)
 
 
 def test_a_spec_that_is_not_a_spec_is_refused():

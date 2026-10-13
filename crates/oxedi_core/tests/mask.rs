@@ -6,6 +6,8 @@
 
 mod common;
 
+use std::collections::BTreeSet;
+
 use oxedi_core::{Cell, DateMode, Diagnostic, Document, Mask, Phi, Processor, Spec, Table, Tables};
 
 const KEY: &[u8] = b"oxedi-test-key-0";
@@ -212,37 +214,48 @@ struct Coincidence {
     file: &'static str,
     original: (&'static str, &'static str),
     cell: (&'static str, &'static str),
+    rows: usize,
+    values: usize,
     reason: &'static str,
 }
 
 /// The known coincidences of the anonymized files. Every other original is
 /// searched in every cell it can leak into, and a cell of these columns
 /// counts only when it reads the same as in the unmasked output. A test fails
-/// when an entry no longer occurs, so the list cannot outlive the data it
-/// describes.
+/// when an entry occurs in more or fewer rows than `rows`, or with more or
+/// fewer distinct cell texts than `values`, so the list can neither outlive
+/// the data it describes nor cover a new copy of patient data.
 const COINCIDENCES: &[Coincidence] = &[
     Coincidence {
         file: "united_healthcare_legacy_sample.txt",
         original: ("claims", "patient_id"),
         cell: ("payments", "payer_identifier"),
+        rows: 1,
+        values: 1,
         reason: "a nine-digit patient id is a prefix of the ten-digit payer identifier",
     },
     Coincidence {
         file: "united_healthcare_legacy_sample.txt",
         original: ("claims", "patient_id"),
         cell: ("payments", "trace_number"),
+        rows: 1,
+        values: 1,
         reason: "a nine-digit patient id is a prefix of the ten-digit trace number",
     },
     Coincidence {
         file: "edi835_test_eyemed.RMT",
         original: ("claims", "patient_last_name"),
         cell: ("claims", "rendering_provider_name"),
+        rows: 1,
+        values: 1,
         reason: "a rendering provider is named like a patient",
     },
     Coincidence {
         file: "edi835_test_united.rmt",
         original: ("claims", "patient_last_name"),
         cell: ("claims", "rendering_provider_name"),
+        rows: 1332,
+        values: 30,
         reason: "rendering providers are named like patients",
     },
 ];
@@ -269,25 +282,45 @@ const NAME_MIN: usize = 3;
 /// [`shifted_dates_equal_their_own_date_plus_the_rows_offset`] when they shift.
 #[test]
 fn no_original_value_of_a_flagged_column_survives_masking() {
-    let mut used = std::collections::BTreeSet::new();
+    let mut used = Used::new();
     for dates in [DateMode::Year, DateMode::Shift] {
         no_original_survives(dates, &mut used);
     }
     for (index, entry) in COINCIDENCES.iter().enumerate() {
-        assert!(
-            used.contains(&index),
-            "{}: {}.{} no longer coincides with a cell of {}.{} ({})",
+        let rows: BTreeSet<usize> = used
+            .iter()
+            .filter(|(at, ..)| *at == index)
+            .map(|(_, row, _)| *row)
+            .collect();
+        let values: BTreeSet<&str> = used
+            .iter()
+            .filter(|(at, ..)| *at == index)
+            .map(|(.., cell)| cell.as_str())
+            .collect();
+        assert_eq!(
+            (rows.len(), values.len()),
+            (entry.rows, entry.values),
+            "{}: {}.{} coincides with a cell of {}.{} in {} rows with {} distinct texts, \
+             not {} rows with {} ({})",
             entry.file,
             entry.original.0,
             entry.original.1,
             entry.cell.0,
             entry.cell.1,
+            rows.len(),
+            values.len(),
+            entry.rows,
+            entry.values,
             entry.reason
         );
     }
 }
 
-fn no_original_survives(dates: DateMode, used: &mut std::collections::BTreeSet<usize>) {
+/// Each entry of [`COINCIDENCES`] that occurs, with the row and text of its
+/// cell.
+type Used = BTreeSet<(usize, usize, String)>;
+
+fn no_original_survives(dates: DateMode, used: &mut Used) {
     runs(dates, |name, spec, (plain, _), (masked, diagnostics)| {
         let originals = originals(spec, plain);
         assert!(!originals.is_empty(), "{name} has patient data to mask");
@@ -332,7 +365,7 @@ fn no_original_survives(dates: DateMode, used: &mut std::collections::BTreeSet<u
                         Some(index)
                             if rendered(plain, table, column, *row) == Some(cell.clone()) =>
                         {
-                            used.insert(index);
+                            used.insert((index, *row, cell.clone()));
                         }
                         _ => panic!(
                             "{name}: {:?} read at {}.{} row {} leaks in {table}.{column} row {row} cell {cell:?}",
@@ -422,10 +455,15 @@ fn shifted_dates_equal_their_own_date_plus_the_rows_offset() {
                     continue;
                 }
                 for row in 0..before.len() {
-                    let (Some(Cell::Date32(was)), Some(Cell::Date32(now))) =
-                        (cell_at(before, column, row), cell_at(after, column, row))
-                    else {
+                    let Some(Cell::Date32(was)) = cell_at(before, column, row) else {
                         continue;
+                    };
+                    let Some(Cell::Date32(now)) = cell_at(after, column, row) else {
+                        panic!(
+                            "{name} {}.{column} row {row}: a date became {:?}",
+                            def.name,
+                            cell_at(after, column, row)
+                        );
                     };
                     let expected = match seed(spec, plain, index, row) {
                         Some(seed) => {
