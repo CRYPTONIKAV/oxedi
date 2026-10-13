@@ -68,32 +68,57 @@ jobs:
             [ "$actual" = "$2" ] || fail "after the $3 deploy, versions.json gives $1 the aliases $actual, expected $2"
           }
 
+          # Before each run, viewer/index.html and docs/llms.txt get a marker line naming the run,
+          # so what gh-pages already held cannot pass for what the run published; both files are
+          # restored after the run.
+          mark() {
+            echo "<!-- deploy dry run: $1 -->" >> viewer/index.html
+            echo "# deploy dry run: $1" >> docs/llms.txt
+          }
+          unmark() { git checkout -- viewer/index.html docs/llms.txt; }
+          # Whether the file at a gh-pages path holds the marker line of a run.
+          marked() {
+            case "$1" in
+              *.html) git show "gh-pages:$1" | grep -qxF "<!-- deploy dry run: $2 -->" ;;
+              *) git show "gh-pages:$1" | grep -qxF "# deploy dry run: $2" ;;
+            esac
+          }
+
           # dev: its own version and viewer/dev/; viewer/ and llms.txt stay as they were.
           viewer=$(released_viewer); llms=$(blob llms.txt)
+          mark dev
           .github/scripts/deploy-docs.sh --no-push dev
+          unmark
           expect_aliases dev '[]' dev
-          git show gh-pages:viewer/dev/index.html | cmp -s - viewer/index.html || fail "after the dev deploy, gh-pages viewer/dev/index.html is not viewer/index.html"
+          marked viewer/dev/index.html dev || fail "the dev deploy did not publish viewer/dev/index.html (no dev marker)"
+          marked dev/llms.txt dev || fail "the dev deploy did not put docs/llms.txt into dev/ (no dev marker)"
           [ "$(released_viewer)" = "$viewer" ] || fail "the dev deploy changed viewer/ on gh-pages"
           [ "$(blob llms.txt)" = "$llms" ] || fail "the dev deploy changed llms.txt on gh-pages"
 
-          # 999.0 moves latest: the alias, the default page, viewer/ and llms.txt follow it.
+          # 999.0 moves latest: the alias, the default page, viewer/ and llms.txt follow it. The
+          # default is first set to dev, so the redirect to latest/ shows that the run set it.
+          mike set-default dev
+          git show gh-pages:index.html | grep -q 'dev/' || fail "mike set-default dev did not make gh-pages index.html redirect to dev/"
+          mark 999.0
           .github/scripts/deploy-docs.sh --no-push release 999.0 | tee "$log"
+          unmark
           grep -qx "Version 999.0: latest moves = true" "$log" || fail "the 999.0 deploy did not decide to move latest"
           expect_aliases 999.0 '["latest"]' 999.0
           git show gh-pages:index.html | grep -q 'latest/' || fail "after the 999.0 deploy, gh-pages index.html does not redirect to latest/"
-          git show gh-pages:viewer/index.html | cmp -s - viewer/index.html || fail "after the 999.0 deploy, gh-pages viewer/index.html is not viewer/index.html"
-          git show gh-pages:llms.txt | cmp -s - docs/llms.txt || fail "after the 999.0 deploy, gh-pages llms.txt is not docs/llms.txt"
+          marked viewer/index.html 999.0 || fail "the 999.0 deploy did not publish viewer/index.html (no 999.0 marker)"
+          marked llms.txt 999.0 || fail "the 999.0 deploy did not publish the root llms.txt (no 999.0 marker)"
+          marked viewer/dev/index.html dev || fail "the 999.0 deploy changed viewer/dev/index.html"
 
-          # 998.0 keeps latest on 999.0 and leaves viewer/ and llms.txt alone. A marker line added
-          # to docs/llms.txt reaches 998.0/llms.txt through mike and must not reach the root one.
+          # 998.0 keeps latest on 999.0 and leaves viewer/ and llms.txt alone: its marker reaches
+          # 998.0/llms.txt through mike and nothing outside 998.0/.
           viewer=$(released_viewer); llms=$(blob llms.txt)
-          echo "# deploy dry run marker" >> docs/llms.txt
+          mark 998.0
           .github/scripts/deploy-docs.sh --no-push release 998.0 | tee "$log"
-          git checkout -- docs/llms.txt
+          unmark
           grep -qx "Version 998.0: latest moves = false" "$log" || fail "the 998.0 deploy decided to move latest"
           expect_aliases 998.0 '[]' 998.0
           expect_aliases 999.0 '["latest"]' 998.0
-          git show gh-pages:998.0/llms.txt | grep -qx "# deploy dry run marker" || fail "after the 998.0 deploy, gh-pages 998.0/llms.txt lacks the marker line"
+          marked 998.0/llms.txt 998.0 || fail "the 998.0 deploy did not put docs/llms.txt into 998.0/ (no 998.0 marker)"
           [ "$(released_viewer)" = "$viewer" ] || fail "the 998.0 deploy changed viewer/ on gh-pages"
           [ "$(blob llms.txt)" = "$llms" ] || fail "the 998.0 deploy changed llms.txt on gh-pages"
           echo "deploy dry run: dev, 999.0 (moves latest) and 998.0 (keeps it) left gh-pages as expected"

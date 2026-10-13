@@ -10,9 +10,10 @@
 #              llms.txt alone.
 #
 # By default every read of gh-pages is of a freshly fetched origin/gh-pages, and every push goes
-# through retry-gh-pages.sh. With --no-push nothing is fetched or pushed: mike runs without
-# --push, publish-viewer.sh commits onto the local gh-pages branch (PUSH=local), and the reads
-# and the final checks are of that local branch, which may not exist yet.
+# through retry-gh-pages.sh; gh-pages must already exist on origin, or the first fetch fails the
+# run. With --no-push nothing is fetched or pushed: mike runs without --push, publish-viewer.sh
+# commits onto the local gh-pages branch (PUSH=local), and the reads and the final checks are of
+# that local branch, which may not exist yet.
 #
 # Runs from the repository root. Needs mike (and mkdocs) on the PATH, jq, a git identity, the
 # viewer's module in viewer/pkg (make wasm) and GITHUB_SHA, which names the viewer's commit.
