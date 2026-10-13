@@ -163,3 +163,18 @@ def test_pyx12_finds_nothing_new_in_the_masked_written_file(name):
     original = pyx12_findings(oxedi.write(oxedi.parse(read(name), delimiters=delimiters_for(name)).tables, envelope()))
     written = pyx12_findings(oxedi.write(masked(name).tables, envelope()))
     assert not (written - original)
+
+
+@pytest.mark.parametrize(
+    "name", ["masked_findings_5010_sample.txt", "masked_findings_4010_sample.txt"]
+)
+def test_findings_on_flagged_places_carry_the_cores_masked_datums(name):
+    plain = oxedi.parse(read(name), delimiters=delimiters_for(name)).diagnostics
+    result = masked(name).diagnostics
+    assert len(plain) == len(result) == 5
+    # The golden file is the core's own masked rendering of the same key.
+    golden = (MASKED / f"{name}.diagnostics.txt").read_text(encoding="utf-8")
+    assert "".join(f"{d}\n" for d in result) == golden
+    for was, now in zip(plain, result):
+        assert as_text(was.datum) not in str(now)
+        assert re.fullmatch("[0-9a-f]{16}", as_text(now.datum)), now.datum

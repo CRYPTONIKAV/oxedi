@@ -145,6 +145,12 @@ fn export_error(table: &Table, err: &ArrowError) -> PyErr {
     ))
 }
 
+fn spec_export_error(table: &str, err: &ArrowError) -> PyErr {
+    PyRuntimeError::new_err(format!(
+        "the schema of table {table:?} could not be exported to Arrow: {err}"
+    ))
+}
+
 fn schema_of(table: &Table) -> Result<SchemaRef, ArrowError> {
     let fields = table
         .columns()
@@ -200,7 +206,7 @@ pub fn schema(tables: &Arc<Tables>, index: usize) -> Result<FFI_ArrowSchema, PyE
 /// The schema of every table of `spec`, by name, in the spec's table order:
 /// the Arrow types the tables of a parse with `spec` have, with each
 /// reference column's field metadata naming the table it points at.
-pub fn spec_schemas(spec: &Spec) -> Result<Vec<(String, FFI_ArrowSchema)>, PyErr> {
+pub fn spec_schemas(spec: &Spec) -> Result<Vec<(String, Schema)>, PyErr> {
     spec_schema(spec)
         .into_iter()
         .map(|table| {
@@ -220,14 +226,14 @@ pub fn spec_schemas(spec: &Spec) -> Result<Vec<(String, FFI_ArrowSchema)>, PyErr
                 })
                 .collect::<Result<Vec<_>, ArrowError>>();
             fields
-                .and_then(|fields| FFI_ArrowSchema::try_from(&Schema::new(fields)))
-                .map(|schema| (table.name.clone(), schema))
-                .map_err(|err| {
-                    PyRuntimeError::new_err(format!(
-                        "the schema of table {:?} could not be exported to Arrow: {err}",
-                        table.name
-                    ))
-                })
+                .map(|fields| (table.name.clone(), Schema::new(fields)))
+                .map_err(|err| spec_export_error(&table.name, &err))
         })
         .collect()
+}
+
+/// A schema as the object `pyarrow.schema` imports through the Arrow
+/// PyCapsule interface.
+pub fn export_schema(name: &str, schema: &Schema) -> Result<FFI_ArrowSchema, PyErr> {
+    FFI_ArrowSchema::try_from(schema).map_err(|err| spec_export_error(name, &err))
 }

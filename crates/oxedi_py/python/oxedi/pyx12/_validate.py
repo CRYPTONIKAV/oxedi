@@ -7,8 +7,8 @@ import os
 from bisect import bisect_right
 from typing import Any, BinaryIO, Optional, Union
 
-from .. import Diagnostic, parse
-from .._core import _external_diagnostic, _loop_paths
+from .. import Diagnostic, Mask, parse
+from .._core import _external_diagnostic, _loop_paths, _mask_findings
 from . import _capture
 from ._tree import Finding, collect
 
@@ -251,7 +251,7 @@ def _finish(result: Any, drafts: list[Draft]) -> list[Diagnostic]:
     ]
 
 
-def validate(source: Source) -> list[Diagnostic]:
+def validate(source: Source, mask: Optional[Mask] = None) -> list[Diagnostic]:
     """Validates an 835 file with pyx12 and returns what it finds.
 
     ``source`` is the file's bytes, a path, or a file object open in binary
@@ -298,10 +298,35 @@ def validate(source: Source) -> list[Diagnostic]:
     with no ISA to read the delimiters from raises ``oxedi.ParseError``,
     as ``oxedi.parse`` does. Nothing is written to disk and no
     acknowledgement is generated.
+
+    With ``mask``, an ``oxedi.Mask``, the datum of a finding at a place a
+    column flags as patient data reads is masked as ``parse`` masks its own
+    diagnostics with that mask. In the finding's message, every occurrence
+    of the original datum, and of each value its segment holds at such a
+    place, is replaced by the masked form, whether or not the finding names
+    an element; every other attribute, and the findings' number and order,
+    stay as without it. The flagged places are those of the built-in spec
+    of the file's version, the one ``parse(source)`` selects: ``validate``
+    takes no spec, so columns only a patched spec flags are not masked
+    here. pyx12 still reads the original file: the mask hides what
+    ``validate`` returns, not what pyx12 is given. ``mask`` of any other
+    type than ``oxedi.Mask`` or ``None`` raises ``TypeError``.
     """
+    if mask is not None and not isinstance(mask, Mask):
+        raise TypeError(
+            f"validate: mask must be an oxedi.Mask or None, not {type(mask).__name__}"
+        )
     _import_pyx12()
     data = _read(source)
     result = parse(data)
+    findings = _findings(data, result)
+    if mask is None:
+        return findings
+    return _mask_findings(findings, result.document, mask, result.spec)
+
+
+def _findings(data: bytes, result: Any) -> list[Diagnostic]:
+    """pyx12's findings about ``data``, whose parse is ``result``."""
     document = result.document
     base = data.find(b"ISA")
     text = data[max(base, 0):].decode("latin-1")

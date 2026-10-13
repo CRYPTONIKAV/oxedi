@@ -1,0 +1,5 @@
+SNIP 2 · element CLP01 (claim_submitter_identifier) has length 69; the spec allows 1 to 38 · segment #17, element 1 · at interchange#1/group#1/transaction#1/2000#1/2100#1 · datum "364f6d54a5575b80"
+SNIP 2 · element NM109 (identification_code) has length 91; the spec allows 2 to 80 · segment #18, element 9 · at interchange#1/group#1/transaction#1/2000#1/2100#1 · datum "390d95a0cbe6b79d"
+SNIP 2 · element REF02 (reference_identification) has length 66; the spec allows 1 to 50 · segment #20, element 2 · at interchange#1/group#1/transaction#1/2000#1/2100#1 · datum "f8b1e8a507ee80bf"
+SNIP 2 · element DTM02 (date) is not a valid DT (date CCYYMMDD or YYMMDD) · segment #21, element 2 · at interchange#1/group#1/transaction#1/2000#1/2100#1 · datum "862d589ddded8889"
+SNIP 2 · element REF02 (reference_identification) has length 59; the spec allows 1 to 50 · segment #28, element 2 · at interchange#1/group#1/transaction#1/2000#1/2100#1/2110#1 · datum "de7e4a5b7cee794a"

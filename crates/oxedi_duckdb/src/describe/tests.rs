@@ -118,13 +118,27 @@ fn null_option() {
 fn macro_parameter() {
     assert_eq!(
         SchemaError::MacroParameter {
-            parameter: "ver".to_owned(),
+            parameter: Some("ver".to_owned()),
             value: "0_macro_parametersm.ver".to_owned(),
         }
         .to_string(),
         "oxedi_schema: version must be a constant string; a table macro passed its parameter \
          \"ver\" as \"0_macro_parametersm.ver\"; DuckDB does not substitute a macro parameter \
          given with := or =>, so write version = ver"
+    );
+}
+
+#[test]
+fn macro_parameter_without_a_name() {
+    assert_eq!(
+        SchemaError::MacroParameter {
+            parameter: None,
+            value: "0_macro_parametersm.a.b".to_owned(),
+        }
+        .to_string(),
+        "oxedi_schema: version must be a constant string; a table macro passed a parameter as \
+         \"0_macro_parametersm.a.b\"; DuckDB does not substitute a macro parameter given with \
+         := or =>, so write version = <the parameter>"
     );
 }
 

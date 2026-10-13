@@ -233,6 +233,14 @@ pub enum TableDefError {
         /// The column's type.
         found: ColumnKind,
     },
+    /// `phi` is set on an element an envelope loop uses as a control number
+    /// or count.
+    PhiOnControlElement {
+        /// The segment the column reads, e.g. `ST`.
+        segment: String,
+        /// The 1-based element position.
+        element: usize,
+    },
     /// `phi_seed` names a column the table does not have.
     UnknownPhiSeed {
         /// The column named.
@@ -405,6 +413,12 @@ impl fmt::Display for TableDefError {
                 write!(
                     f,
                     "\"phi\": \"date\" applies to a date column; this column is {found}"
+                )
+            }
+            TableDefError::PhiOnControlElement { segment, element } => {
+                write!(
+                    f,
+                    "\"phi\" cannot flag {segment}{element:02}: it is an envelope control number or count; findings about envelope controls quote it unmasked, so it cannot be flagged; remove \"phi\" from this column"
                 )
             }
             TableDefError::UnknownPhiSeed { name } => {

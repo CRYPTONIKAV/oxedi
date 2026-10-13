@@ -174,12 +174,15 @@ fn constant(name: &'static str, text: String) -> Result<String, ReadError> {
     }
 }
 
-/// The name of the table macro parameter `text` stands for, when it is one
-/// (see [`constant`]).
-pub(crate) fn macro_parameter(text: &str) -> Option<String> {
-    text.strip_prefix(MACRO_PARAMETERS)
-        .and_then(|qualified| qualified.rsplit_once('.'))
-        .map(|(_, parameter)| parameter.to_owned())
+/// Whether `text` stands for a table macro parameter (see [`constant`]): `None`
+/// when it is a value, `Some(Some(name))` with the parameter's name when
+/// exactly one dot separates the macro from the parameter, and `Some(None)`
+/// when more dots make the split ambiguous (the macro's name may contain a
+/// dot too).
+pub(crate) fn macro_parameter(text: &str) -> Option<Option<String>> {
+    let qualified = text.strip_prefix(MACRO_PARAMETERS)?;
+    let (_, parameter) = qualified.split_once('.')?;
+    Some((!parameter.contains('.')).then(|| parameter.to_owned()))
 }
 
 /// The paths of a VARCHAR or a list of VARCHAR.

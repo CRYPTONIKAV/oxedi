@@ -24,7 +24,7 @@ function megabytes(size) {
  */
 export function createLoader({ parse, maskKey = () => undefined, status, alert, onLoad, onClear }) {
   let ticket = 0;
-  let kept = null;
+  let source = null;
 
   function fail(message) {
     onClear();
@@ -32,27 +32,41 @@ export function createLoader({ parse, maskKey = () => undefined, status, alert, 
     alert.hidden = false;
   }
 
-  async function parseBytes(mine, name, bytes) {
+  // Shows the source, whatever order reads and toggles finish in: the newest run wins.
+  async function run(src) {
+    const mine = ++ticket;
     alert.hidden = true;
     alert.textContent = '';
-    status.textContent = 'Parsing\u2026';
+    status.textContent = src.reading ? 'Reading\u2026' : 'Parsing\u2026';
     status.hidden = false;
+    let bytes;
+    try {
+      bytes = await src.bytes;
+    } catch (err) {
+      if (mine === ticket) {
+        status.hidden = true;
+        fail(`${src.name}: could not be read (${err instanceof Error ? err.message : String(err)})`);
+      }
+      return;
+    }
+    if (mine !== ticket) return;
+    status.textContent = 'Parsing\u2026';
     await nextFrame();
     if (mine !== ticket) return;
-    kept = { name, bytes };
     try {
       const view = JSON.parse(parse(bytes, maskKey()));
       if (mine !== ticket) return;
-      onLoad({ name, size: bytes.length, bytes, view });
+      onLoad({ name: src.name, size: bytes.length, bytes, view, source: src });
     } catch (err) {
-      if (mine === ticket) fail(`${name}: ${err instanceof Error ? err.message : String(err)}`);
+      if (mine === ticket) fail(`${src.name}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       if (mine === ticket) status.hidden = true;
     }
   }
 
   function loadBytes(name, bytes) {
-    return parseBytes(++ticket, name, bytes);
+    source = { name, bytes: Promise.resolve(bytes), reading: false };
+    return run(source);
   }
 
   async function loadFile(file) {
@@ -62,29 +76,18 @@ export function createLoader({ parse, maskKey = () => undefined, status, alert, 
       );
       if (!ok) return;
     }
-    // The latest file chosen wins, whatever order the reads finish in.
-    const mine = ++ticket;
-    alert.hidden = true;
-    status.textContent = 'Reading\u2026';
-    status.hidden = false;
-    let buffer;
-    try {
-      buffer = await file.arrayBuffer();
-    } catch (err) {
-      if (mine === ticket) {
-        status.hidden = true;
-        fail(`${file.name}: could not be read (${err instanceof Error ? err.message : String(err)})`);
-      }
-      return;
-    }
-    if (mine !== ticket) return;
-    await parseBytes(mine, file.name, new Uint8Array(buffer));
+    const bytes = file.arrayBuffer().then((buffer) => new Uint8Array(buffer));
+    source = { name: file.name, bytes, reading: true };
+    return run(source);
   }
 
-  /** Parses the last file again, e.g. after the masking choice changed. */
+  /** Parses the newest file chosen again, even one still being read, e.g. after the masking choice changed. */
   function reparse() {
-    if (kept) parseBytes(++ticket, kept.name, kept.bytes);
+    if (source) run(source);
   }
 
-  return { loadFile, loadBytes, reparse };
+  /** The newest file chosen, or null: what a result's `source` is compared with. */
+  const current = () => source;
+
+  return { loadFile, loadBytes, reparse, current };
 }

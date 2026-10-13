@@ -56,6 +56,50 @@ impl Spec {
     }
 }
 
+/// The segment id and 1-based element `source` reads when an envelope loop
+/// uses that element as a control number or count. A repeated group reads
+/// its element in every group, so each of those positions is checked.
+fn control_element(
+    spec: &Spec,
+    table: &TableDef,
+    source: &ColumnSource,
+) -> Option<(String, usize)> {
+    let (segment, first, step) = match source {
+        ColumnSource::Element {
+            segment, element, ..
+        } => (segment, *element, 0),
+        ColumnSource::GroupElement { offset, .. } => {
+            let repeat = table.repeat?;
+            (
+                table.segment.as_ref()?,
+                repeat.from.checked_add(*offset)?,
+                repeat.step,
+            )
+        }
+        ColumnSource::SegmentIndex { .. } => return None,
+    };
+    let reads = |position: usize| match position.checked_sub(first) {
+        Some(0) => true,
+        Some(distance) => step > 0 && distance % step == 0,
+        None => false,
+    };
+    let mut controls = Vec::new();
+    for def in spec.loops() {
+        let Some(control) = def.control else {
+            continue;
+        };
+        controls.push((def.trigger.segment.as_slice(), control.opener_element));
+        if let Some(end) = def.end.as_deref() {
+            controls.push((end, control.closer_element));
+            controls.push((end, control.count_element));
+        }
+    }
+    let (_, element) = controls
+        .into_iter()
+        .find(|&(id, position)| id == segment.as_slice() && reads(position))?;
+    Some((String::from_utf8_lossy(segment).into_owned(), element))
+}
+
 /// Fills `table.phi` from the `phi` word each column wrote (parallel to
 /// `table.columns`) and `table.phi_seed` from the `phi_seed` column name.
 pub(super) fn compile_phi(
@@ -83,6 +127,12 @@ pub(super) fn compile_phi(
                 },
             ));
         };
+        if let Some((segment, element)) = control_element(spec, table, source) {
+            return Err(fail(
+                Some(name),
+                TableDefError::PhiOnControlElement { segment, element },
+            ));
+        }
         let found = spec.column_kind(table, source);
         let reason = match (kind, found) {
             (Phi::Date, ColumnKind::Element(Some(ElementType::Dt)))

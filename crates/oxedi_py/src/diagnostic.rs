@@ -1,12 +1,16 @@
 //! `Diagnostic`: one finding about a file's data, as Python attributes.
 
-use oxedi_core::{Diagnostic, LoopRef, Rule, SnipLevel};
+use oxedi_core::{Diagnostic, LoopRef, Projector, Rule, SnipLevel};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyInt, PyList};
-use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
 use pyo3_stub_gen::type_info::{ParameterDefault, ParameterInfo, ParameterKind, PyFunctionInfo};
 use pyo3_stub_gen::{PyStubType, TypeInfo};
+
+use crate::document::PyDocument;
+use crate::mask::PyMask;
+use crate::spec::PySpec;
 
 /// One finding about the data of a file. A value, never raised.
 #[gen_stub_pyclass(module = "oxedi._core")]
@@ -267,6 +271,38 @@ pyo3_stub_gen::inventory::submit! {
 }
 
 pyo3_stub_gen::export_verbatim!("oxedi._core", "_external_diagnostic");
+
+/// Copies of `diagnostics`, findings an external validator raised about
+/// `document`, with the datum of each one at a place a column `spec` flags
+/// as patient data masked by `mask`, as `parse` masks its own diagnostics,
+/// and, in the message, the original datum and each flagged value of the
+/// finding's segment replaced by its masked form. The inputs are left as
+/// they are.
+///
+/// Internal: adapters to external validators call it; it is not part of the
+/// public API.
+#[gen_stub_pyfunction]
+#[pyfunction]
+#[pyo3(name = "_mask_findings")]
+pub fn mask_findings(
+    diagnostics: Vec<PyRef<'_, PyDiagnostic>>,
+    document: &Bound<'_, PyDocument>,
+    mask: &Bound<'_, PyMask>,
+    spec: &Bound<'_, PySpec>,
+) -> Vec<PyDiagnostic> {
+    let document = &document.get().inner;
+    let spec = &spec.get().inner;
+    let mut found: Vec<Diagnostic> = diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.inner.clone())
+        .collect();
+    Projector::new(spec, document.delimiters())
+        .with_mask(&mask.get().inner)
+        .mask_found(&mut found, document);
+    found.into_iter().map(PyDiagnostic::from).collect()
+}
+
+pyo3_stub_gen::export_verbatim!("oxedi._core", "_mask_findings");
 
 /// The diagnostics as a Python list of `Diagnostic`.
 pub fn to_list(py: Python<'_>, diagnostics: Vec<Diagnostic>) -> PyResult<Bound<'_, PyList>> {
