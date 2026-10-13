@@ -636,3 +636,19 @@ proptest! {
         prop_assert_eq!(is_dt(text.as_bytes()), parse_dt(text.as_bytes()).is_some());
     }
 }
+
+#[test]
+fn removing_a_table_moves_it_out_and_keeps_the_others_in_order() {
+    let mut tables = Tables::new(vec![
+        Table::new("services", []),
+        Table::new("claims", []),
+        Table::new("payments", []),
+    ]);
+    assert_eq!(
+        tables.remove("payments").map(|t| t.name().to_owned()),
+        Some("payments".into())
+    );
+    assert_eq!(tables.remove("payments"), None);
+    let names: Vec<&str> = tables.iter().map(Table::name).collect();
+    assert_eq!(names, vec!["claims", "services"]);
+}

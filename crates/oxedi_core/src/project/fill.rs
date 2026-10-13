@@ -25,6 +25,9 @@ impl<'s> Projector<'s> {
         let spec = self.spec;
         for watcher in watchers {
             let state = &mut self.tables[watcher.table];
+            if !state.kept {
+                continue;
+            }
             let (slot, seen, bytes) = match watcher.carried {
                 Some(at) => {
                     let Some(carried) = state.carried.get_mut(at) else {
@@ -101,7 +104,7 @@ impl<'s> Projector<'s> {
         for slot in 0..self.segment_tables[id.index()].len() {
             let index = self.segment_tables[id.index()][slot];
             let def = &spec.tables()[index];
-            if def.segment.as_deref() != Some(segment.id) {
+            if !self.tables[index].kept || def.segment.as_deref() != Some(segment.id) {
                 continue;
             }
             let Some(repeat) = def.repeat else {

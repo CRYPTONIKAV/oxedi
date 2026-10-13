@@ -207,6 +207,12 @@ impl Tables {
         self.tables.iter().find(|table| table.name == name)
     }
 
+    /// Moves a table out by name, leaving the others in order.
+    pub fn remove(&mut self, name: &str) -> Option<Table> {
+        let at = self.tables.iter().position(|table| table.name == name)?;
+        Some(self.tables.remove(at))
+    }
+
     /// Every table, ordered by name.
     pub fn iter(&self) -> std::slice::Iter<'_, Table> {
         self.tables.iter()

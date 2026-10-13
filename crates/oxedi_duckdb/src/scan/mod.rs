@@ -13,7 +13,7 @@ use std::sync::Arc;
 use libduckdb_sys as ffi;
 use oxedi_core::{ColumnType, Document, Processor, Table};
 
-use crate::builtins::Builtins;
+use crate::builtins::{Builtin, Builtins};
 use crate::diagnostics;
 use crate::error::ReadError;
 use crate::files::FileSystem;
@@ -137,8 +137,8 @@ impl Scan {
 }
 
 /// Reads and parses one file, checks that its spec projects the bound table
-/// with the bound columns, and keeps that table only (or its findings, for
-/// `diagnostics`).
+/// with the bound columns, and fills that table only (or collects its
+/// findings, for `diagnostics`).
 fn load(bound: &Bound, file: &str) -> Result<Table, ReadError> {
     let bytes = bound.file_system.read_all(file)?;
     let document = match Document::parse(bytes.as_slice()) {
@@ -173,6 +173,8 @@ fn load(bound: &Bound, file: &str) -> Result<Table, ReadError> {
         ),
     })?;
     if bound.diagnostics {
+        // Every table is filled: a text value too large to store is a
+        // finding of the table that would hold it.
         let (_tables, findings) = Processor::run(&builtin.spec, &document);
         return diagnostics::of_findings(&findings);
     }
@@ -187,13 +189,24 @@ fn load(bound: &Bound, file: &str) -> Result<Table, ReadError> {
             bound: bound.bound_version,
         });
     }
-    let (tables, _diagnostics) = Processor::run(&builtin.spec, &document);
-    // The other tables and the document are dropped on return.
-    tables
-        .get(&bound.table)
-        .cloned()
+    project(builtin, &document, &bound.table, file)
+}
+
+/// Fills the table `name` alone from the document, with the rows a run that
+/// fills every table gives it.
+fn project(
+    builtin: &Builtin,
+    document: &Document<'_>,
+    name: &str,
+    file: &str,
+) -> Result<Table, ReadError> {
+    Processor::run_tables(&builtin.spec, document, &[name])
+        .map_err(|error| ReadError::Internal {
+            message: format!("{file:?}: {error}"),
+        })?
+        .remove(name)
         .ok_or_else(|| ReadError::Internal {
-            message: format!("{file:?}: the parsed file has no table {:?}", bound.table),
+            message: format!("{file:?}: the parsed file has no table {name:?}"),
         })
 }
 

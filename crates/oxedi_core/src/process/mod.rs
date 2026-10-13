@@ -12,7 +12,7 @@ use crate::delimiters::Delimiters;
 use crate::diagnostic::Diagnostic;
 use crate::document::Document;
 use crate::engine::{Event, LoopEngine};
-use crate::project::Projector;
+use crate::project::{Projector, UnknownTable};
 use crate::segment::Segment;
 use crate::spec::Spec;
 
@@ -54,6 +54,24 @@ impl<'s> Processor<'s> {
             projector: Projector::new(spec, delimiters),
             output: Output::default(),
         }
+    }
+
+    /// A processor whose projector fills only the tables named in `names`;
+    /// see [`Projector::with_tables`]. The events and the diagnostics are
+    /// those of [`Processor::new`], except a text value too large to store
+    /// in a table left out, which is not reported. A name the spec does not
+    /// define is an [`UnknownTable`].
+    pub fn with_tables(
+        spec: &'s Spec,
+        delimiters: &Delimiters,
+        names: &[&str],
+    ) -> Result<Self, UnknownTable> {
+        Ok(Self {
+            engine: LoopEngine::new(spec),
+            checker: EnvelopeChecker::new(spec, delimiters),
+            projector: Projector::with_tables(spec, delimiters, names)?,
+            output: Output::default(),
+        })
     }
 
     /// Consumes one segment. The output is valid until the next call.
@@ -121,6 +139,26 @@ impl<'s> Processor<'s> {
         }
         diagnostics.extend_from_slice(processor.finish().diagnostics());
         (processor.take_tables(), diagnostics)
+    }
+
+    /// Processes a whole document as [`Processor::run`] does, filling only
+    /// the tables named in `names` and collecting no diagnostics. Each table
+    /// it returns holds the rows `run` gives that table. A name the spec does
+    /// not define is an [`UnknownTable`].
+    pub fn run_tables(
+        spec: &Spec,
+        document: &Document<'_>,
+        names: &[&str],
+    ) -> Result<Tables, UnknownTable> {
+        let mut processor = Processor::with_tables(spec, document.delimiters(), names)?;
+        let mut segment = Segment::empty();
+        let mut index = 0;
+        while document.segment_into(index, &mut segment) {
+            processor.feed(&segment);
+            index += 1;
+        }
+        processor.finish();
+        Ok(processor.take_tables())
     }
 }
 

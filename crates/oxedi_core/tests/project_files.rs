@@ -336,3 +336,39 @@ fn a_three_line_patch_adds_a_column_the_table_then_shows() {
         assert_eq!(claims.column(name), Some(data), "{name} is unchanged");
     }
 }
+
+/// Filling one table, or every one, gives each the rows of a full run, parent
+/// references included; the diagnostics do not change.
+#[test]
+fn filling_some_tables_gives_each_the_rows_of_a_full_run() {
+    let (five, four) = common::builtins();
+    for (name, bytes, delims) in common::all_files() {
+        let spec = common::select(&five, &four, &bytes, delims);
+        let document = Document::with_delimiters(&bytes[..], delims).unwrap();
+        let (whole, diagnostics) = Processor::run(spec, &document);
+        let names: Vec<&str> = spec.tables().iter().map(|t| t.name.as_str()).collect();
+        assert_eq!(
+            Processor::run_tables(spec, &document, &names).unwrap(),
+            whole,
+            "{name}"
+        );
+        for table in &whole {
+            let one = Processor::run_tables(spec, &document, &[table.name()]).unwrap();
+            assert_eq!(one.len(), 1, "{name}: {}", table.name());
+            assert_eq!(
+                one.get(table.name()),
+                Some(table),
+                "{name}: {}",
+                table.name()
+            );
+
+            let mut processor = Processor::with_tables(spec, &delims, &[table.name()]).unwrap();
+            let mut seen = Vec::new();
+            for segment in Tokenizer::with_delimiters(&bytes, delims) {
+                seen.extend_from_slice(processor.feed(&segment).diagnostics());
+            }
+            seen.extend_from_slice(processor.finish().diagnostics());
+            assert_eq!(seen, diagnostics, "{name}: {}", table.name());
+        }
+    }
+}
