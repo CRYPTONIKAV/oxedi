@@ -32,6 +32,9 @@ docs:
     -- Findings of the parse (also for files that are not valid 835)
     FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true);
 
+    -- Every table's columns and types, without a file
+    FROM oxedi_schema(version := '5010');
+
     -- Text columns are VARCHAR; binary := true keeps the raw bytes
     FROM read_835('remittance.835', binary := true);
 

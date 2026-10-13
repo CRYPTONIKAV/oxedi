@@ -229,7 +229,7 @@ const RESERVED_KEYWORDS: &[&str] = &[
 /// The SQL spelling of an identifier: as is when it is a plain lowercase name
 /// that is not a reserved keyword, otherwise in double quotes with inner
 /// double quotes doubled.
-fn identifier(name: &str) -> String {
+pub(crate) fn identifier(name: &str) -> String {
     let mut chars = name.chars();
     let plain = chars
         .next()

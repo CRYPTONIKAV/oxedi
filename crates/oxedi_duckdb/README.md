@@ -42,6 +42,13 @@ COPY (
                 date DATE '2024-01-10', time TIME '09:00');
 ```
 
+The tables, columns and types `read_835` returns, without a file (references name their table):
+
+```sql
+FROM oxedi_schema();                               -- version := '5010' by default
+FROM oxedi_schema(version := '4010') WHERE table_name = 'claims';
+```
+
 Parameters, options, types, limits and writing from your own tables are in the
 [DuckDB guide](../../docs/duckdb/index.md).
 

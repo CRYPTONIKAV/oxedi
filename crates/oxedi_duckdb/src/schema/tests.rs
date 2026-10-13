@@ -60,3 +60,25 @@ fn dates_and_times() {
     assert_eq!(of(ColumnType::Date32, false), Ok(SqlType::Date));
     assert_eq!(of(ColumnType::Time32, false), Ok(SqlType::Time));
 }
+
+#[test]
+fn types_display_as_describe_writes_them() {
+    let written: Vec<String> = [
+        SqlType::Bigint,
+        SqlType::Varchar,
+        SqlType::Blob,
+        SqlType::Date,
+        SqlType::Time,
+        SqlType::Decimal {
+            width: 38,
+            scale: 2,
+        },
+    ]
+    .iter()
+    .map(ToString::to_string)
+    .collect();
+    assert_eq!(
+        written,
+        ["BIGINT", "VARCHAR", "BLOB", "DATE", "TIME", "DECIMAL(38,2)"]
+    );
+}

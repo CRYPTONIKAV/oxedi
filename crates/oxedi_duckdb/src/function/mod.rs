@@ -73,10 +73,10 @@ pub unsafe fn register(
 }
 
 /// A table function handle, destroyed on drop.
-struct TableFunction(ffi::duckdb_table_function);
+pub(crate) struct TableFunction(pub(crate) ffi::duckdb_table_function);
 
 impl TableFunction {
-    fn new() -> TableFunction {
+    pub(crate) fn new() -> TableFunction {
         // SAFETY: creating a table function has no precondition.
         TableFunction(unsafe { ffi::duckdb_create_table_function() })
     }
