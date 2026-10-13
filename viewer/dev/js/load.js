@@ -15,14 +15,16 @@ function megabytes(size) {
 
 /**
  * @param {object} options
- * @param {(bytes: Uint8Array) => string} options.parse  the module's parse
+ * @param {(bytes: Uint8Array, maskKey?: Uint8Array) => string} options.parse  the module's parse
+ * @param {() => Uint8Array | undefined} [options.maskKey]  the key to mask patient data with, or nothing to show it
  * @param {HTMLElement} options.status   region that shows "Parsing…"
  * @param {HTMLElement} options.alert    role="alert" region for errors
  * @param {(loaded: {name: string, size: number, bytes: Uint8Array, view: object}) => void} options.onLoad
  * @param {() => void} options.onClear   drops the previous file's views
  */
-export function createLoader({ parse, status, alert, onLoad, onClear }) {
+export function createLoader({ parse, maskKey = () => undefined, status, alert, onLoad, onClear }) {
   let ticket = 0;
+  let kept = null;
 
   function fail(message) {
     onClear();
@@ -37,8 +39,9 @@ export function createLoader({ parse, status, alert, onLoad, onClear }) {
     status.hidden = false;
     await nextFrame();
     if (mine !== ticket) return;
+    kept = { name, bytes };
     try {
-      const view = JSON.parse(parse(bytes));
+      const view = JSON.parse(parse(bytes, maskKey()));
       if (mine !== ticket) return;
       onLoad({ name, size: bytes.length, bytes, view });
     } catch (err) {
@@ -78,5 +81,10 @@ export function createLoader({ parse, status, alert, onLoad, onClear }) {
     await parseBytes(mine, file.name, new Uint8Array(buffer));
   }
 
-  return { loadFile, loadBytes };
+  /** Parses the last file again, e.g. after the masking choice changed. */
+  function reparse() {
+    if (kept) parseBytes(++ticket, kept.name, kept.bytes);
+  }
+
+  return { loadFile, loadBytes, reparse };
 }
