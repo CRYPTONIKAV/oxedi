@@ -9,6 +9,8 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-16
+
 ### Added
 - `oxedi.Mask(key, dates="year")` and the `mask=` argument of `parse`, `parse_file` and `stream`:
   the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
@@ -21,19 +23,19 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   its datum and in pyx12's message, and the flagged values of its segment that the message quotes
   are masked too; pyx12 still reads the original file. `spec=` locates the findings' loops and
   sets the columns masked, so a patched spec masks here what it flags in `parse`.
-- A "Hide patient data" switch in the browser viewer.
-- A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
-  reference, recipes and every example run in CI); the README is now its front page.
-- The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
-  reference of every table and column, a glossary, and short guides by task. Old page addresses
-  redirect to the new ones.
 - A viewer in the browser at <https://javillegas.dev/oxedi/viewer/>: drop an 835 file to see its
   summary, tables, diagnostics, text and loops. The parser runs as WebAssembly in the page, and
-  the page cannot open network connections.
+  the page cannot open network connections. A "Hide patient data" switch masks the patient data
+  the spec flags.
 - `Spec.schema()`: the schema of every table of a spec (built-in or patched) without a file, as a
   mapping of table name to `pyarrow.Schema` with the Arrow types `parse` gives each table. The
   field metadata of a reference column (`payment`, `claim`, `service`) names the table it points
   at under `oxedi.parent`. It needs pyarrow.
+- A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
+  reference, recipes and every example run in CI); the README is now its front page. The
+  documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
+  reference of every table and column, a glossary, and short guides by task. Old page addresses
+  redirect to the new ones.
 
 ### Changed
 - A spec patch that removes or unflags `claims.patient_id` now needs `"phi_seed"` cleared
@@ -284,7 +286,8 @@ First usable version of oxedi835.
 
 Release candidate of 0.1.0, published to TestPyPI only. Same code as 0.1.0.
 
-[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.6.0
 [0.5.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.5.0
 [0.5.0rc1]: https://github.com/javillegasna/oxedi/releases/tag/v0.5.0rc1
 [0.4.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.4.0
