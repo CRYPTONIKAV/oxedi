@@ -23,8 +23,6 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 - The documentation now describes how interest balances: a claim's interest is reported in
   `AMT*I` and paid through `PLB` with reason code `L6`, so a claim that carries interest balances
   under the existing rules.
-- Errors that print their inner error (document, spec, row, write) no longer also return it as
-  their `source()`, so a report that walks the chain does not print the same text twice.
 
 ## [0.5.0] - 2026-10-12
 
