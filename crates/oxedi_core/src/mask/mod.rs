@@ -31,12 +31,23 @@ pub enum Phi {
 }
 
 impl Phi {
-    /// The word mixed into the digest so the same value masks differently per kind.
-    fn tag(self) -> &'static [u8] {
+    /// The word a spec writes for the kind, also mixed into the digest so the
+    /// same value masks differently per kind.
+    pub fn word(self) -> &'static str {
         match self {
-            Phi::Name => b"name",
-            Phi::Id => b"id",
-            Phi::Date => b"date",
+            Phi::Name => "name",
+            Phi::Id => "id",
+            Phi::Date => "date",
+        }
+    }
+
+    /// The kind a spec's word names, or `None`.
+    pub fn from_word(word: &str) -> Option<Phi> {
+        match word {
+            "name" => Some(Phi::Name),
+            "id" => Some(Phi::Id),
+            "date" => Some(Phi::Date),
+            _ => None,
         }
     }
 }
@@ -107,7 +118,7 @@ impl Mask {
     /// The token for a text value: the first 8 bytes of
     /// `HMAC-SHA256(key, kind 0x00 value)` as 16 lowercase hex characters.
     pub fn text(&self, kind: Phi, value: &[u8]) -> [u8; 16] {
-        let digest = self.digest(kind.tag(), value);
+        let digest = self.digest(kind.word().as_bytes(), value);
         const HEX: &[u8; 16] = b"0123456789abcdef";
         let nibbles = digest
             .iter()

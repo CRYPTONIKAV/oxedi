@@ -269,7 +269,7 @@ impl<'s> Plans<'s> {
 
 /// The column type of a declared column: its element's type, `Int64` for a
 /// segment index, `Binary` for an element the spec does not define.
-pub(super) fn column_type(spec: &Spec, table: &TableDef, source: &ColumnSource) -> ColumnType {
+pub(crate) fn column_type(spec: &Spec, table: &TableDef, source: &ColumnSource) -> ColumnType {
     let def = match source {
         ColumnSource::Element {
             segment,

@@ -9,6 +9,7 @@ use super::Spec;
 use super::columns::{check_held, compile_column};
 use super::error::SpecError;
 use super::loops::LoopId;
+use super::phi::compile_phi;
 use super::raw::{RawColumn, RawTable};
 use super::render::render_key;
 use super::segments::{ROW_COLUMN, SEGMENT_COLUMN};
@@ -111,6 +112,7 @@ fn compile_table(
         }
     }
     let mut columns = Vec::with_capacity(def.columns.len());
+    let mut written = Vec::with_capacity(def.columns.len());
     for (column, value) in section(value, "columns") {
         let raw = RawColumn::deserialize(value).map_err(|e| SpecError::TableSchema {
             table: name.to_string(),
@@ -119,8 +121,9 @@ fn compile_table(
         })?;
         let source = compile_column(spec, name, column, &raw, &loops, segment.as_deref(), repeat)?;
         columns.push((column.to_string(), source));
+        written.push(raw.phi);
     }
-    Ok(TableDef {
+    let mut table = TableDef {
         name: name.to_string(),
         reference,
         loops,
@@ -129,7 +132,11 @@ fn compile_table(
         columns,
         parent: None,
         ancestors: Vec::new(),
-    })
+        phi: Vec::new(),
+        phi_seed: None,
+    };
+    compile_phi(spec, &mut table, &written, def.phi_seed.as_deref())?;
+    Ok(table)
 }
 
 /// Rejects a loop anchoring two tables without `segment` and a `ref` used

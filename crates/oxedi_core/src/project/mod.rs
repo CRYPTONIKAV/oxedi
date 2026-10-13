@@ -81,7 +81,8 @@ use crate::spec::{LoopId, OccurrenceDef, Spec};
 use carry::Carried;
 use check::Checked;
 use fill::append;
-use plan::{Candidate, ElementPlan, Plans, column_type};
+pub(crate) use plan::column_type;
+use plan::{Candidate, ElementPlan, Plans};
 pub use schema::{ColumnSchema, TableSchema, spec_schema, table_columns, table_schema};
 pub use unknown::UnknownTable;
 

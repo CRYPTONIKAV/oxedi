@@ -17,7 +17,8 @@
 //! `table_error` and `balance_error` why an occurrence, a table or a
 //! balancing rule is rejected; `raw` the deserialization shapes;
 //! `shape` the JSON shape checks; `build` and `compile` the construction of a [`Spec`],
-//! `columns` the compilation of one table column;
+//! `columns` the compilation of one table column; `phi` the check of the
+//! columns flagged as patient data and of the seed column;
 //! `error` the load error; `render` the text used in messages; `patch` the
 //! merge patch; `version` the version declaration and the choice of a spec
 //! by it.
@@ -32,6 +33,7 @@ mod loops;
 mod occurrence_error;
 mod occurrences;
 mod patch;
+mod phi;
 mod raw;
 mod render;
 mod segments;
@@ -210,6 +212,13 @@ impl Spec {
             None => Some(def),
             Some(component) => def.composite.get(&component),
         }
+    }
+
+    /// Whether any column of any table is flagged as patient data.
+    pub fn masks_anything(&self) -> bool {
+        self.tables
+            .iter()
+            .any(|table| table.phi.iter().any(Option::is_some))
     }
 
     /// Every table, in name order.

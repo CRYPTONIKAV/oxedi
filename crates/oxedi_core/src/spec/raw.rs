@@ -118,6 +118,7 @@ pub(super) struct RawTable {
     pub(super) repeat: Option<RawRepeat>,
     #[serde(default)]
     pub(super) columns: BTreeMap<String, IgnoredAny>,
+    pub(super) phi_seed: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -142,6 +143,7 @@ pub(super) struct RawColumn {
     pub(super) group_element: Option<usize>,
     #[serde(default)]
     pub(super) segment_index: bool,
+    pub(super) phi: Option<String>,
 }
 
 // A pick is a name (`first`, `last`) or a 1-based position; which names are
