@@ -43,6 +43,20 @@ fn empty_path_list() {
 }
 
 #[test]
+fn macro_parameter() {
+    assert_eq!(
+        text(ReadError::MacroParameter {
+            name: "table_name",
+            parameter: "tbl".to_owned(),
+            value: "0_macro_parametersone.tbl".to_owned(),
+        }),
+        "read_835: table_name must be a constant string; a table macro passed its parameter \
+         \"tbl\" as \"0_macro_parametersone.tbl\"; DuckDB does not substitute a macro \
+         parameter given with := or =>, so write table_name = tbl"
+    );
+}
+
+#[test]
 fn unknown_table() {
     assert_eq!(
         text(ReadError::UnknownTable {

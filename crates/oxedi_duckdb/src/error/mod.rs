@@ -29,6 +29,16 @@ pub enum ReadError {
         /// The parameter's name.
         name: &'static str,
     },
+    /// A text parameter received a table macro's parameter, which DuckDB
+    /// passed as the parameter's qualified name instead of a value.
+    MacroParameter {
+        /// The `read_835` parameter.
+        name: &'static str,
+        /// The macro parameter forwarded to it.
+        parameter: String,
+        /// The text DuckDB passed.
+        value: String,
+    },
     /// `table_name` names no table of the spec.
     UnknownTable {
         /// The name given.
@@ -158,6 +168,16 @@ impl fmt::Display for ReadError {
             ReadError::NullOption { name } => write!(
                 f,
                 "{FUNCTION}: {name} must not be NULL; leave it out to use its default"
+            ),
+            ReadError::MacroParameter {
+                name,
+                parameter,
+                value,
+            } => write!(
+                f,
+                "{FUNCTION}: {name} must be a constant string; a table macro passed its \
+                 parameter {parameter:?} as {value:?}; DuckDB does not substitute a macro \
+                 parameter given with := or =>, so write {name} = {parameter}"
             ),
             ReadError::UnknownTable { table, known } => write!(
                 f,

@@ -54,6 +54,17 @@ COPY (SELECT * FROM read_835('remits/*.835', table_name := 'claims')) TO 'claims
 | `binary` | `false` | return text columns as `BLOB` (the raw bytes) instead of `VARCHAR` |
 | `ignore_errors` | `false` | report a file that is not an X12 interchange as a `diagnostics` row and go on |
 
+!!! note "Forwarding a macro parameter"
+    Inside a macro with a literal path, forward the parameter with `=`, as in
+    `table_name = tbl`. DuckDB does not substitute a macro parameter given with `:=` or `=>`,
+    so `read_835` refuses it when the macro is created.
+
+    ```sql
+    CREATE MACRO remit_table(tbl) AS TABLE
+        SELECT * FROM read_835('remits/a.835', table_name = tbl);
+    SELECT count(*) FROM remit_table('payments');
+    ```
+
 To see the columns of a table, describe it on any file:
 
 ```sql

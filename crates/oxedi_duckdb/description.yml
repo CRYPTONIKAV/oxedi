@@ -16,6 +16,10 @@ repo:
   ref: REPLACE_WITH_COMMIT_OR_TAG
 
 docs:
+  extended_description: |
+    Parses X12 EDI 835 remittance advice into tables (payments, claims, services, adjustments,
+    provider adjustments and diagnostics) without dropping a byte, and writes tables back into an
+    835 with the `edi835` COPY format. Documentation: https://javillegas.dev/oxedi/latest/duckdb/
   hello_world: |
     INSTALL oxedi FROM community;
     LOAD oxedi;
