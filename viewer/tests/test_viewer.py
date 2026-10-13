@@ -291,6 +291,7 @@ def test_the_toggle_warns_that_the_text_view_is_not_masked(viewer):
     assert viewer.page.is_hidden("#mask-note")
     viewer.page.check("#mask")
     assert "original file" in text_of(viewer, "#mask-note")
+    assert "table filter stays as typed" in text_of(viewer, "#mask-note")
     viewer.page.uncheck("#mask")
     assert viewer.page.is_hidden("#mask-note")
 
