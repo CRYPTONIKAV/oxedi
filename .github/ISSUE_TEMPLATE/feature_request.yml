@@ -1,0 +1,21 @@
+name: Feature request
+description: A new column, table, segment, binding or behaviour
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach a real 835 file: it holds patient data. Describe the segments with
+        invented values instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you need to do
+      description: The task, not the solution. For a new column, name the segment and element.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today
+      description: A workaround, or why none works. If a spec patch can do it, say what you tried.

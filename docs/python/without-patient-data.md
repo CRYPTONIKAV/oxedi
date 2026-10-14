@@ -206,4 +206,4 @@ print(oxedi.parse(data).diagnostics)
 ## In the browser
 
 The [viewer](../start/viewer.md) has a **Hide patient data** switch that applies the same mask
-to the tables and their CSV export.
+to the tables, the diagnostics and the CSV export.
