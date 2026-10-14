@@ -316,6 +316,28 @@ impl std::error::Error for CopyError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // `Row` and `Write` print their inner error in full, so the chain
         // stops here instead of printing it a second time.
-        None
+        match self {
+            CopyError::UnknownOption { .. }
+            | CopyError::FileOption { .. }
+            | CopyError::MissingOption { .. }
+            | CopyError::NoValue { .. }
+            | CopyError::OptionValue { .. }
+            | CopyError::FractionalTime { .. }
+            | CopyError::TimeOutOfRange { .. }
+            | CopyError::UnknownVersion { .. }
+            | CopyError::UnknownDelimiter { .. }
+            | CopyError::DelimiterLength { .. }
+            | CopyError::ColumnCount { .. }
+            | CopyError::NotStruct { .. }
+            | CopyError::NotRows { .. }
+            | CopyError::FieldType { .. }
+            | CopyError::FloatForDecimal { .. }
+            | CopyError::Value { .. }
+            | CopyError::Row(_)
+            | CopyError::Write(_)
+            | CopyError::SecondFile { .. }
+            | CopyError::Output { .. }
+            | CopyError::Internal { .. } => None,
+        }
     }
 }

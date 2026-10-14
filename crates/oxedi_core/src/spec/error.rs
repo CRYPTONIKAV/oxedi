@@ -492,6 +492,36 @@ impl std::error::Error for SpecError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // Every variant that holds an inner error prints it in full, so the
         // chain stops here instead of printing it a second time.
-        None
+        match self {
+            SpecError::Json(_)
+            | SpecError::Schema { .. }
+            | SpecError::Patch { .. }
+            | SpecError::UnknownParent { .. }
+            | SpecError::Cycle { .. }
+            | SpecError::NoLoops { .. }
+            | SpecError::EmptySegmentId { .. }
+            | SpecError::EndIsTrigger { .. }
+            | SpecError::BadPosition { .. }
+            | SpecError::NotAnObject { .. }
+            | SpecError::WrongType { .. }
+            | SpecError::UnknownKey { .. }
+            | SpecError::MissingKey { .. }
+            | SpecError::SegmentSchema { .. }
+            | SpecError::BadElementDef { .. }
+            | SpecError::TableSchema { .. }
+            | SpecError::BadTable { .. }
+            | SpecError::BadVersion { .. }
+            | SpecError::BadControl { .. }
+            | SpecError::BadOccurrence { .. }
+            | SpecError::BalanceSchema { .. }
+            | SpecError::BadBalance { .. }
+            | SpecError::UnmatchedTrigger { .. }
+            | SpecError::TriggerQualifierWider { .. }
+            | SpecError::TriggerNotFirst { .. }
+            | SpecError::UnknownLoopUsage { .. }
+            | SpecError::ZeroLoopMax { .. }
+            | SpecError::AmbiguousTrigger { .. }
+            | SpecError::OverlappingTriggers { .. } => None,
+        }
     }
 }
