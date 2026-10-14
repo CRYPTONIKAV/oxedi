@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://javillegas.dev/oxedi/
+    about: Guides for Python, SQL and the spec format. Read the spec guide before asking for a new column.

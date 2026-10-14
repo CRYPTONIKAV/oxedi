@@ -1,0 +1,55 @@
+name: Bug report
+description: Something parsed, projected or wrote wrongly, or a diagnostic is wrong or unclear
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Do not attach a real 835 file
+
+        A real 835 holds patient data, and a GitHub issue is public. Never paste or attach one,
+        and never paste a diagnostic or a table that quotes one.
+
+        - Mask it first: `oxedi.Mask(key)` in Python (see "Sharing data without patient
+          information" in the docs), or "Hide patient data" in the browser viewer.
+        - Better, cut it to the few segments that show the problem and replace the values with
+          invented ones. Keep the separators and the segment order.
+  - type: textarea
+    id: ran
+    attributes:
+      label: What you ran
+      description: The call or command, and the spec if it is not the built-in one.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostic
+    attributes:
+      label: The diagnostic or error, in full
+      description: Copy the text as printed. Check first that it holds no real name, id or date.
+  - type: textarea
+    id: sample
+    attributes:
+      label: A minimal file
+      description: Only invented values or masked output, never a real file.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: oxedi version
+      description: "`oxedi.__version__`, or the DuckDB extension version."
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Patient data
+      options:
+        - label: Nothing I wrote above comes from a real file, or it is masked.
+          required: true
