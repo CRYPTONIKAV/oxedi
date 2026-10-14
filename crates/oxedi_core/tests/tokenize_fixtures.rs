@@ -1,4 +1,4 @@
-//! The five real fixtures through the whole tokenizer: lossless by construction,
+//! The five original synthetic fixtures through the whole tokenizer: lossless by construction,
 //! one segment per frame, and the ISA-less fragment case.
 
 mod common;

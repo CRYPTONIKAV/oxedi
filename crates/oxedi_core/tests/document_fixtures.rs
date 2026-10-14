@@ -1,4 +1,4 @@
-//! The five real fixtures through `Document`: lossless, identical to the
+//! The five original synthetic fixtures through `Document`: lossless, identical to the
 //! tokenizer, borrowed and owned.
 
 mod common;
