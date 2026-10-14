@@ -27,12 +27,15 @@ VERSION     := $(shell echo '$(CARGO_VERSION)' | sed -E 's/-(a|b|rc)\.?/\1/; s/-
 .PHONY: help version release-check configure_ci set_duckdb_version set_duckdb_tag set_duckdb_repository debug release test_debug test_release duckdb-oracle duckdb-version-check duckdb-release-check duckdb-tag sdist-check wheel-check gates test clippy fmt fmt-check bench-check doc venv py-dev py-test py-test-nopyx12 stubs stubtest compat-oracle dist smoke readme-py readme-py-check docs-venv docs-dev docs docs-serve docs-test wasm-bindgen-version wasm wasm-size-check viewer-serve viewer-units viewer-oracle viewer-test publish-test publish-test-verify publish tag clean-dist
 
 help: ## list targets
-	@grep -E '^[a-z][a-z0-9_-]*:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
+	@awk 'BEGIN { FS = ":.*## " } \
+	  /^##@ / { printf "\n%s\n", substr($$0, 5); next } \
+	  /^[a-z][a-z0-9_-]*:.*##/ { printf "  %-24s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo
 	@echo "Python releases use release-check and tag (tags v*, which start the PyPI workflow)."
 	@echo "The DuckDB extension uses duckdb-release-check and duckdb-tag (tags duckdb-v*, which do not)."
 
 # ---- Rust gates (the same four CI runs, plus rustdoc and the PyPI README check) ----
+##@ Rust gates
 gates: fmt-check clippy test bench-check doc readme-py-check ## run every commit gate
 
 test: ## cargo test --workspace --locked
@@ -54,6 +57,7 @@ doc: ## rustdoc with warnings as errors
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 
 # ---- Python binding ----
+##@ Python package
 PY_TOOLS := maturin pytest polars pyarrow pandas "edi-835-parser==1.8.0" duckdb
 venv: ## create .venv with uv and the dev tools
 	uv venv $(VENV) --python 3.13
@@ -129,6 +133,7 @@ clean-dist:
 	rm -rf $(WHEELS)
 
 # ---- DuckDB extension (crates/oxedi_duckdb) ----
+##@ DuckDB extension (names fixed by DuckDB CI)
 # DuckDB's community CI runs set_duckdb_version, configure_ci, release (or debug) and
 # test_release (or test_debug) from the repository root and uploads
 # build/<type>/extension/oxedi/oxedi.duckdb_extension, so each target delegates to the crate's
@@ -173,6 +178,7 @@ duckdb-oracle: py-dev ## DuckDB extension: compare read_835 with oxedi.parse_fil
 	$(MAKE) -C $(EXT_DIR) test_oracle ORACLE_PYTHON=$(abspath $(PYTHON))
 
 # ---- Documentation site (mkdocs.yml, docs/, docs/tests/) ----
+##@ Docs site
 # The docs environment holds the site tools from docs/requirements.txt and the package itself
 # (debug build, editable), so the API reference and the examples run against the current code.
 $(DOCS_VENV)/.ready: docs/requirements.txt
@@ -195,6 +201,7 @@ docs-test: docs-dev ## run every python and sql block of the docs and README (SQ
 	$(DOCS_PYTHON) -m pytest docs/tests -q
 
 # ---- Browser viewer (crates/oxedi_wasm, viewer/) ----
+##@ Viewer
 # The module is built for the browser with size-first release settings passed as environment
 # variables, so native release builds (wheels, the DuckDB extension) keep the workspace profile.
 # The wasm-bindgen CLI must be the exact version Cargo.lock resolves for the crate; CI reads it
@@ -244,6 +251,7 @@ viewer-test: viewer-units viewer-oracle ## run the page's unit checks, the oracl
 	$(DOCS_PYTHON) -m pytest viewer/tests -q
 
 # ---- Release ----
+##@ Releases
 # Python releases use release-check and tag (tags v*, which start the PyPI workflow).
 # The DuckDB extension uses duckdb-release-check and duckdb-tag (tags duckdb-v*, which do not).
 version: ## print the PEP 440 version published by maturin
