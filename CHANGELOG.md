@@ -54,6 +54,9 @@ This file covers the Python package; the DuckDB extension has its own changelog 
   any value of the file.
 
 ### Fixed
+- `oxedi.pyx12.validate(..., mask=)` no longer rewrites the text oxedi itself writes in a "could
+  not finish validating" finding, so its segment numbers stay readable when a flagged value is
+  one to three characters long; its datum is still masked.
 - The documentation now describes how interest balances: a claim's interest is reported in
   `AMT*I` and paid through `PLB` with reason code `L6`, so a claim that carries interest balances
   under the existing rules.

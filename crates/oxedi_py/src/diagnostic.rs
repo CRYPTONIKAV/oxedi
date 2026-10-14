@@ -277,18 +277,21 @@ pyo3_stub_gen::export_verbatim!("oxedi._core", "_external_diagnostic");
 /// as patient data masked by `mask`, as `parse` masks its own diagnostics,
 /// and, in the message, the original datum and each flagged value of the
 /// finding's segment replaced by its masked form. The inputs are left as
-/// they are.
+/// they are. A finding whose position in `own_text` is true is one the
+/// adapter wrote itself: its datum is masked but its message is left as
+/// written.
 ///
 /// Internal: adapters to external validators call it; it is not part of the
 /// public API.
 #[gen_stub_pyfunction]
 #[pyfunction]
-#[pyo3(name = "_mask_findings")]
+#[pyo3(name = "_mask_findings", signature = (diagnostics, document, mask, spec, own_text=None))]
 pub fn mask_findings(
     diagnostics: Vec<PyRef<'_, PyDiagnostic>>,
     document: &Bound<'_, PyDocument>,
     mask: &Bound<'_, PyMask>,
     spec: &Bound<'_, PySpec>,
+    own_text: Option<Vec<bool>>,
 ) -> Vec<PyDiagnostic> {
     let document = &document.get().inner;
     let spec = &spec.get().inner;
@@ -298,7 +301,7 @@ pub fn mask_findings(
         .collect();
     Projector::new(spec, document.delimiters())
         .with_mask(&mask.get().inner)
-        .mask_found(&mut found, document);
+        .mask_found_except(&mut found, document, &own_text.unwrap_or_default());
     found.into_iter().map(PyDiagnostic::from).collect()
 }
 

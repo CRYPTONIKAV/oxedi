@@ -204,6 +204,7 @@ def _failure(reason: str, track: list[int], positions: _Positions, document: Any
         level=_FAILURE_LEVEL,
         segment=segment,
         datum=datum,
+        own_text=True,
     )
 
 
@@ -230,6 +231,7 @@ def _rejection(text: str, positions: _Positions, document: Any) -> Draft:
         level=_FAILURE_LEVEL,
         segment=segment,
         datum=datum,
+        own_text=True,
     )
 
 
@@ -237,18 +239,22 @@ def _by_segment(draft: Draft) -> tuple[bool, int]:
     return (draft["segment"] is None, draft["segment"] or 0)
 
 
-def _finish(result: Any, drafts: list[Draft]) -> list[Diagnostic]:
+def _finish(result: Any, drafts: list[Draft]) -> tuple[list[Diagnostic], list[bool]]:
     """The diagnostics of ``drafts`` in segment order, each with the loop
-    path ``parse`` gives its segment."""
+    path ``parse`` gives its segment, and, for each, whether its message is
+    text oxedi wrote (a failure finding) rather than pyx12's."""
     drafts = sorted(drafts, key=_by_segment)
+    own = [d.get("own_text", False) for d in drafts]
+    drafts = [{k: v for k, v in d.items() if k != "own_text"} for d in drafts]
     segments = [d["segment"] for d in drafts if d["segment"] is not None]
     paths = iter(_loop_paths(result, segments))
-    return [
+    found = [
         _external_diagnostic(
             _ORIGIN, path=next(paths) if d["segment"] is not None else None, **d
         )
         for d in drafts
     ]
+    return found, own
 
 
 def validate(
@@ -325,7 +331,9 @@ def validate(
     points at, keeps the exception's type and drops its text: ``could not
     finish validating: ValueError, whose message is not shown with a mask;
     ...``, or ``its error tree could not be read (ValueError, whose message
-    is not shown with a mask)``. pyx12 still reads the original file: the
+    is not shown with a mask)``. The rest of a failure finding is text oxedi
+    wrote, so the mask does not rewrite it; its datum is masked as any other.
+    pyx12 still reads the original file: the
     mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
     of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,
     and so does ``spec`` of any other type than ``oxedi.Spec`` or ``None``.
@@ -341,10 +349,10 @@ def validate(
     _import_pyx12()
     data = _read(source)
     result = parse(data, spec=spec)
-    findings = _findings(data, result, masked=mask is not None)
+    findings, own = _findings(data, result, masked=mask is not None)
     if mask is None:
         return findings
-    return _mask_findings(findings, result.document, mask, result.spec)
+    return _mask_findings(findings, result.document, mask, result.spec, own)
 
 
 def _reason(err: BaseException, masked: bool) -> str:
@@ -357,9 +365,12 @@ def _reason(err: BaseException, masked: bool) -> str:
     return f"{type(err).__name__}: {err}"
 
 
-def _findings(data: bytes, result: Any, masked: bool) -> list[Diagnostic]:
-    """pyx12's findings about ``data``, whose parse is ``result``; with
-    ``masked``, failure findings leave out the text of pyx12's exception."""
+def _findings(
+    data: bytes, result: Any, masked: bool
+) -> tuple[list[Diagnostic], list[bool]]:
+    """pyx12's findings about ``data``, whose parse is ``result``, and for
+    each whether its message is text oxedi wrote; with ``masked``, failure
+    findings leave out the text of pyx12's exception."""
     document = result.document
     base = data.find(b"ISA")
     text = data[max(base, 0):].decode("latin-1")

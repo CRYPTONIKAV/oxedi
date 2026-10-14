@@ -980,6 +980,49 @@ def test_mask_findings_masks_datum_and_message_and_leaves_the_input_alone():
     assert place(masked) == place(finding)
 
 
+def test_mask_findings_keeps_the_message_of_a_finding_flagged_as_own_text():
+    data = balanced_5010()
+    result = oxedi.parse(data)
+    document = result.document
+    index = next(i for i in range(len(document)) if document[i].id == b"CLP")
+    claim = bytes(document[index].elements[0])
+    message = f"could not finish validating: it was processing segment #{claim.decode()}"
+    make = lambda: oxedi._core._external_diagnostic(
+        "pyx12", message, 1, segment=index, element=1, datum=claim
+    )
+    mask = oxedi.Mask(MASK_KEY)
+
+    own, other = oxedi._core._mask_findings(
+        [make(), make()], document, mask, result.spec, [True, False]
+    )
+
+    assert own.rule == other.rule.replace(other.datum.decode(), claim.decode())
+    assert claim.decode() in own.rule and claim.decode() not in other.rule
+    assert own.datum == other.datum != claim
+
+
+def test_a_masked_failure_keeps_its_location_text_when_a_flagged_value_is_short(monkeypatch):
+    import pyx12.x12n_document
+
+    original = balanced_5010()
+    document = oxedi.parse(original).document
+    index = next(i for i in range(len(document)) if document[i].id == b"CLP")
+    claim = bytes(document[index].elements[0])
+    data = original.replace(b"CLP*" + claim + b"*", b"CLP*%d*" % index, 1)
+    real = pyx12.x12n_document.apply_segment_errors
+
+    def breaks(node, seg, errh):
+        if seg.get_seg_id() == "CLP":
+            raise ValueError("SECRETNAME")
+        return real(node, seg, errh)
+
+    monkeypatch.setattr(pyx12.x12n_document, "apply_segment_errors", breaks)
+    (failure,) = validate(data, mask=oxedi.Mask(MASK_KEY))
+    assert is_failure(failure) and failure.segment == index
+    assert f"it was processing segment #{index};" in failure.rule
+    assert "SECRETNAME" not in failure.rule
+
+
 def test_a_mask_that_is_not_a_mask_is_refused():
     with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), mask="nope")
