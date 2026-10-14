@@ -420,28 +420,3 @@ fn unquoted_takes_an_accented_letter_or_a_hyphen_as_a_boundary() {
         "<d>\u{e9} and <d>-1"
     );
 }
-
-#[test]
-fn mask_found_except_keeps_the_message_of_a_finding_the_caller_wrote() {
-    let spec = Spec::builtin_835();
-    let document = Document::parse(SAMPLE).unwrap();
-    let mask = mask();
-    let projector = Projector::new(&spec, document.delimiters()).with_mask(&mask);
-    let (index, _) = find(&document, b"CLP", None);
-    let text = "could not finish validating: it was processing segment #1";
-    let mut found = vec![
-        external(text.into(), Some(index), 1, b"1"),
-        external(text.into(), Some(index), 1, b"1"),
-    ];
-
-    projector.mask_found_except(&mut found, &document, &[true]);
-
-    let token = String::from_utf8_lossy(&mask.text(Phi::Id, b"1")).into_owned();
-    assert_eq!(message(&found[0]), text);
-    assert_eq!(found[0].datum, token.as_bytes());
-    assert_eq!(
-        message(&found[1]),
-        format!("could not finish validating: it was processing segment #{token}")
-    );
-    assert_eq!(found[1].datum, token.as_bytes());
-}

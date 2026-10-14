@@ -231,7 +231,6 @@ def _rejection(text: str, positions: _Positions, document: Any) -> Draft:
         level=_FAILURE_LEVEL,
         segment=segment,
         datum=datum,
-        own_text=True,
     )
 
 
@@ -331,8 +330,10 @@ def validate(
     points at, keeps the exception's type and drops its text: ``could not
     finish validating: ValueError, whose message is not shown with a mask;
     ...``, or ``its error tree could not be read (ValueError, whose message
-    is not shown with a mask)``. The rest of a failure finding is text oxedi
+    is not shown with a mask)``. The rest of such a finding is text oxedi
     wrote, so the mask does not rewrite it; its datum is masked as any other.
+    The finding for a file pyx12 rejects quotes pyx12's X12Error, which can
+    hold the whole ISA line, and its message is masked as pyx12's messages are.
     pyx12 still reads the original file: the
     mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
     of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,

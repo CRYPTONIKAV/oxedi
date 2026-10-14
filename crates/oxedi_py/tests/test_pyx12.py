@@ -1023,6 +1023,26 @@ def test_a_masked_failure_keeps_its_location_text_when_a_flagged_value_is_short(
     assert "SECRETNAME" not in failure.rule
 
 
+def test_a_masked_rejection_hides_a_flagged_isa_value_its_message_quotes():
+    spec = oxedi.Spec.builtin().patch(
+        {
+            "tables": {
+                "envelope": {
+                    "loops": ["interchange"],
+                    "columns": {"sender": {"segment": "ISA", "element": 6, "phi": "id"}},
+                }
+            }
+        }
+    )
+    data = read("multi_claim_sample.txt")
+    sender = bytes(oxedi.parse(data).document[0].elements[5]).strip().decode()
+    (plain,) = validate(data, spec=spec)
+    (masked,) = validate(data, mask=oxedi.Mask(MASK_KEY), spec=spec)
+    assert sender in plain.rule
+    assert sender not in masked.rule
+    assert masked.rule.startswith("could not finish validating: X12Error: ")
+
+
 def test_a_mask_that_is_not_a_mask_is_refused():
     with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), mask="nope")

@@ -299,9 +299,26 @@ pub fn mask_findings(
         .iter()
         .map(|diagnostic| diagnostic.inner.clone())
         .collect();
+    // The adapter wrote these messages itself; they hold no value of the file
+    // to replace, so they are set aside while the rest is masked and put back.
+    let own_text = own_text.unwrap_or_default();
+    let mut kept: Vec<Option<String>> = Vec::with_capacity(found.len());
+    for (position, diagnostic) in found.iter_mut().enumerate() {
+        let own = own_text.get(position).copied().unwrap_or(false);
+        kept.push(match &mut diagnostic.rule {
+            Rule::External { message, .. } if own => Some(std::mem::take(message)),
+            _ => None,
+        });
+    }
     Projector::new(spec, document.delimiters())
         .with_mask(&mask.get().inner)
-        .mask_found_except(&mut found, document, &own_text.unwrap_or_default());
+        .mask_found(&mut found, document);
+    for (diagnostic, original) in found.iter_mut().zip(kept) {
+        if let (Rule::External { message, .. }, Some(original)) = (&mut diagnostic.rule, original)
+        {
+            *message = original;
+        }
+    }
     found.into_iter().map(PyDiagnostic::from).collect()
 }
 

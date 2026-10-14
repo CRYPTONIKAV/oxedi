@@ -123,7 +123,8 @@ quote any value of the file: `could not finish validating: ValueError, whose mes
 with a mask; ...`, or `its error tree could not be read (ValueError, whose message is not shown
 with a mask)` when pyx12's error tree cannot be read. The rest of that finding, which says which
 segment pyx12 was processing, is oxedi's own text and is never rewritten, so its segment numbers
-stay readable; its datum is masked like any other.
+stay readable; its datum is masked like any other. The finding for a file pyx12 refuses to read
+quotes pyx12's own error text, which can hold the ISA line, and is masked like any pyx12 message.
 
 ## Use it in SQL
 

@@ -72,12 +72,7 @@ impl<'s> DatumMask<'s> {
     /// also has its message rewritten: the original datum, when it was
     /// masked, and the value of every flagged place of `current` are replaced
     /// by their masked forms.
-    pub(super) fn apply(
-        &self,
-        diagnostics: &mut [Diagnostic],
-        current: Option<&Segment<'_>>,
-        rewrite_message: bool,
-    ) {
+    pub(super) fn apply(&self, diagnostics: &mut [Diagnostic], current: Option<&Segment<'_>>) {
         for diagnostic in diagnostics {
             let mut quoted = Vec::new();
             if let Some(masked) = self.masked_datum(diagnostic, current) {
@@ -85,9 +80,6 @@ impl<'s> DatumMask<'s> {
                 quoted.push((original, masked));
             }
             let about = current.filter(|segment| diagnostic.segment == Some(segment.index));
-            if !rewrite_message {
-                continue;
-            }
             if let Rule::External { message, .. } = &mut diagnostic.rule {
                 if let Some(segment) = about {
                     quoted.extend(self.values(segment));
@@ -199,7 +191,7 @@ impl<'s> Projector<'s> {
         current: Option<&Segment<'_>>,
     ) {
         if let Some(datums) = &self.datums {
-            datums.apply(diagnostics, current, true);
+            datums.apply(diagnostics, current);
         }
     }
 
@@ -213,27 +205,12 @@ impl<'s> Projector<'s> {
     /// short values it overlaps or touches, stands apart from the message's
     /// words and numbers. Without a mask it does nothing.
     pub fn mask_found(&self, diagnostics: &mut [Diagnostic], document: &Document<'_>) {
-        self.mask_found_except(diagnostics, document, &[]);
-    }
-
-    /// Like [`Projector::mask_found`], but a diagnostic whose position in
-    /// `own_text` is `true` keeps its message as written: the caller wrote
-    /// that text itself, so it holds no value of the file to replace and
-    /// rewriting it could only garble it. Its datum is masked all the same.
-    /// A position past the end of `own_text` counts as `false`.
-    pub fn mask_found_except(
-        &self,
-        diagnostics: &mut [Diagnostic],
-        document: &Document<'_>,
-        own_text: &[bool],
-    ) {
         let Some(datums) = &self.datums else {
             return;
         };
-        for (position, diagnostic) in diagnostics.iter_mut().enumerate() {
+        for diagnostic in diagnostics {
             let current = diagnostic.segment.and_then(|index| document.segment(index));
-            let own = own_text.get(position).copied().unwrap_or(false);
-            datums.apply(std::slice::from_mut(diagnostic), current.as_ref(), !own);
+            datums.apply(std::slice::from_mut(diagnostic), current.as_ref());
         }
     }
 

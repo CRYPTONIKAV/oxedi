@@ -312,7 +312,7 @@ impl<'s> Projector<'s> {
             }
         }
         if let Some(datums) = &self.datums {
-            datums.apply(&mut self.diagnostics, Some(segment), true);
+            datums.apply(&mut self.diagnostics, Some(segment));
         }
         &self.diagnostics
     }
@@ -332,7 +332,7 @@ impl<'s> Projector<'s> {
             state.carried.iter_mut().for_each(Carried::clear);
         }
         if let Some(datums) = &self.datums {
-            datums.apply(&mut self.diagnostics, None, true);
+            datums.apply(&mut self.diagnostics, None);
         }
         &self.diagnostics
     }
