@@ -52,3 +52,43 @@ fn every_sample_is_in_the_list() {
          listed but not on disk: {stale:?}"
     );
 }
+
+/// The quoted names in the bench workload list.
+fn bench_samples() -> Vec<String> {
+    let source = include_str!("../benches/common/mod.rs");
+    let start = source
+        .find("pub const SAMPLES: &[&str] = &[")
+        .expect("benches/common/mod.rs lists SAMPLES");
+    let body = &source[start..];
+    let body = &body[..body.find("];").expect("the SAMPLES list ends")];
+    body.split('"')
+        .skip(1)
+        .step_by(2)
+        .map(String::from)
+        .collect()
+}
+
+/// The benches run the engine on the largest samples, so their list must be the
+/// largest samples by size, not an arbitrary subset.
+#[test]
+fn the_bench_list_is_the_largest_samples() {
+    let dir = common::samples_dir();
+    let mut sizes: Vec<(u64, String)> = files_in(&dir)
+        .into_iter()
+        .map(|name| {
+            let len = std::fs::metadata(dir.join(&name))
+                .unwrap_or_else(|e| panic!("cannot stat {name}: {e}"))
+                .len();
+            (len, name)
+        })
+        .collect();
+    sizes.sort_by(|a, b| b.cmp(a));
+    let mut largest: Vec<String> = sizes.into_iter().take(3).map(|(_, name)| name).collect();
+    largest.sort();
+    let mut listed = bench_samples();
+    listed.sort();
+    assert_eq!(
+        listed, largest,
+        "benches/common SAMPLES must be the three largest files of tests/samples"
+    );
+}

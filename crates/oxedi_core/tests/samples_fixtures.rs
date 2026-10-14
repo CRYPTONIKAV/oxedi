@@ -18,6 +18,18 @@ const SAMPLES: &[(&str, usize, Option<u8>)] = &[
 ];
 
 #[test]
+fn the_expectations_name_every_sample() {
+    let mut named: Vec<&str> = SAMPLES.iter().map(|&(name, _, _)| name).collect();
+    named.sort_unstable();
+    let mut listed = common::SAMPLES.to_vec();
+    listed.sort_unstable();
+    assert_eq!(
+        named, listed,
+        "SAMPLES here and common::SAMPLES must name the same samples"
+    );
+}
+
+#[test]
 fn samples_tokenize_losslessly_from_their_isa() {
     for &(name, count, repetition) in SAMPLES {
         let bytes = common::load_sample(name);

@@ -18,6 +18,11 @@ fn selected(bytes: Vec<u8>) -> String {
     }
 }
 
+fn sorted(mut names: Vec<&str>) -> Vec<&str> {
+    names.sort_unstable();
+    names
+}
+
 #[test]
 fn samples_get_the_spec_of_their_declared_version() {
     let cases = [
@@ -28,6 +33,12 @@ fn samples_get_the_spec_of_their_declared_version() {
         ("edi835_test_versant.RMT", "4010"),
         ("edi835_test_united.rmt", "5010"),
     ];
+    let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
+    assert_eq!(
+        sorted(named),
+        sorted(common::SAMPLES.to_vec()),
+        "the cases here and common::SAMPLES must name the same samples"
+    );
     for (name, expected) in cases {
         assert_eq!(selected(common::load_sample(name)), expected, "{name}");
     }
@@ -41,7 +52,19 @@ fn fixtures_get_the_spec_of_their_declared_version() {
         ("united_healthcare_legacy_sample.txt", "5010"),
         ("multi_claim_sample.txt", "4010"),
         ("trizetto_sample.rmt", "4010"),
+        ("balanced_5010_sample.txt", "5010"),
+        ("balanced_4010_sample.txt", "4010"),
+        ("edge_cases_5010_sample.txt", "5010"),
+        ("edge_cases_4010_sample.txt", "4010"),
+        ("masked_findings_5010_sample.txt", "5010"),
+        ("masked_findings_4010_sample.txt", "4010"),
     ];
+    let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
+    assert_eq!(
+        sorted(named),
+        sorted(common::FIXTURES.to_vec()),
+        "the cases here and common::FIXTURES must name the same fixtures"
+    );
     for (name, expected) in cases {
         assert_eq!(selected(common::load_fixture(name)), expected, "{name}");
     }
