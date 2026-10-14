@@ -124,7 +124,7 @@ with a mask; ...`, or `its error tree could not be read (ValueError, whose messa
 with a mask)` when pyx12's error tree cannot be read. The rest of that finding, which says which
 segment pyx12 was processing, is oxedi's own text and is never rewritten, so its segment numbers
 stay readable; its datum is masked like any other. The finding for a file pyx12 refuses to read
-quotes pyx12's own error text, which can hold the ISA line, and is masked like any pyx12 message.
+quotes pyx12's own error text, which can hold the ISA line, and is masked like any pyx12 message; its datum is `ISA`, not the ISA line.
 
 ## Use it in SQL
 

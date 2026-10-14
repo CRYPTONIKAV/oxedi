@@ -208,10 +208,11 @@ def _failure(reason: str, track: list[int], positions: _Positions, document: Any
     )
 
 
-def _rejection(text: str, positions: _Positions, document: Any) -> Draft:
+def _rejection(text: str, positions: _Positions, document: Any, masked: bool) -> Draft:
     """The failure for a file pyx12 refuses to read as X12: at the segment
-    holding the ISA, with its bytes as the datum. pyx12 only logs that it
-    refused, so the reason is read again from its reader."""
+    holding the ISA, with its bytes as the datum, or, when ``masked``, only
+    the segment id, as the bytes name no element a mask could reach. pyx12
+    only logs that it refused, so the reason is read again from its reader."""
     import pyx12.errors
     import pyx12.rawx12file
 
@@ -223,8 +224,11 @@ def _rejection(text: str, positions: _Positions, document: Any) -> Draft:
     segment = positions.locate(1)
     datum = b""
     if segment is not None:
-        raw = bytes(document[segment].raw)
-        datum = raw[max(raw.find(b"ISA"), 0):].rstrip(b"\r\n")
+        if masked:
+            datum = b"ISA"
+        else:
+            raw = bytes(document[segment].raw)
+            datum = raw[max(raw.find(b"ISA"), 0):].rstrip(b"\r\n")
     where = f"it rejected segment #{segment}" if segment is not None else "it reached no segment"
     return dict(
         message=f"could not finish validating: {reason}; {where}",
@@ -333,7 +337,8 @@ def validate(
     is not shown with a mask)``. The rest of such a finding is text oxedi
     wrote, so the mask does not rewrite it; its datum is masked as any other.
     The finding for a file pyx12 rejects quotes pyx12's X12Error, which can
-    hold the whole ISA line, and its message is masked as pyx12's messages are.
+    hold the whole ISA line, and its message is masked as pyx12's messages are;
+    its datum is ``ISA`` instead of the ISA line, which names no element.
     pyx12 still reads the original file: the
     mask hides what ``validate`` returns, not what pyx12 is given. ``mask``
     of any other type than ``oxedi.Mask`` or ``None`` raises ``TypeError``,
@@ -389,5 +394,5 @@ def _findings(
         reason = f"its error tree could not be read ({_reason(err, masked)})"
         return _finish(result, [_failure(reason, run.track, positions, document)])
     if not found and not run.ok and not run.track:
-        return _finish(result, [_rejection(text, positions, document)])
+        return _finish(result, [_rejection(text, positions, document, masked)])
     return _finish(result, [_diagnostic(f, positions, document) for f in found])

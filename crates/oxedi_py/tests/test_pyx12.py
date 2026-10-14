@@ -1041,6 +1041,9 @@ def test_a_masked_rejection_hides_a_flagged_isa_value_its_message_quotes():
     assert sender in plain.rule
     assert sender not in masked.rule
     assert masked.rule.startswith("could not finish validating: X12Error: ")
+    assert sender.encode() in plain.datum
+    assert sender.encode() not in masked.datum
+    assert masked.datum == b"ISA"
 
 
 def test_a_mask_that_is_not_a_mask_is_refused():
