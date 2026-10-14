@@ -2019,7 +2019,12 @@ finding for an exception inside pyx12, whose text no flagged place
 points at, keeps the exception's type and drops its text: <code>could not
 finish validating: ValueError, whose message is not shown with a mask;
 ...</code>, or <code>its error tree could not be read (ValueError, whose message
-is not shown with a mask)</code>. pyx12 still reads the original file: the
+is not shown with a mask)</code>. The rest of such a finding is text oxedi
+wrote, so the mask does not rewrite it; its datum is masked as any other.
+The finding for a file pyx12 rejects quotes pyx12's X12Error, which can
+hold the whole <abbr title="Interchange control header segment">ISA</abbr> line, and its message is masked as pyx12's messages are;
+its datum is <code>ISA</code> instead of the <abbr title="Interchange control header segment">ISA</abbr> line, which names no element.
+pyx12 still reads the original file: the
 mask hides what <code>validate</code> returns, not what pyx12 is given. <code>mask</code>
 of any other type than <code>oxedi.Mask</code> or <code>None</code> raises <code>TypeError</code>,
 and so does <code>spec</code> of any other type than <code>oxedi.Spec</code> or <code>None</code>.</p>
