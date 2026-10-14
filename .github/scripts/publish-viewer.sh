@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # One attempt at publishing the viewer (and, for a release, the site's llms.txt) to gh-pages:
-# builds a worktree from the current origin/gh-pages, replaces the viewer's folder, commits and
+# builds a worktree from the gh-pages commit it just fetched, replaces the viewer's folder, commits and
 # pushes. Nothing outside viewer/ and, for a release, the root llms.txt is touched. Run it
 # through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
 # Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH: true (the
 # default) pushes; false stops after the commit in the temporary worktree (a dry run that never
-# pushes); local starts from the local gh-pages branch instead of origin/gh-pages, fetches
+# pushes); local starts from the local gh-pages branch instead of the fetched one, fetches
 # nothing, and moves that branch onto the commit (deploy-docs.sh --no-push).
 set -euo pipefail
 
@@ -14,7 +14,7 @@ if [ "$push" = "local" ]; then
   base=gh-pages
 else
   git fetch origin gh-pages
-  base=origin/gh-pages
+  base=FETCH_HEAD
 fi
 pages=$(mktemp -d)/gh-pages
 git worktree add -B viewer-publish "$pages" "$base"

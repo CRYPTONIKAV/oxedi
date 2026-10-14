@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs a command that pushes to gh-pages, up to 3 times. Before every attempt the local
-# gh-pages branch (the one mike works on) is reset to origin/gh-pages, so a retry after a
+# gh-pages branch (the one mike works on) is reset to the commit it just fetched, so a retry after a
 # rejected push redoes its commit on top of what the other deploy published.
 #
 # Only two failures are retried: the fetch itself failing, and the command's output showing that
@@ -20,7 +20,7 @@ for attempt in $(seq 1 "$attempts"); do
   if ! git fetch origin gh-pages; then
     reason="git fetch origin gh-pages failed"
   else
-    git branch -f gh-pages origin/gh-pages || exit 1
+    git branch -f gh-pages FETCH_HEAD || exit 1
     "$@" 2>&1 | tee "$log"
     status=${PIPESTATUS[0]}
     if [ "$status" -eq 0 ]; then
