@@ -9,11 +9,11 @@
 #              otherwise it deploys only its own folder and leaves `latest`, the viewer and
 #              llms.txt alone.
 #
-# By default every read of gh-pages is of a freshly fetched origin/gh-pages, and every push goes
-# through retry-gh-pages.sh; gh-pages must already exist on origin, or the first fetch fails the
-# run. With --no-push nothing is fetched or pushed: mike runs without --push, publish-viewer.sh
-# commits onto the local gh-pages branch (PUSH=local), and the reads and the final checks are of
-# that local branch, which may not exist yet.
+# By default every read of gh-pages is of the commit a fresh `git fetch origin gh-pages`
+# returned, and every push goes through retry-gh-pages.sh; gh-pages must already exist on
+# origin, or the first fetch fails the run. With --no-push nothing is fetched or pushed: mike
+# runs without --push, publish-viewer.sh commits onto the local gh-pages branch (PUSH=local),
+# and the reads and the final checks are of that local branch, which may not exist yet.
 #
 # Runs from the repository root. Needs mike (and mkdocs) on the PATH, jq, a git identity, the
 # viewer's module in viewer/pkg (make wasm) and GITHUB_SHA, which names the viewer's commit.
@@ -52,7 +52,7 @@ case "$kind" in
 esac
 
 if [ "$push" = true ]; then
-  pages=origin/gh-pages
+  pages=""
   mike_push=(--push)
 else
   pages=gh-pages
@@ -61,9 +61,18 @@ fi
 # KIND and VERSION are read by publish-viewer.sh and by the inner shells below.
 export NO_MKDOCS_2_WARNING=true KIND=$kind VERSION=$version
 
-# Brings origin/gh-pages up to date; a no-push run reads the local branch and fetches nothing.
+# Brings gh-pages up to date; a no-push run reads the local branch and fetches nothing. A push
+# run reads the commit the fetch returned, not origin/gh-pages, which a single-branch or shallow
+# clone may leave stale.
 refresh() {
-  if [ "$push" = true ]; then git fetch origin gh-pages; fi
+  if [ "$push" = true ]; then
+    git fetch origin gh-pages
+    pages=$(git rev-parse --verify --quiet 'FETCH_HEAD^{commit}') \
+      || {
+        echo "git fetch origin gh-pages did not produce a gh-pages commit in FETCH_HEAD" >&2
+        exit 1
+      }
+  fi
 }
 # Runs a command that writes gh-pages: through retry-gh-pages.sh when it pushes, as is otherwise.
 write_pages() {

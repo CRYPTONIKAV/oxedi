@@ -220,7 +220,21 @@ fn internal() {
 
 #[test]
 fn no_read_error_has_a_source() {
-    assert!(ReadError::EmptyPathList.source().is_none());
+    let mask = ReadError::Mask {
+        name: "mask_key",
+        source: MaskError::ShortKey { length: 5 },
+    };
+    let parse = ReadError::Parse {
+        file: "a.835".to_owned(),
+        source: Document::parse(b"not an interchange".to_vec()).unwrap_err(),
+    };
+    let open = ReadError::Open {
+        file: "a.835".to_owned(),
+        message: "denied".to_owned(),
+    };
+    for error in [ReadError::EmptyPathList, mask, parse, open] {
+        assert!(error.source().is_none(), "{error}");
+    }
 }
 
 #[test]

@@ -62,8 +62,8 @@ jobs:
         run: .venv-docs/bin/playwright install-deps chromium
       - name: Unit checks, oracle and browser tests
         run: make viewer-test
-      # The publish script on a temporary worktree of origin/gh-pages, committing but never
-      # pushing, so a broken viewer deploy shows on the pull request.
+      # The publish script on a temporary worktree of the gh-pages commit it fetches, committing
+      # but never pushing, so a broken viewer deploy shows on the pull request.
       - name: Viewer publish (dry run, no push)
         env:
           PUSH: "false"

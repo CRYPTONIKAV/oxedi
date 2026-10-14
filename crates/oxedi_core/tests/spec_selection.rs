@@ -28,6 +28,8 @@ fn samples_get_the_spec_of_their_declared_version() {
         ("edi835_test_versant.RMT", "4010"),
         ("edi835_test_united.rmt", "5010"),
     ];
+    let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
+    common::assert_same_names("the cases here vs common::SAMPLES", &named, common::SAMPLES);
     for (name, expected) in cases {
         assert_eq!(selected(common::load_sample(name)), expected, "{name}");
     }
@@ -41,7 +43,19 @@ fn fixtures_get_the_spec_of_their_declared_version() {
         ("united_healthcare_legacy_sample.txt", "5010"),
         ("multi_claim_sample.txt", "4010"),
         ("trizetto_sample.rmt", "4010"),
+        ("balanced_5010_sample.txt", "5010"),
+        ("balanced_4010_sample.txt", "4010"),
+        ("edge_cases_5010_sample.txt", "5010"),
+        ("edge_cases_4010_sample.txt", "4010"),
+        ("masked_findings_5010_sample.txt", "5010"),
+        ("masked_findings_4010_sample.txt", "4010"),
     ];
+    let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
+    common::assert_same_names(
+        "the cases here vs common::FIXTURES",
+        &named,
+        common::FIXTURES,
+    );
     for (name, expected) in cases {
         assert_eq!(selected(common::load_fixture(name)), expected, "{name}");
     }

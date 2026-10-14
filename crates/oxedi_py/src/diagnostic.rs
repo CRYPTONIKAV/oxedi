@@ -277,18 +277,21 @@ pyo3_stub_gen::export_verbatim!("oxedi._core", "_external_diagnostic");
 /// as patient data masked by `mask`, as `parse` masks its own diagnostics,
 /// and, in the message, the original datum and each flagged value of the
 /// finding's segment replaced by its masked form. The inputs are left as
-/// they are.
+/// they are. A finding whose position in `own_text` is true is one the
+/// adapter wrote itself: its datum is masked but its message is left as
+/// written.
 ///
 /// Internal: adapters to external validators call it; it is not part of the
 /// public API.
 #[gen_stub_pyfunction]
 #[pyfunction]
-#[pyo3(name = "_mask_findings")]
+#[pyo3(name = "_mask_findings", signature = (diagnostics, document, mask, spec, own_text=None))]
 pub fn mask_findings(
     diagnostics: Vec<PyRef<'_, PyDiagnostic>>,
     document: &Bound<'_, PyDocument>,
     mask: &Bound<'_, PyMask>,
     spec: &Bound<'_, PySpec>,
+    own_text: Option<Vec<bool>>,
 ) -> Vec<PyDiagnostic> {
     let document = &document.get().inner;
     let spec = &spec.get().inner;
@@ -296,9 +299,25 @@ pub fn mask_findings(
         .iter()
         .map(|diagnostic| diagnostic.inner.clone())
         .collect();
+    // The adapter wrote these messages itself; they hold no value of the file
+    // to replace, so they are set aside while the rest is masked and put back.
+    let own_text = own_text.unwrap_or_default();
+    let mut kept: Vec<Option<String>> = Vec::with_capacity(found.len());
+    for (position, diagnostic) in found.iter_mut().enumerate() {
+        let own = own_text.get(position).copied().unwrap_or(false);
+        kept.push(match &mut diagnostic.rule {
+            Rule::External { message, .. } if own => Some(std::mem::take(message)),
+            _ => None,
+        });
+    }
     Projector::new(spec, document.delimiters())
         .with_mask(&mask.get().inner)
         .mask_found(&mut found, document);
+    for (diagnostic, original) in found.iter_mut().zip(kept) {
+        if let (Rule::External { message, .. }, Some(original)) = (&mut diagnostic.rule, original) {
+            *message = original;
+        }
+    }
     found.into_iter().map(PyDiagnostic::from).collect()
 }
 

@@ -320,3 +320,22 @@ fn table_schema_errors_display_the_table_the_column_and_the_serde_message() {
         "table \"claims\" does not match the schema: invalid type: integer `1`, expected a table object"
     );
 }
+
+#[test]
+fn no_spec_error_chains_its_source() {
+    use std::error::Error;
+    let patch = SpecError::Patch {
+        source: Box::new(SpecError::Json(json_error("{"))),
+    };
+    let schema = SpecError::Schema {
+        loop_name: None,
+        source: json_error("{"),
+    };
+    let key = SpecError::MissingKey {
+        path: String::new(),
+        key: "name",
+    };
+    for err in [SpecError::Json(json_error("{")), schema, patch, key] {
+        assert!(err.source().is_none(), "{err}");
+    }
+}

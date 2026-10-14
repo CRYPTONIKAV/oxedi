@@ -401,7 +401,27 @@ impl std::error::Error for ReadError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // `Parse` and `Mask` print the core error in full, so the chain
         // stops here instead of printing it a second time.
-        None
+        match self {
+            ReadError::PathType { .. }
+            | ReadError::NullPath { .. }
+            | ReadError::EmptyPathList
+            | ReadError::NullOption { .. }
+            | ReadError::MacroParameter { .. }
+            | ReadError::Mask { .. }
+            | ReadError::MaskDatesWithoutKey { .. }
+            | ReadError::UnknownTable { .. }
+            | ReadError::UnknownVersion { .. }
+            | ReadError::PatternWithoutExternalAccess { .. }
+            | ReadError::NoFiles { .. }
+            | ReadError::Glob { .. }
+            | ReadError::Open { .. }
+            | ReadError::Read { .. }
+            | ReadError::Parse { .. }
+            | ReadError::InvalidUtf8 { .. }
+            | ReadError::SchemaMismatch { .. }
+            | ReadError::UnsupportedType { .. }
+            | ReadError::Internal { .. } => None,
+        }
     }
 }
 

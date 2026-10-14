@@ -554,14 +554,16 @@ def _loop_paths(result: Result, segments: typing.Sequence[builtins.int]) -> buil
     segment is a `ValueError` naming it.
     """
 
-def _mask_findings(diagnostics: typing.Sequence[Diagnostic], document: Document, mask: Mask, spec: Spec) -> builtins.list[Diagnostic]:
+def _mask_findings(diagnostics: typing.Sequence[Diagnostic], document: Document, mask: Mask, spec: Spec, own_text: typing.Optional[typing.Sequence[builtins.bool]] = None) -> builtins.list[Diagnostic]:
     r"""
     Copies of `diagnostics`, findings an external validator raised about
     `document`, with the datum of each one at a place a column `spec` flags
     as patient data masked by `mask`, as `parse` masks its own diagnostics,
     and, in the message, the original datum and each flagged value of the
     finding's segment replaced by its masked form. The inputs are left as
-    they are.
+    they are. A finding whose position in `own_text` is true is one the
+    adapter wrote itself: its datum is masked but its message is left as
+    written.
     
     Internal: adapters to external validators call it; it is not part of the
     public API.
