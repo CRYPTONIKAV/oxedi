@@ -326,16 +326,35 @@ a release. The Python package and the DuckDB extension are versioned and tagged 
 
 ## Complexity
 
-The long-term targets per function are a cyclomatic complexity of 6–7, nesting no deeper than
-3, and at most 8 branches. Flat per-variant tables (a big `Display` or kind `match`) are the
-expected exceptions. Today's code is the baseline: nothing may get worse, and functions over a
-target may only shrink. Two checks hold that line. Clippy (`make clippy`) caps cognitive
-complexity, nesting, function length and argument count at today's largest values
-(`clippy.toml`); lower a ceiling when a refactor brings the largest function down. `make
-complexity` (needs uv; CI runs it in the Workflows job) measures every Rust, Python and JS
-function outside the tests with a pinned lizard (nesting of Python functions with the `ast`
-module) and fails when a function over a target (CCN above 7, nesting above 3) is missing from
-`.github/complexity-baseline.txt` or is worse than its entry. It also fails when an entry is
-better than recorded or gone, so a refactor that simplifies a function must remove or lower its
-entry: run `make complexity-update` and commit the baseline with the refactor. No pinned tool
-counts branches per function separately from CCN, so the 8-branch limit is a review guideline.
+**Targets.** Per function: cyclomatic complexity (CCN) of 6–7, nesting no deeper than 3, at
+most 8 branches. Flat per-variant dispatch (a big `Display` or kind `match`) is the expected
+exception. No pinned tool counts branches apart from CCN, so the 8-branch limit is checked in
+review.
+
+**The ratchet.** Today's code is the baseline: nothing may get worse, and a function over a
+target may only shrink. Two checks hold that line:
+
+- Clippy (`make clippy`) caps cognitive complexity, nesting, function length and argument count
+  at today's largest values, set in `clippy.toml`. Lower a ceiling when a refactor brings the
+  largest function down. A Rust toolchain bump may need them measured again.
+- `make complexity` (needs uv) measures CCN and nesting of every Rust, Python and JS function
+  outside tests, benches, examples and tooling, with a pinned lizard (Python nesting with the
+  `ast` module). It compares the functions over a target (CCN above 7, nesting above 3) with
+  `.github/complexity-baseline.txt`. CI runs it in the Workflows area (see [CI](#ci)).
+
+**What it reports.** Every line says how to resolve it:
+
+- `FAIL`: a function is over a target and not in the baseline, or worse than its entry.
+  Simplify it.
+- `STALE`: an entry is better than recorded, or its function is within the targets or gone.
+  Run `make complexity-update` and commit the baseline with the refactor, so the baseline
+  shrinks.
+- `MOVED`: a file was moved or renamed, and a function in it matches its old entry, no worse.
+  Run `make complexity-update` to record the new path.
+
+**Reviewed exceptions.** Adding a variant to a flat dispatch, such as one more arm in an
+error's `Display`, raises its CCN by one and is acceptable. Record it with
+`make complexity-update ACCEPT='path::function'` (several separated by spaces) and say why in
+the pull request's **Intent**. Nothing else is accepted this way: split the function instead.
+On a pull request, CI lists every added or raised entry in the job summary, and changes to the
+baseline or `clippy.toml` need the maintainer's review (`.github/CODEOWNERS`).
