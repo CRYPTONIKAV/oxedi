@@ -146,7 +146,7 @@ pub fn diagnostics_of(
     delims: oxedi_core::Delimiters,
 ) -> Vec<oxedi_core::Diagnostic> {
     let mut engine = oxedi_core::LoopEngine::new(spec);
-    let mut checker = oxedi_core::EnvelopeChecker::new(spec, &delims);
+    let mut checker = oxedi_core::StructureChecker::new(spec, &delims);
     let mut diagnostics = Vec::new();
     for segment in oxedi_core::Tokenizer::with_delimiters(bytes, delims) {
         let events = engine.feed(&segment);

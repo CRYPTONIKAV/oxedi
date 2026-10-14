@@ -43,10 +43,10 @@ impl fmt::Display for Rule {
                 f,
                 "the input starts with a UTF-8 byte order mark, kept as leading trivia of the first segment"
             ),
-            Rule::UnknownSegment { id } => write!(
+            Rule::UnknownSegment { segment_id } => write!(
                 f,
                 "segment {} is not part of the structure: no open loop holds it and it opens no loop",
-                Quoted(id)
+                Quoted(segment_id)
             ),
             Rule::ImplicitLoop {
                 loop_name,

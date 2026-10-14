@@ -19,7 +19,7 @@ fn every_rule_names_its_variant() {
     let id = || b"SE".to_vec();
     let rules = [
         (Rule::ByteOrderMark, "ByteOrderMark"),
-        (Rule::UnknownSegment { id: id() }, "UnknownSegment"),
+        (Rule::UnknownSegment { segment_id: id() }, "UnknownSegment"),
         (
             Rule::ImplicitLoop {
                 loop_name: "group".into(),
@@ -253,7 +253,9 @@ fn byte_order_mark_displays_the_first_segment_and_the_mark() {
 #[test]
 fn unknown_segment_displays_id_index_path_and_datum() {
     let diagnostic = Diagnostic::new(
-        Rule::UnknownSegment { id: b"XX".to_vec() },
+        Rule::UnknownSegment {
+            segment_id: b"XX".to_vec(),
+        },
         Some(7),
         None,
         None,
@@ -841,7 +843,7 @@ fn value_dropped_displays_the_table_the_column_the_byte_total_and_the_value() {
 fn invalid_utf8_in_a_datum_is_shown_as_hex_escapes() {
     let diagnostic = Diagnostic::new(
         Rule::UnknownSegment {
-            id: vec![b'Z', 0xFF],
+            segment_id: vec![b'Z', 0xFF],
         },
         Some(1),
         None,
@@ -863,7 +865,9 @@ fn span_resolves_the_segment_bytes_from_the_document() {
         Document::with_delimiters(&b"AA*1~BB*2~"[..], Delimiters::new(b'*', b':', b'~')).unwrap();
     let at = |segment| {
         Diagnostic::new(
-            Rule::UnknownSegment { id: b"BB".to_vec() },
+            Rule::UnknownSegment {
+                segment_id: b"BB".to_vec(),
+            },
             segment,
             None,
             None,

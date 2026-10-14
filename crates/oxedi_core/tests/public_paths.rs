@@ -2,7 +2,7 @@
 #![allow(unused_imports)]
 
 mod by_module {
-    use oxedi_core::check::EnvelopeChecker;
+    use oxedi_core::check::StructureChecker;
     use oxedi_core::column::Bitmap;
     use oxedi_core::column::Cell;
     use oxedi_core::column::CellError;
@@ -51,7 +51,7 @@ mod by_module {
     use oxedi_core::project::table_columns;
     use oxedi_core::project::table_schema;
     use oxedi_core::segment::Segment;
-    use oxedi_core::segment::WriteError;
+    use oxedi_core::segment::SegmentWriteError;
     use oxedi_core::spec::AnchorChains;
     use oxedi_core::spec::AnchorPositions;
     use oxedi_core::spec::ColumnSource;
@@ -85,8 +85,8 @@ mod by_module {
 }
 
 // Root re-exports from lib.rs
-use oxedi_core::EnvelopeChecker;
 use oxedi_core::Projector;
+use oxedi_core::StructureChecker;
 use oxedi_core::Tokenizer;
 use oxedi_core::{
     AnchorChains, AnchorPositions, ColumnSource, Control, ControlCount, ControlError,
@@ -107,7 +107,7 @@ use oxedi_core::{Event, LoopEngine};
 use oxedi_core::{Frame, next_frame};
 use oxedi_core::{LoopTree, Node, NodeId, TreeBuilder};
 use oxedi_core::{Output, Processor};
-use oxedi_core::{Segment, WriteError};
+use oxedi_core::{Segment, SegmentWriteError};
 
 #[test]
 fn every_public_path_resolves() {}

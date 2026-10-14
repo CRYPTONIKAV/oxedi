@@ -9,7 +9,7 @@
 //! diagnostic, the checker's included, read from a place such a column reads
 //! (see [`Projector::with_mask`]).
 
-use crate::check::EnvelopeChecker;
+use crate::check::StructureChecker;
 use crate::column::Tables;
 use crate::delimiters::Delimiters;
 use crate::diagnostic::Diagnostic;
@@ -43,7 +43,7 @@ impl Output {
 #[derive(Debug, Clone)]
 pub struct Processor<'s> {
     engine: LoopEngine<'s>,
-    checker: EnvelopeChecker<'s>,
+    checker: StructureChecker<'s>,
     projector: Projector<'s>,
     output: Output,
 }
@@ -54,7 +54,7 @@ impl<'s> Processor<'s> {
     pub fn new(spec: &'s Spec, delimiters: &Delimiters) -> Self {
         Self {
             engine: LoopEngine::new(spec),
-            checker: EnvelopeChecker::new(spec, delimiters),
+            checker: StructureChecker::new(spec, delimiters),
             projector: Projector::new(spec, delimiters),
             output: Output::default(),
         }
@@ -72,7 +72,7 @@ impl<'s> Processor<'s> {
     ) -> Result<Self, UnknownTable> {
         Ok(Self {
             engine: LoopEngine::new(spec),
-            checker: EnvelopeChecker::new(spec, delimiters),
+            checker: StructureChecker::new(spec, delimiters),
             projector: Projector::with_tables(spec, delimiters, names)?,
             output: Output::default(),
         })

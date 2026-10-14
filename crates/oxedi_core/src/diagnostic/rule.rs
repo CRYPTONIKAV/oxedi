@@ -14,7 +14,7 @@ pub enum Rule {
     /// No open loop holds the segment and it opens no loop.
     UnknownSegment {
         /// The segment id.
-        id: Vec<u8>,
+        segment_id: Vec<u8>,
     },
     /// A loop was opened without its own trigger, to hold a descendant.
     ImplicitLoop {

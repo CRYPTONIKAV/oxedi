@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use oxedi_core::write::{Envelope, Finding, Origin, WriteError, write_with_findings};
+use oxedi_core::write::{Envelope, Finding, ValueOrigin, WriteError, write_with_findings};
 use oxedi_core::{Spec, Tables};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -219,7 +219,7 @@ pub struct PyWriteFinding {
 
 impl PyWriteFinding {
     /// Where the value at fault comes from.
-    fn origin(&self) -> Option<&Origin> {
+    fn origin(&self) -> Option<&ValueOrigin> {
         match &self.inner {
             Finding::DelimiterInValue { origin, .. }
             | Finding::UnwrittenValue { origin, .. }
@@ -257,8 +257,8 @@ impl PyWriteFinding {
             | Finding::DuplicateRowNumber { table, .. }
             | Finding::OutOfOrder { table, .. } => Some(table),
             _ => match self.origin()? {
-                Origin::Cell { table, .. } | Origin::Row { table, .. } => Some(table),
-                Origin::Envelope { .. } => None,
+                ValueOrigin::Cell { table, .. } | ValueOrigin::Row { table, .. } => Some(table),
+                ValueOrigin::Envelope { .. } => None,
             },
         }
     }
@@ -272,8 +272,8 @@ impl PyWriteFinding {
             | Finding::DuplicateRowNumber { row, .. }
             | Finding::OutOfOrder { row, .. } => Some(*row),
             _ => match self.origin()? {
-                Origin::Cell { row, .. } | Origin::Row { row, .. } => Some(*row),
-                Origin::Envelope { .. } => None,
+                ValueOrigin::Cell { row, .. } | ValueOrigin::Row { row, .. } => Some(*row),
+                ValueOrigin::Envelope { .. } => None,
             },
         }
     }
@@ -286,7 +286,7 @@ impl PyWriteFinding {
             | Finding::MismatchedReference { column, .. }
             | Finding::OutOfOrder { column, .. } => Some(column),
             _ => match self.origin()? {
-                Origin::Cell { column, .. } => Some(column),
+                ValueOrigin::Cell { column, .. } => Some(column),
                 _ => None,
             },
         }
@@ -296,7 +296,7 @@ impl PyWriteFinding {
     #[getter]
     fn field(&self) -> Option<&str> {
         match self.origin()? {
-            Origin::Envelope { field } => Some(field),
+            ValueOrigin::Envelope { field } => Some(field),
             _ => None,
         }
     }

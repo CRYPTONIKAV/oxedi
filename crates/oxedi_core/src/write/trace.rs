@@ -3,7 +3,7 @@
 //! field) behind it.
 
 use super::envelope::Field;
-use super::finding::Origin;
+use super::finding::ValueOrigin;
 
 /// The source of one written element.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,7 +66,7 @@ impl Traces {
         element: Option<usize>,
         component: Option<usize>,
         names: &dyn Fn(usize, Option<usize>) -> String,
-    ) -> Option<Origin> {
+    ) -> Option<ValueOrigin> {
         let &(start, row) = self.segments.get(index)?;
         let end = self
             .segments
@@ -82,15 +82,15 @@ impl Traces {
             })
         });
         match found.map(|entry| entry.src) {
-            Some(Src::Cell { table, row, column }) => Some(Origin::Cell {
+            Some(Src::Cell { table, row, column }) => Some(ValueOrigin::Cell {
                 table: names(table, None),
                 row,
                 column: names(table, Some(column)),
             }),
-            Some(Src::Field(field)) => Some(Origin::Envelope {
+            Some(Src::Field(field)) => Some(ValueOrigin::Envelope {
                 field: field.name().to_string(),
             }),
-            None => row.map(|(table, row)| Origin::Row {
+            None => row.map(|(table, row)| ValueOrigin::Row {
                 table: names(table, None),
                 row,
             }),

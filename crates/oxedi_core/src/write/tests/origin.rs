@@ -2,7 +2,7 @@
 
 use crate::diagnostic::{Diagnostic, Rule};
 use crate::write::envelope::Field;
-use crate::write::finding::Origin;
+use crate::write::finding::ValueOrigin;
 use crate::write::trace::{Src, Traces};
 use crate::write::writer::origin_of;
 
@@ -44,7 +44,7 @@ fn a_control_number_mismatch_names_the_envelope_field_of_the_closer() {
     );
     assert_eq!(
         origin_of(&diagnostic, &traces(), &names),
-        Some(Origin::Envelope {
+        Some(ValueOrigin::Envelope {
             field: "control_number".to_string()
         })
     );
@@ -66,7 +66,7 @@ fn a_rule_about_a_whole_instance_names_the_row_that_opened_it() {
     );
     assert_eq!(
         origin_of(&diagnostic, &traces(), &names),
-        Some(Origin::Row {
+        Some(ValueOrigin::Row {
             table: "table0".to_string(),
             row: 3
         })

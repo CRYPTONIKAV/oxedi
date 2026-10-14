@@ -12,7 +12,7 @@ use super::refusal::PlanError;
 /// Where a written value comes from. Rows are 0-based positions in the
 /// table as given.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Origin {
+pub enum ValueOrigin {
     /// One cell of a table.
     Cell {
         /// The table.
@@ -36,14 +36,14 @@ pub enum Origin {
     },
 }
 
-impl fmt::Display for Origin {
+impl fmt::Display for ValueOrigin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Origin::Cell { table, row, column } => {
+            ValueOrigin::Cell { table, row, column } => {
                 write!(f, "table {table:?} row {row} column {column:?}")
             }
-            Origin::Row { table, row } => write!(f, "table {table:?} row {row}"),
-            Origin::Envelope { field } => write!(f, "envelope field {field:?}"),
+            ValueOrigin::Row { table, row } => write!(f, "table {table:?} row {row}"),
+            ValueOrigin::Envelope { field } => write!(f, "envelope field {field:?}"),
         }
     }
 }
@@ -56,7 +56,7 @@ pub enum Finding {
     /// is it would split its element, segment or repeat.
     DelimiterInValue {
         /// Where the value comes from.
-        origin: Origin,
+        origin: ValueOrigin,
         /// The element or component it fills, e.g. `NM103` or `SVC01-2`.
         place: String,
         /// The value.
@@ -69,7 +69,7 @@ pub enum Finding {
     /// A column that no valid file of the spec fills holds a value.
     UnwrittenValue {
         /// Where the value comes from.
-        origin: Origin,
+        origin: ValueOrigin,
         /// The value as text.
         value: String,
         /// The element whose code list excludes the column's `where` code.
@@ -143,7 +143,7 @@ pub enum Finding {
     /// A value has no text its element can hold.
     NotWritable {
         /// Where the value comes from.
-        origin: Origin,
+        origin: ValueOrigin,
         /// The element or component it fills.
         place: String,
         /// The value as text.
@@ -155,7 +155,7 @@ pub enum Finding {
     /// value at fault came from when the writer knows it.
     ReadBack {
         /// Where the value or row at fault comes from.
-        origin: Option<Origin>,
+        origin: Option<ValueOrigin>,
         /// The diagnostic about the written file.
         diagnostic: Diagnostic,
     },

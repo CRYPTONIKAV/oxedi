@@ -15,7 +15,7 @@
 //! - [`LoopEngine`] interprets a segment stream against a spec and emits
 //!   [`Event`]s (loops opened and closed, segments captured or unmatched);
 //!   [`LoopTree`] collects those events into a tree of loop instances.
-//! - [`EnvelopeChecker`] reads the same events and reports structural
+//! - [`StructureChecker`] reads the same events and reports structural
 //!   [`Diagnostic`]s: unknown segments, implicit or unterminated loops, and
 //!   envelope counts or control numbers that do not match.
 //! - [`Projector`] reads the same events too: it checks every element the
@@ -52,7 +52,7 @@ pub mod tokenizer;
 pub mod tree;
 pub mod write;
 
-pub use check::EnvelopeChecker;
+pub use check::StructureChecker;
 pub use column::{
     Bitmap, Cell, CellError, Column, ColumnData, ColumnType, RowError, Table, Tables, parse_dt,
     parse_n, parse_r, parse_tm,
@@ -66,7 +66,7 @@ pub use frame::{Frame, next_frame};
 pub use mask::{DateMode, Mask, MaskError, Phi};
 pub use process::{Output, Processor};
 pub use project::{ColumnSchema, Projector, TableSchema, UnknownTable, spec_schema};
-pub use segment::{Segment, WriteError};
+pub use segment::{Segment, SegmentWriteError};
 pub use spec::{
     AnchorChains, AnchorPositions, BalanceError, BalanceRule, BalanceTerm, ColumnSource, Control,
     ControlCount, ControlError, DeclaredVersion, ElementDef, ElementDefError, ElementType, LoopDef,

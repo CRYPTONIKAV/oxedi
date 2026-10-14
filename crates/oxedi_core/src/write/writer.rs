@@ -16,7 +16,7 @@ use crate::spec::Spec;
 use super::data::{Data, bind};
 use super::emit::Emitter;
 use super::envelope::{Envelope, carries_repetition, delimiters};
-use super::finding::{Finding, Origin, WriteError};
+use super::finding::{Finding, ValueOrigin, WriteError};
 use super::layout::Layout;
 use super::nest::nest;
 use super::plan::WritePlan;
@@ -127,7 +127,7 @@ fn unwritten(spec: &Spec, plan: &WritePlan, data: &[Data<'_>], findings: &mut Ve
                 continue;
             }
             findings.push(Finding::UnwrittenValue {
-                origin: Origin::Cell {
+                origin: ValueOrigin::Cell {
                     table: table.name.clone(),
                     row,
                     column: name.clone(),
@@ -182,7 +182,7 @@ pub(super) fn origin_of(
     diagnostic: &Diagnostic,
     traces: &Traces,
     names: &dyn Fn(usize, Option<usize>) -> String,
-) -> Option<Origin> {
+) -> Option<ValueOrigin> {
     let opened = match &diagnostic.rule {
         Rule::RequiredOccurrenceMissing { opened_at, .. }
         | Rule::RequiredLoopMissing { opened_at, .. }

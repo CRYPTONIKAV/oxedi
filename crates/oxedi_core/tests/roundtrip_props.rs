@@ -5,7 +5,7 @@ mod common;
 
 use std::borrow::Cow;
 
-use oxedi_core::{Delimiters, Element, Segment, Tokenizer, WriteError, frame::is_trivia};
+use oxedi_core::{Delimiters, Element, Segment, SegmentWriteError, Tokenizer, frame::is_trivia};
 use proptest::prelude::*;
 
 const ELEMENT: u8 = b'*';
@@ -110,7 +110,7 @@ proptest! {
                     prop_assert_eq!(back[0].id, segment.id, "written {:?}", written);
                     prop_assert_eq!(&back[0].elements, &segment.elements, "written {:?}", written);
                 }
-                Err(WriteError::DelimiterInValue { byte, element, component }) => {
+                Err(SegmentWriteError::DelimiterInValue { byte, element, component }) => {
                     prop_assert_eq!(element, 0, "rejected byte must come from the id");
                     prop_assert_eq!(component, None);
                     prop_assert!(segment.id.contains(&byte), "rejected byte must come from the id");

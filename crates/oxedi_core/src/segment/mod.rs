@@ -135,7 +135,7 @@ impl<'a> Segment<'a> {
 
 /// Why a segment could not be written.
 #[derive(Debug)]
-pub enum WriteError {
+pub enum SegmentWriteError {
     /// The sink failed.
     Io(io::Error),
     /// A value contains a delimiter and no release byte is configured to escape it.
@@ -149,11 +149,11 @@ pub enum WriteError {
     },
 }
 
-impl fmt::Display for WriteError {
+impl fmt::Display for SegmentWriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            WriteError::Io(e) => write!(f, "write failed: {e}"),
-            WriteError::DelimiterInValue {
+            SegmentWriteError::Io(e) => write!(f, "write failed: {e}"),
+            SegmentWriteError::DelimiterInValue {
                 byte,
                 element,
                 component,
@@ -174,19 +174,19 @@ impl fmt::Display for WriteError {
     }
 }
 
-impl std::error::Error for WriteError {
+impl std::error::Error for SegmentWriteError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // `Io` prints the I/O error in full, so the chain stops here
         // instead of printing it a second time.
         match self {
-            WriteError::Io(_) | WriteError::DelimiterInValue { .. } => None,
+            SegmentWriteError::Io(_) | SegmentWriteError::DelimiterInValue { .. } => None,
         }
     }
 }
 
-impl From<io::Error> for WriteError {
+impl From<io::Error> for SegmentWriteError {
     fn from(e: io::Error) -> Self {
-        WriteError::Io(e)
+        SegmentWriteError::Io(e)
     }
 }
 
@@ -200,9 +200,9 @@ impl Segment<'_> {
         &self,
         delims: &Delimiters,
         out: &mut W,
-    ) -> Result<(), WriteError> {
+    ) -> Result<(), SegmentWriteError> {
         if let Some(&byte) = self.id.iter().find(|&&byte| delims.is_special(byte)) {
-            return Err(WriteError::DelimiterInValue {
+            return Err(SegmentWriteError::DelimiterInValue {
                 byte,
                 element: 0,
                 component: None,
@@ -235,7 +235,7 @@ fn write_value<W: io::Write>(
     out: &mut W,
     element: usize,
     component: Option<usize>,
-) -> Result<(), WriteError> {
+) -> Result<(), SegmentWriteError> {
     if !value.iter().any(|&byte| delims.is_special(byte)) {
         return Ok(out.write_all(value)?);
     }
@@ -245,7 +245,7 @@ fn write_value<W: io::Write>(
             .copied()
             .find(|&byte| delims.is_special(byte))
             .unwrap_or_default();
-        return Err(WriteError::DelimiterInValue {
+        return Err(SegmentWriteError::DelimiterInValue {
             byte,
             element,
             component,

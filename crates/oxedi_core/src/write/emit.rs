@@ -14,7 +14,7 @@ use crate::spec::{ControlCount, LoopId, Spec};
 
 use super::data::Data;
 use super::envelope::{Envelope, Field, control_text, trigger_values};
-use super::finding::{Finding, Origin};
+use super::finding::{Finding, ValueOrigin};
 use super::layout::{Item, Layout};
 use super::nest::Nest;
 use super::plan::{Instances, SegmentPlan, SegmentSource, ValueSource, WritePlan};
@@ -196,7 +196,7 @@ impl Emitter<'_> {
         self.texts.clear();
         for value in values {
             if let Some(field) = value.field {
-                let origin = Origin::Envelope {
+                let origin = ValueOrigin::Envelope {
                     field: field.name().to_string(),
                 };
                 if value.checked {
