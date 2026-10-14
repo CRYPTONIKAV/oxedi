@@ -9,9 +9,9 @@
 #              otherwise it deploys only its own folder and leaves `latest`, the viewer and
 #              llms.txt alone.
 #
-# By default every read of gh-pages is of the commit a fresh `git fetch origin gh-pages` returned, and every push goes
-# through retry-gh-pages.sh; gh-pages must already exist on origin, or the first fetch fails the
-# run. With --no-push nothing is fetched or pushed: mike runs without --push, publish-viewer.sh
+# By default every read of gh-pages is of the commit a fresh `git fetch origin gh-pages`
+# returned, and every push goes through retry-gh-pages.sh; gh-pages must already exist on
+# origin, or the first fetch fails the run. With --no-push nothing is fetched or pushed: mike runs without --push, publish-viewer.sh
 # commits onto the local gh-pages branch (PUSH=local), and the reads and the final checks are of
 # that local branch, which may not exist yet.
 #
@@ -68,7 +68,10 @@ refresh() {
   if [ "$push" = true ]; then
     git fetch origin gh-pages
     pages=$(git rev-parse --verify --quiet 'FETCH_HEAD^{commit}') \
-      || { echo "git fetch origin gh-pages did not produce a gh-pages commit in FETCH_HEAD"; exit 1; }
+      || {
+        echo "git fetch origin gh-pages did not produce a gh-pages commit in FETCH_HEAD" >&2
+        exit 1
+      }
   fi
 }
 # Runs a command that writes gh-pages: through retry-gh-pages.sh when it pushes, as is otherwise.

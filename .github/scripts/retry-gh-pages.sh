@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs a command that pushes to gh-pages, up to 3 times. Before every attempt the local
-# gh-pages branch (the one mike works on) is reset to the commit it just fetched, so a retry after a
-# rejected push redoes its commit on top of what the other deploy published.
+# gh-pages branch (the one mike works on) is reset to the commit it just fetched, so a retry
+# after a rejected push redoes its commit on top of what the other deploy published.
 #
 # Only two failures are retried: the fetch itself failing, and the command's output showing that
 # the push was rejected because the remote moved (non-fast-forward, "fetch first"). Any other

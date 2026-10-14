@@ -19,14 +19,8 @@ const SAMPLES: &[(&str, usize, Option<u8>)] = &[
 
 #[test]
 fn the_expectations_name_every_sample() {
-    let mut named: Vec<&str> = SAMPLES.iter().map(|&(name, _, _)| name).collect();
-    named.sort_unstable();
-    let mut listed = common::SAMPLES.to_vec();
-    listed.sort_unstable();
-    assert_eq!(
-        named, listed,
-        "SAMPLES here and common::SAMPLES must name the same samples"
-    );
+    let named: Vec<&str> = SAMPLES.iter().map(|&(name, _, _)| name).collect();
+    common::assert_same_names("SAMPLES here vs common::SAMPLES", &named, common::SAMPLES);
 }
 
 #[test]

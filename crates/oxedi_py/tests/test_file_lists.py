@@ -47,13 +47,8 @@ def test_the_per_sample_tables_name_every_sample():
 
 
 # The files test_write.py leaves to other suites: the ISA-less fragment has no
-# envelope to write back, and the masked-findings fixtures exist for the masking
-# tests.
-NOT_WRITTEN = {
-    "blue_cross_nc_sample.txt",
-    "masked_findings_5010_sample.txt",
-    "masked_findings_4010_sample.txt",
-}
+# envelope to write back.
+NOT_WRITTEN = {"blue_cross_nc_sample.txt"}
 
 
 def test_the_write_lists_name_every_file_but_the_stated_exceptions():

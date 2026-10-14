@@ -18,11 +18,6 @@ fn selected(bytes: Vec<u8>) -> String {
     }
 }
 
-fn sorted(mut names: Vec<&str>) -> Vec<&str> {
-    names.sort_unstable();
-    names
-}
-
 #[test]
 fn samples_get_the_spec_of_their_declared_version() {
     let cases = [
@@ -34,11 +29,7 @@ fn samples_get_the_spec_of_their_declared_version() {
         ("edi835_test_united.rmt", "5010"),
     ];
     let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
-    assert_eq!(
-        sorted(named),
-        sorted(common::SAMPLES.to_vec()),
-        "the cases here and common::SAMPLES must name the same samples"
-    );
+    common::assert_same_names("the cases here vs common::SAMPLES", &named, common::SAMPLES);
     for (name, expected) in cases {
         assert_eq!(selected(common::load_sample(name)), expected, "{name}");
     }
@@ -60,10 +51,10 @@ fn fixtures_get_the_spec_of_their_declared_version() {
         ("masked_findings_4010_sample.txt", "4010"),
     ];
     let named: Vec<&str> = cases.iter().map(|(name, _)| *name).collect();
-    assert_eq!(
-        sorted(named),
-        sorted(common::FIXTURES.to_vec()),
-        "the cases here and common::FIXTURES must name the same fixtures"
+    common::assert_same_names(
+        "the cases here vs common::FIXTURES",
+        &named,
+        common::FIXTURES,
     );
     for (name, expected) in cases {
         assert_eq!(selected(common::load_fixture(name)), expected, "{name}");

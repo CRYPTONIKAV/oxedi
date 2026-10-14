@@ -278,3 +278,14 @@ pub fn delimiters(use_release: bool) -> oxedi_core::Delimiters {
         delims
     }
 }
+
+/// Fails naming the files `named` lacks and the ones it names that `listed`
+/// does not hold, so a file added to one list and not the other is found at a glance.
+pub fn assert_same_names(what: &str, named: &[&str], listed: &[&str]) {
+    let missing: Vec<&&str> = listed.iter().filter(|n| !named.contains(n)).collect();
+    let unknown: Vec<&&str> = named.iter().filter(|n| !listed.contains(n)).collect();
+    assert!(
+        missing.is_empty() && unknown.is_empty(),
+        "{what}: missing {missing:?}, unknown {unknown:?}"
+    );
+}

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One attempt at publishing the viewer (and, for a release, the site's llms.txt) to gh-pages:
-# builds a worktree from the gh-pages commit it just fetched, replaces the viewer's folder, commits and
-# pushes. Nothing outside viewer/ and, for a release, the root llms.txt is touched. Run it
-# through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
+# builds a worktree from the gh-pages commit it just fetched, replaces the viewer's folder,
+# commits and pushes. Nothing outside viewer/ and, for a release, the root llms.txt is touched.
+# Run it through retry-gh-pages.sh so a rejected push is redone on a fresh worktree.
 # Environment: KIND (release or dev), VERSION (release only), GITHUB_SHA, and PUSH: true (the
 # default) pushes; false stops after the commit in the temporary worktree (a dry run that never
 # pushes); local starts from the local gh-pages branch instead of the fetched one, fetches

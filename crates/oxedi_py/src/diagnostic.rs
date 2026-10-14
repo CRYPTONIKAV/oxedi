@@ -314,8 +314,7 @@ pub fn mask_findings(
         .with_mask(&mask.get().inner)
         .mask_found(&mut found, document);
     for (diagnostic, original) in found.iter_mut().zip(kept) {
-        if let (Rule::External { message, .. }, Some(original)) = (&mut diagnostic.rule, original)
-        {
+        if let (Rule::External { message, .. }, Some(original)) = (&mut diagnostic.rule, original) {
             *message = original;
         }
     }
