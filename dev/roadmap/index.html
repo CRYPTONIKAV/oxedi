@@ -1987,19 +1987,21 @@ what people need. If something matters to you, say so in an
 <li><strong>Try it in your browser.</strong> Drop an 835 on the <a href="https://javillegas.dev/oxedi/viewer/">viewer</a>
   and see its payments, tables, problems and loops. The file is read in the browser and never
   uploaded, so it is safe to use with real remittances. See <a href="../start/viewer/">Try it in your browser</a>.</li>
+<li><strong>Hide patient data.</strong> Replace patient names and ids with keyed tokens and reduce dates, for
+  sharing data with analysts, vendors or tests. It works in Python (<code>parse</code>, <code>validate</code>) and in
+  the browser viewer, and comes to DuckDB with the next extension version. See
+  <a href="../python/without-patient-data/">Sharing data without patient information</a>.</li>
 <li><strong>Move from edi-835-parser</strong> without rewriting your code. See
   <a href="../migrating-from-edi-835-parser/">Migrating from edi-835-parser</a>.</li>
 </ul>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>A mode without patient data.</strong> Tables where patient names and ids are replaced by keyed
-  hashes, for sharing data with analysts, vendors or tests.</li>
-</ul>
-<h2 id="being-considered">Being considered<a class="headerlink" href="#being-considered" title="Permanent link">&para;</a></h2>
-<ul>
 <li><strong>Ask an AI assistant about your remittances.</strong> A local tool server that lets an assistant
   answer questions such as totals by payer, denied claims or a claim's adjustments, over a
   file, a folder or cloud storage. Patient fields would be masked by default.</li>
+</ul>
+<h2 id="being-considered">Being considered<a class="headerlink" href="#being-considered" title="Permanent link">&para;</a></h2>
+<ul>
 <li><strong>More X12 transactions</strong>, starting with the 837 claim. The same engine, a different spec,
   and a way to match claims with their payments.</li>
 <li><strong>More recipes</strong>, such as Spark and Ray for very large batches.</li>
