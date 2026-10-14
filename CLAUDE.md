@@ -27,33 +27,20 @@ public planning page is `docs/roadmap.md` on the site.
 
 ## Non-negotiables in code
 
-- Lossless on every file: every input byte lands in exactly one `Segment::raw`; unknown
-  input is data or an event, never dropped.
-- No `unwrap`/`expect`/`panic!` or fallible indexing on input in `src/` (documented
-  exception: `Spec::builtin_835`). Indexing with ids the owner created (`LoopId`, `NodeId`)
-  is fine.
-- Core is sans-IO: `[dependencies]` holds `serde`, `serde_json`, `hmac` and `sha2`; nothing
-  that does I/O, uses threads or a runtime, and each new dependency is approved in a §7
-  section. The Python binding (`crates/oxedi_py`) delegates everything to
-  the core, holds the only `arrow-*`/`pyo3` dependencies, and names no 835 segment.
-- Comments and doc comments describe implementation only: no stage numbers, principle
-  codes (N1, P3), history or links to planning docs.
-- Module layout: one folder per module (`x/mod.rs`, tests in `x/tests.rs` or `x/tests/` by
-  topic), enforced by clippy `self_named_module_files`. About 400 lines of code per file,
-  tests excluded; a longer file needs a reason it is one coherent piece. A folder's `mod.rs`
-  re-exports and lists what each file holds.
-- P10: every error or diagnostic names the rule that failed, where (loop and key as written
-  for specs; segment index, byte range, element/component position and loop path for files)
-  and the offending datum; one full-text `Display` test per variant; `Display` is
-  self-explanatory on its own and prints any inner error in full, and `source()` returns an
-  inner error only when `Display` does not print it (one `source()` test per error type pins
-  which).
-- Gates on every commit: `cargo test --workspace --locked`, `cargo clippy --workspace
-  --all-targets --locked -- -D warnings`, `cargo fmt --all -- --check`,
-  `cargo bench --workspace --no-run --locked`. CI runs the same.
-- Fixtures (`tests/fixtures/`, synthetic) and samples (`tests/samples/`, anonymized real
-  payer files) are never edited. The real originals and the re-identification key live
-  outside the repo; never commit them.
+The code conventions live in one place, `CONTRIBUTING.md#code-conventions`, written for any
+contributor: lossless, no panics on input (and its exception for the built-in specs), errors
+explain themselves, the structure is data, the sans-IO core and its dependencies, comments,
+module layout, file size, positions, names, renames and the commit gates; the test-data rules
+are in `CONTRIBUTING.md#tests-and-test-data`. Follow them exactly as written there.
+`ARCHITECTURE.md` is the public map of the code. Agent-specific additions:
+
+- The public names map to the contract's codes: "Lossless" is N1, "Errors explain themselves"
+  is P10.
+- "Comments describe the code, not its history" also excludes stage numbers, principle codes
+  (N1, P3) and links to `.doc/` or other planning docs.
+- Each new dependency is approved in a §7 section before it is added.
+- A stage that renames a public core item or moves a module updates `ARCHITECTURE.md` and
+  `crates/oxedi_core/tests/public_paths.rs` in the same commit.
 
 ## How a stage runs
 

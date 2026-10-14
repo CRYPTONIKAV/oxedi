@@ -1,5 +1,191 @@
 # Contributing
 
+Thank you for helping. This page says how to start, how to test fast, the rules every change
+keeps, and how to send it. [ARCHITECTURE.md](ARCHITECTURE.md) explains how the code is laid out.
+
+## Start here
+
+1. Read [ARCHITECTURE.md](ARCHITECTURE.md): the pipelines, where to change what, and the
+   glossary of internal names.
+2. Install the tools (see [Setup](#setup)), then run `make venv && make gates`. When it passes,
+   your machine builds and tests everything a pull request needs.
+3. While you work, run only the tests you need: see [the fast loop](#the-fast-loop).
+
+## The fast loop
+
+`make gates` runs every check. While you work, run only the part you touch:
+
+| What | Command | Warm time |
+|---|---|---|
+| One core module | `cargo test -p oxedi_core --lib engine::` | under 1 s |
+| One integration suite | `cargo test -p oxedi_core --test project_golden` | 2 s |
+| One test by name | `cargo test -p oxedi_core --test write_findings a_value_holding_a_delimiter` | 1 s |
+| The DuckDB crate (Rust) | `cargo test -p oxedi_duckdb` | 5 s |
+| One Python test | `make py-dev && .venv/bin/pytest crates/oxedi_py/tests/test_spec.py -k version` | 5 s |
+| The SQL tests | `make release && make test_release` | 40 s |
+| The viewer's unit checks | `make viewer-units` | under 1 s |
+| Before pushing | `make gates`, plus `make py-test` when `crates/oxedi_py` changed | a few minutes |
+
+Times are for a machine that has built once. Some notes:
+
+- `--lib <path>` filters the core's unit tests by module path (`engine::`, `project::`,
+  `write::`); `--test <name>` runs one file of `crates/oxedi_core/tests/`. The suites are listed
+  in [crates/oxedi_core/tests/README.md](crates/oxedi_core/tests/README.md).
+- The first `cargo test -p …` after a workspace build compiles the crate again, once (about a
+  minute), because a single package builds with fewer features than the workspace.
+- `crates/oxedi_py` has no Rust tests (`test = false`): its tests are pytest, and `make py-dev`
+  builds the extension first. `make py-dev` installs into the active virtual environment when
+  one is active; deactivate any other one so it lands in `.venv`.
+- The SQL tests need the DuckDB tools once: `git submodule update --init && make configure_ci`.
+  See [DuckDB extension](#duckdb-extension).
+
+## Code conventions
+
+Each rule comes with an example from the code.
+
+**Lossless.** Every input byte lands in exactly one segment's `raw`. Input the code does not
+understand is data, an event or a diagnostic, never dropped. A segment no loop holds stays in the
+document, as `Event::Unmatched` and a `Rule::UnknownSegment` diagnostic. From
+`crates/oxedi_core/src/tokenizer/tests.rs`:
+
+```rust
+assert_eq!(segments[1].raw, b"\r\nSE*2*1~"); // the line break before SE is kept
+assert_eq!(concat_raw(&segments), input);    // every raw, joined, is the input
+```
+
+**No panics on input.** No `unwrap`, `expect`, `panic!` or indexing that can fail on input
+data in `src/`. Return an error, report a diagnostic, or skip with a reason. Indexing with ids
+the code itself created (`LoopId`, `NodeId`) is fine. The only exception is the built-in specs
+(`Spec::builtin_835`, `Spec::builtin_835_4010`), which `expect` because a test proves they
+load. From `crates/oxedi_core/src/write/writer.rs`:
+
+```rust
+let Some(table) = data.get(reason.table) else { continue; };
+```
+
+**Errors explain themselves.** Every error and diagnostic names the rule that failed, where it
+failed and the offending value. "Where" is the loop and key as written for a spec, and the
+segment index, byte range, element and component position and loop path for a file. Each
+variant has one test of its full `Display` text. `Display` reads well on its own and prints any
+inner error in full. `source()` returns the inner error only when `Display` does not print it,
+and one test per error type pins which (for example `no_spec_error_chains_its_source` in
+`crates/oxedi_core/src/spec/tests/display.rs`). From
+`crates/oxedi_core/src/diagnostic/tests.rs`:
+
+```text
+SNIP 1 · segment "XX" is not part of the structure: no open loop holds it and it opens no loop · segment #7 · at interchange#1/group#1/transaction#1/1000A#1 · datum "XX"
+```
+
+**The structure is data.** No code in the core is specific to the 835: the spec JSON holds
+the structure. The Rust bindings (`crates/oxedi_py/src`, `crates/oxedi_duckdb/src`,
+`crates/oxedi_wasm/src`) and the viewer never name an 835 segment; they ask the core. From
+`crates/oxedi_wasm/src/view/mod.rs`:
+
+```rust
+Spec::select(&[builtin(), builtin_4010()], builtin(), document.segments())
+```
+
+**The core stays sans-IO.** `oxedi_core`'s `[dependencies]` are `serde`, `serde_json`, `hmac`
+and `sha2`. Nothing that does I/O, uses threads or needs a runtime. Open an issue before adding
+any dependency to the core. The Python binding holds the only `pyo3` and `arrow-*`
+dependencies, and every binding delegates the work to the core.
+
+**Comments describe the code, not its history.** Comments and doc comments say what the code
+does and why. No ticket or planning references, no "added in", no internal codes. From
+`crates/oxedi_core/src/process/mod.rs`:
+
+```rust
+// One segment buffer for the whole pass: each segment is parsed into the
+// previous one's element and composite vectors.
+```
+
+**One folder per module.** A module of a crate is a folder `x/mod.rs`; its parts are files in
+that folder, and its tests live in `x/tests.rs` or `x/tests/<topic>.rs`. Clippy's
+`self_named_module_files` lint rejects `x.rs` next to `x/`. A folder's `mod.rs` re-exports and
+lists what each file holds (see `crates/oxedi_core/src/write/mod.rs`). The Python binding's
+`crates/oxedi_py/src/` is the exception: its modules are leaves tested from pytest, so each is
+one file.
+
+**Files stay small.** About 400 lines of code per file, tests excluded. A longer file needs a
+reason it is one coherent piece.
+
+**Positions say their base.** Element, component and loop ordinal are 1-based; a segment index
+and a table row are 0-based. A new field says which in its doc comment. From
+`crates/oxedi_core/src/diagnostic/mod.rs`:
+
+```rust
+/// 1-based element position inside the segment, when the finding is.
+pub element: Option<usize>,
+```
+
+**One name per concept.** A binding type that mirrors a core type is `Py<Core>` in Python
+(`PyDiagnostic`) and `<Core>View` in the viewer (`DiagnosticView`, `DelimitersView`). Do not
+reuse a core type's name for a different shape. In prose, a "diagnostic" is a reading result and
+a "finding" is a writing or external-validator result.
+
+**A rename moves the map too.** A change that renames a public core item or moves a module
+updates [ARCHITECTURE.md](ARCHITECTURE.md) and `crates/oxedi_core/tests/public_paths.rs` (which
+names every public path) in the same commit.
+
+**Every commit passes the gates.** CI runs the same commands:
+
+```bash
+cargo test --workspace --locked
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo fmt --all -- --check
+cargo bench --workspace --no-run --locked
+```
+
+`make gates` runs these four plus rustdoc with warnings as errors and `make readme-py-check`.
+
+## Tests and test data
+
+Test data comes in three kinds, all under `crates/oxedi_core/tests/`:
+
+- **Fixtures** (`fixtures/`): small synthetic files. Never edited.
+- **Samples** (`samples/`): real payer files, anonymized before they entered the repository.
+  Never edited. The originals and the key that re-identifies them live outside the repository
+  and are never committed.
+- **Goldens** (`golden/`): generated expected output. Regenerate them, then read the diff:
+
+  ```bash
+  UPDATE_GOLDEN=1 cargo test -p oxedi_core --test engine_golden    # events per file
+  UPDATE_GOLDEN=1 cargo test -p oxedi_core --test project_golden   # tables and diagnostics
+  ```
+
+A new fixture or sample goes in the lists of `crates/oxedi_core/tests/common/mod.rs`
+(`FIXTURES`, `SAMPLES`). `tests/file_lists.rs` and the Python `test_file_lists.py` fail when a
+file is missing from them. [crates/oxedi_core/tests/README.md](crates/oxedi_core/tests/README.md)
+maps every suite to what it pins.
+
+**Never attach a real 835 to an issue or a pull request.** It holds patient data (names, member
+ids, claim numbers, service dates). Instead:
+
+- share masked output: parse with `oxedi.Mask` (see
+  [Sharing data without patient information](docs/python/without-patient-data.md)), or turn on
+  the viewer's mask switch, which masks the tables, the diagnostics and the CSV export (its
+  Text and Loops views still show the original file);
+- or cut the file down to the few segments that show the problem and replace every name, id
+  and date by hand.
+
+## Pull requests
+
+- Branch from `master`; keep one change per pull request.
+- The body has two sections. **Intent**: what the change is for and why. **Verification**: how
+  you checked it (the commands you ran, a golden diff you read). Do not list the diff; reviewers
+  read it.
+- Run `make gates` before pushing, and `make py-test` when `crates/oxedi_py` changed. CI runs
+  only the areas your change touches; see [CI](#ci).
+- A change users can see adds a line under `[Unreleased]` in `CHANGELOG.md` (or
+  `crates/oxedi_duckdb/CHANGELOG.md` for the extension).
+- The maintainer merges.
+
+## Good first issues
+
+Issues labelled `good first issue` have a **Pointers** section: where the code lives, which test
+pins it and how to check it. Comment on the issue before starting, so two people do not take
+the same one.
+
 ## Setup
 
 Prerequisites: the Rust toolchain pinned in `rust-toolchain.toml` (installed by `rustup`),
@@ -16,18 +202,6 @@ make dist       # build the sdist and the release wheel into target/wheels
 make smoke      # install the built wheel in a clean venv and run the suite
 make stubs      # regenerate the native module's type stub (CI fails on drift)
 make stubtest   # check the stub against the built module and the public API
-```
-
-## Test files
-
-The files under `crates/oxedi_core/tests/fixtures/` and `crates/oxedi_core/tests/samples/` are
-never edited.
-
-## Golden files
-
-```bash
-UPDATE_GOLDEN=1 cargo test -p oxedi_core --test engine_golden    # regenerate, then inspect the diff
-UPDATE_GOLDEN=1 cargo test -p oxedi_core --test project_golden   # table and diagnostic goldens
 ```
 
 ## DuckDB extension
@@ -124,8 +298,8 @@ It then checks that `versions.json`, every version directory and the viewer are 
 
 ## CI
 
-`ci.yml` runs five areas, each a reusable workflow (`_rust.yml`, `_python.yml`, `_duckdb.yml`,
-`_docs.yml`, `_viewer.yml`), only when files that area depends on changed: a pull request is
+`ci.yml` runs six areas, each a reusable workflow (`_rust.yml`, `_python.yml`, `_duckdb.yml`,
+`_docs.yml`, `_viewer.yml`, and `_lint.yml`, which lints the workflows and their scripts), only when files that area depends on changed: a pull request is
 compared with its base, a push to `master` with the previous commit. The `Changes` job holds the
 path filters; a change under `.github/` runs Rust, and a change to the composite actions in
 `.github/actions/` runs every area. A draft pull request runs Rust only; the other areas start
