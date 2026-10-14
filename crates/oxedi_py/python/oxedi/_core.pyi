@@ -578,7 +578,7 @@ def _write(tables: Tables | collections.abc.Mapping[builtins.str, typing.Any], e
 def parse(data: typing_extensions.Buffer, spec: typing.Optional[Spec] = None, delimiters: typing.Optional[Delimiters] = None, mask: typing.Optional[Mask] = None) -> Result:
     r"""
     Parses a whole file: indexes every segment, runs the loop engine, the
-    envelope checker and the projector, and returns the document, the
+    structure checker and the projector, and returns the document, the
     tables and every diagnostic. Without `spec`, the built-in spec of the
     version the file declares is used, else the default one. With `mask`, the
     patient data of the tables and diagnostics is hidden.

@@ -159,7 +159,7 @@ fn organization<'py>(
 }
 
 /// Parses a whole file: indexes every segment, runs the loop engine, the
-/// envelope checker and the projector, and returns the document, the
+/// structure checker and the projector, and returns the document, the
 /// tables and every diagnostic. Without `spec`, the built-in spec of the
 /// version the file declares is used, else the default one. With `mask`, the
 /// patient data of the tables and diagnostics is hidden.

@@ -138,7 +138,7 @@ pub fn events_of(
     run_engine(spec, oxedi_core::Tokenizer::with_delimiters(bytes, delims))
 }
 
-/// Tokenize `bytes` with `delims`, run the engine and the envelope checker
+/// Tokenize `bytes` with `delims`, run the engine and the structure checker
 /// side by side, and return every diagnostic in order, `finish` included.
 pub fn diagnostics_of(
     spec: &oxedi_core::Spec,

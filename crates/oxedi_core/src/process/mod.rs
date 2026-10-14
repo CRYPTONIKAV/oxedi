@@ -1,7 +1,7 @@
 //! One pass over a segment stream with every consumer of the engine's events.
 //!
 //! The processor feeds each segment to the loop engine and hands the events
-//! it returns to the envelope checker and to the projector, so the loop
+//! it returns to the structure checker and to the projector, so the loop
 //! structure, the structural and element diagnostics and the table rows all
 //! come from the same walk. [`Processor::run`] does the same over a whole
 //! document and is the same code path. A processor given a [`Mask`] masks
@@ -33,13 +33,13 @@ impl Output {
         &self.events
     }
 
-    /// The envelope checker's diagnostics, then the projector's.
+    /// The structure checker's diagnostics, then the projector's.
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
 }
 
-/// The loop engine, the envelope checker and the projector, fed together.
+/// The loop engine, the structure checker and the projector, fed together.
 #[derive(Debug, Clone)]
 pub struct Processor<'s> {
     engine: LoopEngine<'s>,

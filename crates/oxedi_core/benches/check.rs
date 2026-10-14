@@ -1,4 +1,4 @@
-//! Throughput of the loop engine with the envelope checker over the three
+//! Throughput of the loop engine with the structure checker over the three
 //! largest samples.
 
 mod common;
@@ -8,7 +8,7 @@ use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_m
 use oxedi_core::{Delimiters, LoopEngine, Spec, StructureChecker, Tokenizer};
 use std::hint::black_box;
 
-/// Runs the engine and the envelope checker over every segment and returns
+/// Runs the engine and the structure checker over every segment and returns
 /// how many diagnostics the checker raised.
 fn run_check(spec: &Spec, bytes: &[u8]) -> usize {
     let mut engine = LoopEngine::new(spec);
