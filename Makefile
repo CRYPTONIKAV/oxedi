@@ -61,8 +61,8 @@ doc: ## rustdoc with warnings as errors
 complexity: ## fail if a Rust, Python or JS function is over the complexity targets and not in the baseline, or worse than it
 	.github/scripts/complexity.sh
 
-complexity-update: ## rewrite .github/complexity-baseline.txt after a refactor (refuses while a function got worse)
-	.github/scripts/complexity.sh --update
+complexity-update: ## rewrite .github/complexity-baseline.txt after a refactor or move; ACCEPT='path::function ...' records reviewed exceptions
+	.github/scripts/complexity.sh --update $(foreach a,$(ACCEPT),--accept '$(a)')
 
 # ---- Python binding ----
 ##@ Python package

@@ -23,7 +23,7 @@ expect() {
   shift 2
   output=$(python3 "$script" "$tmp/baseline" --measurements "$tmp/measured.csv" "$@" 2>&1)
   actual=$?
-  if [ "$actual" != "$status" ] || ! grep -qE "$pattern" <<< "$output"; then
+  if [ "$actual" != "$status" ] || ! grep -qE -- "$pattern" <<< "$output"; then
     echo "FAIL: wanted status $status and /$pattern/, got $actual:"
     echo "$output"
     failed=1
@@ -77,6 +77,83 @@ fi
 
 baseline 'a.rs big twelve 2'
 expect 1 'expected path, function, ccn and nesting separated by tabs'
+
+# A function whose file moved matches its gone entry; --update records the move.
+baseline 'a.rs big 12 2' 'a.rs fmt 20 0'
+measurements 'b.rs,big,11,2' 'a.rs,fmt,20,0'
+expect 1 "MOVED b.rs: big: CCN 11, nesting 2 matches the gone baseline entry a.rs: big \(CCN 12, nesting 2\)"
+expect 0 'wrote' --update
+if ! grep -q 'b.rs	big	11	2' "$tmp/baseline" || grep -q 'a.rs	big' "$tmp/baseline"; then
+  echo "FAIL: the update did not record the move:"
+  cat "$tmp/baseline"
+  failed=1
+fi
+
+# A moved function that got worse is not a move: it is new, and its old entry is stale.
+baseline 'a.rs big 12 2'
+measurements 'b.rs,big,13,2'
+expect 1 'FAIL b.rs: big: CCN 13, nesting 2 is over the targets'
+expect 1 'STALE a.rs: big: baseline entry CCN 12, nesting 2 is now within the targets'
+
+# A reviewed exception is recorded on purpose with --accept.
+baseline 'a.rs fmt 20 0'
+measurements 'a.rs,fmt,21,0' 'a.rs,other,9,0'
+expect 1 "make complexity-update ACCEPT='a.rs::fmt'"
+expect 1 'baseline was not updated: 1 FAIL' --update --accept 'a.rs::fmt'
+expect 0 'ACCEPTED FAIL a.rs: fmt: CCN 21' --update --accept 'a.rs::fmt' --accept 'a.rs::other'
+grep -q 'a.rs	fmt	21	0' "$tmp/baseline" || { echo "FAIL: --accept did not raise fmt"; failed=1; }
+expect 1 "--accept 'a.rs::nothing' names no function" --update --accept 'a.rs::nothing'
+expect 2 'needs --update' --accept 'a.rs::fmt'
+
+# The pull request report lists added and raised entries, counts moves and never fails.
+printf '# old\na.rs\tfmt\t20\t0\na.rs\tbig\t12\t2\n' > "$tmp/old"
+baseline 'a.rs fmt 22 0' 'b.rs big 12 2' 'c.rs fresh 9 1'
+output=$(GITHUB_STEP_SUMMARY="$tmp/summary" python3 "$script" "$tmp/baseline" --compare-with "$tmp/old")
+status=$?
+for want in '::warning title=Complexity baseline::2 entry' \
+  'a.rs. .fmt.: CCN 22, nesting 0, raised from CCN 20, nesting 0' \
+  'c.rs. .fresh.: CCN 9, nesting 1, added' '1 entry\(ies\) moved'; do
+  if [ "$status" != 0 ] || ! grep -qE -- "$want" <<< "$output"; then
+    echo "FAIL: the report wanted /$want/ and status 0, got $status:"
+    echo "$output"
+    failed=1
+  fi
+done
+grep -q 'entries added or raised' "$tmp/summary" || { echo "FAIL: no job summary written"; failed=1; }
+output=$(python3 "$script" "$tmp/old" --compare-with "$tmp/old")
+grep -q 'no entry added or raised' <<< "$output" || { echo "FAIL: unchanged report: $output"; failed=1; }
+
+# Python nesting comes from the ast module: an elif sits at its if's level, a nested function
+# and a comprehension do not deepen the enclosing one, try and with do.
+cat > "$tmp/sample.py" <<'EOF'
+def outer(x):
+    if x:
+        pass
+    elif x > 1:
+        for i in x:
+            if i:
+                pass
+    else:
+        with x:
+            pass
+    def inner():
+        try:
+            while x:
+                pass
+        except ValueError:
+            pass
+    return [y for y in x if y]
+
+
+def flat(x):
+    return [y for y in x if y]
+EOF
+depths=$(python3 -B -c "import sys; sys.path.insert(0, sys.argv[1]); import complexity; \
+print(sorted(complexity.python_nesting(sys.argv[2]).items()))" "$(dirname "$script")" "$tmp/sample.py")
+if [ "$depths" != "[(1, 3), (11, 2), (20, 0)]" ]; then
+  echo "FAIL: Python nesting: wanted [(1, 3), (11, 2), (20, 0)], got $depths"
+  failed=1
+fi
 
 if [ "$failed" = 0 ]; then echo "complexity: ok"; fi
 exit "$failed"

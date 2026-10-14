@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Measures cyclomatic complexity and nesting of every function in the Rust, Python and
 # JavaScript sources and compares them with .github/complexity-baseline.txt (complexity.py says
-# how). Tests are not measured, and only files git tracks are, so target/, site/, viewer/pkg/
-# and the generated type stubs (.pyi) never are.
-# Needs uv: uvx runs complexity.py with the pinned lizard. Arguments go to complexity.py;
-# --update rewrites the baseline once no function got worse.
+# how). Measured: crates/*/src (Rust), crates/*/python and crates/*/scripts (Python) and
+# viewer/js. Not measured: tests (tests/, test/, tests.rs), benches, examples, the tooling under
+# .github/, docs/ and viewer/tests, and anything git does not track (target/, site/, viewer/pkg/)
+# or that is not a source file (the generated .pyi stubs).
+# Needs uv: uvx runs complexity.py with the pinned lizard. Arguments go to complexity.py:
+# --update rewrites the baseline, --accept PATH::FUNCTION records a reviewed exception.
 set -euo pipefail
 
 LIZARD_VERSION="1.24.1"
