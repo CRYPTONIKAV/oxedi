@@ -41,7 +41,7 @@ mod walk;
 mod writer;
 
 pub use envelope::Envelope;
-pub use finding::{Finding, Origin, WriteError};
+pub use finding::{Finding, ValueOrigin, WriteError};
 pub use plan::{
     ElementPlan, Instances, LoopPlan, SegmentPlan, SegmentSource, Unwritten, ValueSource, WritePlan,
 };

@@ -138,7 +138,7 @@ pub fn events_of(
     run_engine(spec, oxedi_core::Tokenizer::with_delimiters(bytes, delims))
 }
 
-/// Tokenize `bytes` with `delims`, run the engine and the envelope checker
+/// Tokenize `bytes` with `delims`, run the engine and the structure checker
 /// side by side, and return every diagnostic in order, `finish` included.
 pub fn diagnostics_of(
     spec: &oxedi_core::Spec,
@@ -146,7 +146,7 @@ pub fn diagnostics_of(
     delims: oxedi_core::Delimiters,
 ) -> Vec<oxedi_core::Diagnostic> {
     let mut engine = oxedi_core::LoopEngine::new(spec);
-    let mut checker = oxedi_core::EnvelopeChecker::new(spec, &delims);
+    let mut checker = oxedi_core::StructureChecker::new(spec, &delims);
     let mut diagnostics = Vec::new();
     for segment in oxedi_core::Tokenizer::with_delimiters(bytes, delims) {
         let events = engine.feed(&segment);

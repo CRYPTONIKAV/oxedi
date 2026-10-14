@@ -6,8 +6,8 @@ use crate::diagnostic::{Diagnostic, Rule};
 use crate::document::DocumentError;
 use crate::write::*;
 
-fn cell() -> Origin {
-    Origin::Cell {
+fn cell() -> ValueOrigin {
+    ValueOrigin::Cell {
         table: "claims".into(),
         row: 3,
         column: "claim_id".into(),
@@ -20,12 +20,12 @@ fn origins_name_the_cell_the_row_or_the_envelope_field() {
         cell().to_string(),
         "table \"claims\" row 3 column \"claim_id\""
     );
-    let row = Origin::Row {
+    let row = ValueOrigin::Row {
         table: "claims".into(),
         row: 3,
     };
     assert_eq!(row.to_string(), "table \"claims\" row 3");
-    let field = Origin::Envelope {
+    let field = ValueOrigin::Envelope {
         field: "sender_id".into(),
     };
     assert_eq!(field.to_string(), "envelope field \"sender_id\"");
@@ -119,7 +119,9 @@ fn findings_display_their_full_text() {
             Finding::ReadBack {
                 origin: Some(cell()),
                 diagnostic: Diagnostic::new(
-                    Rule::UnknownSegment { id: b"ZZ".to_vec() },
+                    Rule::UnknownSegment {
+                        segment_id: b"ZZ".to_vec(),
+                    },
                     Some(4),
                     None,
                     None,
@@ -133,7 +135,9 @@ fn findings_display_their_full_text() {
             Finding::ReadBack {
                 origin: None,
                 diagnostic: Diagnostic::new(
-                    Rule::UnknownSegment { id: b"ZZ".to_vec() },
+                    Rule::UnknownSegment {
+                        segment_id: b"ZZ".to_vec(),
+                    },
                     None,
                     None,
                     None,

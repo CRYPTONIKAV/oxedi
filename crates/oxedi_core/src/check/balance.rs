@@ -26,7 +26,7 @@ use crate::diagnostic::Rule;
 use crate::segment::Segment;
 use crate::spec::{LoopId, Spec, render_terms};
 
-use super::EnvelopeChecker;
+use super::StructureChecker;
 
 /// What one appearance of an occurrence adds to one rule.
 #[derive(Debug, Clone)]
@@ -132,7 +132,7 @@ fn add(total: i128, value: i128, negative: bool) -> Option<i128> {
     }
 }
 
-impl<'s> EnvelopeChecker<'s> {
+impl<'s> StructureChecker<'s> {
     /// Starts the totals of every rule that checks the instance of `id` now
     /// on top of the open stack.
     pub(super) fn balance_opened(&mut self, id: LoopId) {

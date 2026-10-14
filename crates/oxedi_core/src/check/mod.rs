@@ -49,7 +49,7 @@ struct Open {
 
 /// Turns the engine's events into structural diagnostics, one segment at a time.
 #[derive(Debug, Clone)]
-pub struct EnvelopeChecker<'s> {
+pub struct StructureChecker<'s> {
     spec: &'s Spec,
     /// Joins the components of a control value the file split.
     separator: u8,
@@ -76,7 +76,7 @@ pub struct EnvelopeChecker<'s> {
     diagnostics: Vec<Diagnostic>,
 }
 
-impl<'s> EnvelopeChecker<'s> {
+impl<'s> StructureChecker<'s> {
     /// A checker at the root, with nothing open. `delimiters` gives the
     /// component separator, which a control value read as one text keeps.
     pub fn new(spec: &'s Spec, delimiters: &Delimiters) -> Self {
@@ -139,7 +139,7 @@ impl<'s> EnvelopeChecker<'s> {
                     self.seen = self.seen.saturating_add(1);
                     self.report(
                         Rule::UnknownSegment {
-                            id: segment.id.to_vec(),
+                            segment_id: segment.id.to_vec(),
                         },
                         Some(index),
                         None,

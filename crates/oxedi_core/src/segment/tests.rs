@@ -59,7 +59,7 @@ fn element_is_one_based_like_x12() {
     assert_eq!(segment.element(3), None);
 }
 
-fn written(segment: &Segment<'_>, delims: &Delimiters) -> Result<Vec<u8>, WriteError> {
+fn written(segment: &Segment<'_>, delims: &Delimiters) -> Result<Vec<u8>, SegmentWriteError> {
     let mut out = Vec::new();
     segment.write_to(delims, &mut out)?;
     Ok(out)
@@ -100,7 +100,7 @@ fn write_to_without_release_rejects_a_delimiter_in_a_value() {
     };
     assert!(matches!(
         written(&segment, &delims),
-        Err(WriteError::DelimiterInValue {
+        Err(SegmentWriteError::DelimiterInValue {
             byte: b'*',
             element: 1,
             component: None
@@ -124,7 +124,7 @@ fn write_to_reports_the_element_and_component_holding_the_delimiter() {
     };
     assert!(matches!(
         written(&segment, &delims),
-        Err(WriteError::DelimiterInValue {
+        Err(SegmentWriteError::DelimiterInValue {
             byte: b'~',
             element: 3,
             component: Some(2)
@@ -150,7 +150,7 @@ fn write_to_does_not_write_trivia_from_raw() {
 #[test]
 fn delimiter_in_value_displays_where_the_byte_is() {
     assert_eq!(
-        WriteError::DelimiterInValue {
+        SegmentWriteError::DelimiterInValue {
             byte: b'*',
             element: 3,
             component: Some(2)
@@ -159,7 +159,7 @@ fn delimiter_in_value_displays_where_the_byte_is() {
         "element 3 component 2 contains delimiter byte 0x2A and no release byte is configured"
     );
     assert_eq!(
-        WriteError::DelimiterInValue {
+        SegmentWriteError::DelimiterInValue {
             byte: b'*',
             element: 1,
             component: None
@@ -168,7 +168,7 @@ fn delimiter_in_value_displays_where_the_byte_is() {
         "element 1 contains delimiter byte 0x2A and no release byte is configured"
     );
     assert_eq!(
-        WriteError::DelimiterInValue {
+        SegmentWriteError::DelimiterInValue {
             byte: b'*',
             element: 0,
             component: None
@@ -180,7 +180,7 @@ fn delimiter_in_value_displays_where_the_byte_is() {
 
 #[test]
 fn io_error_displays_the_sink_failure() {
-    let err = WriteError::Io(io::Error::other("disk full"));
+    let err = SegmentWriteError::Io(io::Error::other("disk full"));
     assert_eq!(err.to_string(), "write failed: disk full");
     assert!(std::error::Error::source(&err).is_none());
 }
@@ -197,7 +197,7 @@ fn write_to_rejects_an_id_containing_a_delimiter_or_release_byte() {
             terminated: true,
         };
         assert!(
-            matches!(written(&segment, &delims), Err(WriteError::DelimiterInValue { byte: b, element: 0, component: None }) if b == byte),
+            matches!(written(&segment, &delims), Err(SegmentWriteError::DelimiterInValue { byte: b, element: 0, component: None }) if b == byte),
             "id {:?}",
             id
         );
@@ -212,7 +212,7 @@ fn write_to_rejects_an_id_containing_a_delimiter_or_release_byte() {
     };
     assert!(matches!(
         written(&segment, &with_release),
-        Err(WriteError::DelimiterInValue {
+        Err(SegmentWriteError::DelimiterInValue {
             byte: b'?',
             element: 0,
             component: None

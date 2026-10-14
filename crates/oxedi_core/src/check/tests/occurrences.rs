@@ -202,7 +202,7 @@ fn finishing_restarts_the_root_counts() {
     let spec = spec();
     let delims = Delimiters::new(b'*', b':', b'~');
     let mut engine = crate::LoopEngine::new(&spec);
-    let mut checker = EnvelopeChecker::new(&spec, &delims);
+    let mut checker = StructureChecker::new(&spec, &delims);
     for _ in 0..2 {
         let mut out = Vec::new();
         for segment in crate::Tokenizer::with_delimiters(&b"EV~HD~RF*A~IT~QT~TR~EE~"[..], delims) {

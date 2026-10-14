@@ -34,7 +34,7 @@ pub struct View {
     /// The declared version the chosen spec covers, e.g. `005010X221A1`.
     pub spec_version: Option<String>,
     /// The file's separators, as text.
-    pub delimiters: Delimiters,
+    pub delimiters: DelimitersView,
     /// Every segment, in file order.
     pub segments: Vec<SegmentView>,
     /// Loop instances; index 0 is the root.
@@ -49,7 +49,7 @@ pub struct View {
 /// that code point (Latin-1), so `charCodeAt(0)` in JS gives the byte back;
 /// encoding the string as UTF-8 does not for bytes from 0x80 up.
 #[derive(Debug, Serialize)]
-pub struct Delimiters {
+pub struct DelimitersView {
     /// Separates the elements of a segment.
     pub element: String,
     /// Separates the components of a composite element.
@@ -161,7 +161,7 @@ fn view_with(bytes: &[u8], mask: Option<&Mask>) -> Result<View, String> {
             .version()
             .and_then(|version| version.values.first())
             .map(|value| String::from_utf8_lossy(value).into_owned()),
-        delimiters: Delimiters {
+        delimiters: DelimitersView {
             element: text(delimiters.element),
             component: text(delimiters.component),
             segment: text(delimiters.segment),

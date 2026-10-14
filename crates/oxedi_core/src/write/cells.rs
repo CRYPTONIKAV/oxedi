@@ -5,7 +5,7 @@
 use crate::column::Cell;
 
 use super::emit::Emitter;
-use super::finding::{Finding, Origin};
+use super::finding::{Finding, ValueOrigin};
 use super::refusal::place;
 use super::render::{Part, cell_text, write_segment};
 use super::trace::Src;
@@ -39,7 +39,7 @@ impl Emitter<'_> {
         };
         let start = self.texts.len();
         let written = cell_text(cell, data.kind(), max, &mut self.texts);
-        let origin = || Origin::Cell {
+        let origin = || ValueOrigin::Cell {
             table: self
                 .data
                 .get(table)
@@ -95,7 +95,7 @@ impl Emitter<'_> {
     /// Reports a value that holds a delimiter.
     pub(super) fn check_delimiters(
         &mut self,
-        origin: &Origin,
+        origin: &ValueOrigin,
         segment: &[u8],
         element: usize,
         component: Option<usize>,

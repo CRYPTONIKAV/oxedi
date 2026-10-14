@@ -24,4 +24,4 @@ All six use `*` as element separator, `:` as component separator and `~` as term
 `united` is the only 5010 file; its segment count equals its `~` count because it has no
 trailing trivia.
 
-Two files are excerpts of larger transactions and keep the original `SE01`: `edi835_test_file.RMT` declares 1202 segments and holds 76; `edi835_test_not_available_claim_id.RMT` declares 302 and holds 255. The envelope checker reports both, and the test suite pins those two diagnostics as expected.
+Two files are excerpts of larger transactions and keep the original `SE01`: `edi835_test_file.RMT` declares 1202 segments and holds 76; `edi835_test_not_available_claim_id.RMT` declares 302 and holds 255. The structure checker reports both, and the test suite pins those two diagnostics as expected.

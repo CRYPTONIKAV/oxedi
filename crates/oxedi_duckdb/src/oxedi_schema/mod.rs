@@ -25,7 +25,7 @@ use crate::diagnostics;
 use crate::function::{TableFunction, c_message, drop_box, guarded};
 use crate::options::{Named, macro_parameter, named};
 use crate::scan::Vector;
-use crate::schema::{self, LogicalType, SqlType};
+use crate::types::{self, LogicalType, SqlType};
 pub use error::{FUNCTION, SchemaError};
 
 /// The output columns, in order: name and whether it is an INTEGER (else
@@ -138,9 +138,9 @@ pub unsafe fn register(
         for (parameter, boolean) in NAMED {
             let parameter = CString::new(parameter).map_err(|err| err.to_string())?;
             let kind = if boolean {
-                schema::boolean_type()
+                types::boolean_type()
             } else {
-                schema::varchar_type()
+                types::varchar_type()
             };
             ffi::duckdb_table_function_add_named_parameter(
                 function.0,
@@ -218,9 +218,9 @@ unsafe fn bind_with(info: ffi::duckdb_bind_info) -> Result<(), SchemaError> {
             message: err.to_string(),
         })?;
         let kind: LogicalType = if integer {
-            schema::integer_type()
+            types::integer_type()
         } else {
-            schema::varchar_type()
+            types::varchar_type()
         };
         // SAFETY: `info` is live; DuckDB copies the name and type.
         unsafe { ffi::duckdb_bind_add_result_column(info, name.as_ptr(), kind.raw()) };

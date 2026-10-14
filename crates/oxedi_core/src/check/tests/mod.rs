@@ -23,7 +23,7 @@ fn check(spec: &Spec, input: &str) -> Vec<Diagnostic> {
 pub(super) fn check_all(spec: &Spec, input: &str) -> Vec<Diagnostic> {
     let mut engine = LoopEngine::new(spec);
     let delims = Delimiters::new(b'*', b':', b'~');
-    let mut checker = EnvelopeChecker::new(spec, &delims);
+    let mut checker = StructureChecker::new(spec, &delims);
     let mut out = Vec::new();
     for segment in Tokenizer::with_delimiters(input.as_bytes(), delims) {
         let events = engine.feed(&segment);
@@ -80,7 +80,7 @@ fn an_unknown_segment_names_its_id_index_and_path() {
         diagnostics,
         vec![Diagnostic::new(
             Rule::UnknownSegment {
-                id: b"ZZZ".to_vec()
+                segment_id: b"ZZZ".to_vec()
             },
             Some(4),
             None,
@@ -365,8 +365,8 @@ fn finishing_resets_the_checker() {
     let first = check_all(&spec, &input);
     let mut engine = LoopEngine::new(&spec);
     let delims = Delimiters::new(b'*', b':', b'~');
-    let mut checker = EnvelopeChecker::new(&spec, &delims);
-    let run = |engine: &mut LoopEngine<'_>, checker: &mut EnvelopeChecker<'_>| {
+    let mut checker = StructureChecker::new(&spec, &delims);
+    let run = |engine: &mut LoopEngine<'_>, checker: &mut StructureChecker<'_>| {
         let mut out = Vec::new();
         for segment in Tokenizer::with_delimiters(input.as_bytes(), delims) {
             let events = engine.feed(&segment);

@@ -5,7 +5,7 @@
 use oxedi_core::{Cell, ColumnType, Diagnostic, DocumentError, IsaError, Rule, SnipLevel, Table};
 
 use crate::error::ReadError;
-use crate::schema::SqlType;
+use crate::types::SqlType;
 
 /// The name `table_name` gives the table.
 pub const TABLE: &str = "diagnostics";

@@ -2,7 +2,7 @@ use oxedi_core::ColumnType;
 
 use super::{Row, SchemaError, builtin, rows};
 use crate::builtins::Builtins;
-use crate::schema::SqlType;
+use crate::types::SqlType;
 
 fn of(table: &str, binary: bool) -> Vec<Row> {
     let builtins = Builtins::load();

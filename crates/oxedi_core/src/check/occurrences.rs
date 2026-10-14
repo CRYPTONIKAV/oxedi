@@ -20,7 +20,7 @@ use crate::diagnostic::Rule;
 use crate::segment::Segment;
 use crate::spec::{LoopId, Spec, Usage, render_selector, render_trigger};
 
-use super::EnvelopeChecker;
+use super::StructureChecker;
 
 /// An occurrence seen in an instance: `(loop, index in its occurrences,
 /// position)`.
@@ -85,7 +85,7 @@ pub(super) struct Opening {
     out_of_order: Option<Seen>,
 }
 
-impl<'s> EnvelopeChecker<'s> {
+impl<'s> StructureChecker<'s> {
     /// Counts a new instance of `id` under the innermost open instance (or
     /// the root) and, when its own trigger opened it, places it among the
     /// parent's occurrences.
