@@ -323,3 +323,19 @@ a later push.
 `make release-check TAG=v<version>` checks the tag, a clean tree and the changelog entry before
 a release. The Python package and the DuckDB extension are versioned and tagged separately
 (`v*` and `duckdb-v*`); see `make help` for the publishing targets.
+
+## Complexity
+
+The long-term targets per function are a cyclomatic complexity of 6–7, nesting no deeper than
+3, and at most 8 branches. Flat per-variant tables (a big `Display` or kind `match`) are the
+expected exceptions. Today's code is the baseline: nothing may get worse, and functions over a
+target may only shrink. Two checks hold that line. Clippy (`make clippy`) caps cognitive
+complexity, nesting, function length and argument count at today's largest values
+(`clippy.toml`); lower a ceiling when a refactor brings the largest function down. `make
+complexity` (needs uv; CI runs it in the Workflows job) measures every Rust, Python and JS
+function outside the tests with a pinned lizard (nesting of Python functions with the `ast`
+module) and fails when a function over a target (CCN above 7, nesting above 3) is missing from
+`.github/complexity-baseline.txt` or is worse than its entry. It also fails when an entry is
+better than recorded or gone, so a refactor that simplifies a function must remove or lower its
+entry: run `make complexity-update` and commit the baseline with the refactor. No pinned tool
+counts branches per function separately from CCN, so the 8-branch limit is a review guideline.

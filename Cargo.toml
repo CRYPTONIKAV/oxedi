@@ -15,3 +15,8 @@ documentation = "https://javillegas.dev/oxedi/latest/"
 # Project-wide lint posture; CI enforces with -D warnings.
 all = { level = "warn", priority = -1 }
 self_named_module_files = "deny"
+# Size and complexity ceilings; the thresholds are in clippy.toml.
+cognitive_complexity = "warn"
+excessive_nesting = "warn"
+too_many_lines = "warn"
+too_many_arguments = "warn"
