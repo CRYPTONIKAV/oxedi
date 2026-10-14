@@ -1047,6 +1047,111 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#spec-keys-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spec keys reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spec keys reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#root" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Root
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loopsname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loops.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loopsnameoccurrencesname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loops.&lt;name&gt;.occurrences.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segmentsidelementsposition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        segments.&lt;id&gt;.elements.&lt;position&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tablesname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tables.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tablesnamecolumnsname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tables.&lt;name&gt;.columns.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balancingname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        balancing.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2016,6 +2121,111 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#spec-keys-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spec keys reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spec keys reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#root" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Root
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loopsname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loops.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loopsnameoccurrencesname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loops.&lt;name&gt;.occurrences.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segmentsidelementsposition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        segments.&lt;id&gt;.elements.&lt;position&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tablesname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tables.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tablesnamecolumnsname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tables.&lt;name&gt;.columns.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balancingname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        balancing.&lt;name&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2160,6 +2370,451 @@ occurrences sit at their own positions inside that space.</p>
 <h2 id="write-with-a-custom-spec">Write with a custom spec<a class="headerlink" href="#write-with-a-custom-spec" title="Permanent link">&para;</a></h2>
 <p>A patched spec also writes: pass it to <code>oxedi.write(frames, envelope, spec=spec)</code>. See
 <a href="../../python/writing/">Writing</a>.</p>
+<h2 id="spec-keys-reference">Spec keys reference<a class="headerlink" href="#spec-keys-reference" title="Permanent link">&para;</a></h2>
+<p>Every key a spec can hold, with what it means and the Rust code that reads it. The JSON is
+deserialized into the <code>Raw*</code> structs of <code>crates/oxedi_core/src/spec/raw.rs</code>, checked by
+<code>spec/shape.rs</code>, then compiled into the definitions of <code>oxedi_core::spec</code>. For the internal names, see the <a href="https://github.com/javillegasna/oxedi/blob/master/ARCHITECTURE.md#glossary">glossary</a>. An unknown key is an
+error that names its path, and so is a missing required key. Positions of elements and
+components are 1-based. The code names differ from the JSON in three places: a table's
+<code>loops</code> are its <em>anchors</em>, <code>end</code> is a loop's <em>closer</em>, and <code>ref</code> is the <em>reference</em> name.</p>
+<h3 id="root">Root<a class="headerlink" href="#root" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>yes</td>
+<td>The spec's name, shown in <code>Spec(name=...)</code>.</td>
+<td><code>Spec::name</code>, <code>build.rs</code></td>
+</tr>
+<tr>
+<td><code>loops</code></td>
+<td>yes</td>
+<td>The loop structure, by loop name; at least one loop.</td>
+<td><code>LoopDef</code>, <code>build.rs</code></td>
+</tr>
+<tr>
+<td><code>segments</code></td>
+<td>no</td>
+<td>Names and types the elements of each segment id.</td>
+<td><code>SegmentDef</code>, <code>segments.rs</code></td>
+</tr>
+<tr>
+<td><code>tables</code></td>
+<td>no</td>
+<td>The tables of the projection, by table name.</td>
+<td><code>TableDef</code>, <code>compile.rs</code></td>
+</tr>
+<tr>
+<td><code>balancing</code></td>
+<td>no</td>
+<td>Amounts that must add up inside a loop, by rule name.</td>
+<td><code>BalanceRule</code>, <code>balance.rs</code></td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>no</td>
+<td>Which versions of the format the spec covers, used to choose a built-in spec.</td>
+<td><code>DeclaredVersion</code>, <code>version.rs</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="version"><code>version</code><a class="headerlink" href="#version" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>segment</code></td>
+<td>Id of the segment that carries the version, for example <code>GS</code>.</td>
+<td><code>DeclaredVersion::segment</code></td>
+</tr>
+<tr>
+<td><code>element</code></td>
+<td>Position of the element that holds it, for example <code>8</code>.</td>
+<td><code>DeclaredVersion::element</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td>The values of that element the spec covers.</td>
+<td><code>DeclaredVersion::values</code></td>
+</tr>
+</tbody>
+</table>
+<p>All three are required. The first segment with that id decides.</p>
+<h3 id="loopsname"><code>loops.&lt;name&gt;</code><a class="headerlink" href="#loopsname" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parent</code></td>
+<td>no</td>
+<td>Name of the enclosing loop; none for a top-level loop.</td>
+<td><code>LoopDef::parent</code></td>
+</tr>
+<tr>
+<td><code>trigger</code></td>
+<td>yes</td>
+<td>The segment that opens the loop (see below).</td>
+<td><code>Trigger</code>, <code>loops.rs</code></td>
+</tr>
+<tr>
+<td><code>occurrences</code></td>
+<td>no</td>
+<td>The named places segments take in the loop (see below).</td>
+<td><code>OccurrenceDef</code>, <code>occurrences.rs</code></td>
+</tr>
+<tr>
+<td><code>usage</code></td>
+<td>no</td>
+<td><code>required</code> or <code>situational</code> (the default): whether every instance of the parent holds an instance of this loop.</td>
+<td><code>Usage</code>, read by <code>check/occurrences.rs</code></td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>no</td>
+<td>Most instances under one parent instance; at least 1.</td>
+<td><code>LoopDef::max</code>, <code>check/occurrences.rs</code></td>
+</tr>
+<tr>
+<td><code>end</code></td>
+<td>no</td>
+<td>The segment that closes the loop; the loop captures it. It cannot be the trigger's segment.</td>
+<td><code>LoopDef::end</code>, <code>engine/mod.rs</code></td>
+</tr>
+<tr>
+<td><code>control</code></td>
+<td>no</td>
+<td>What the <code>end</code> segment must agree on with the trigger; needs <code>end</code>.</td>
+<td><code>Control</code>, <code>loops.rs</code>; checked by <code>check/mod.rs</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>trigger</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>segment</code></td>
+<td>yes</td>
+<td>Segment id.</td>
+</tr>
+<tr>
+<td><code>where</code></td>
+<td>no</td>
+<td>Conditions on the segment's elements: <code>{"&lt;position&gt;": "&lt;value&gt;"}</code>. All must hold.</td>
+</tr>
+</tbody>
+</table>
+<p><code>control</code>, all four keys required (this is how <code>ST</code>/<code>SE</code>, <code>GS</code>/<code>GE</code> and <code>ISA</code>/<code>IEA</code> are checked):</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opener_element</code></td>
+<td>Position of the control number in the trigger, for example 2 for <code>ST02</code>.</td>
+</tr>
+<tr>
+<td><code>closer_element</code></td>
+<td>Position of the same number in the <code>end</code> segment, for example 2 for <code>SE02</code>.</td>
+</tr>
+<tr>
+<td><code>count_element</code></td>
+<td>Position of the count in the <code>end</code> segment, for example 1 for <code>SE01</code>.</td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td>What the count counts: <code>segments</code> (trigger to end, both included) or <code>children</code> (child loop instances).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="loopsnameoccurrencesname"><code>loops.&lt;name&gt;.occurrences.&lt;name&gt;</code><a class="headerlink" href="#loopsnameoccurrencesname" title="Permanent link">&para;</a></h3>
+<p>An occurrence is a named place for a segment inside a loop. The occurrence the loop's trigger
+opens on has the lowest <code>pos</code> of its loop.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>segment</code></td>
+<td>yes</td>
+<td>Segment id.</td>
+<td><code>OccurrenceDef::segment</code></td>
+</tr>
+<tr>
+<td><code>pos</code></td>
+<td>yes</td>
+<td>Order inside the loop; see "how positions are numbered" above.</td>
+<td><code>OccurrenceDef::pos</code></td>
+</tr>
+<tr>
+<td><code>usage</code></td>
+<td>no</td>
+<td><code>required</code> or <code>situational</code> (the default).</td>
+<td><code>OccurrenceDef::usage</code></td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>no</td>
+<td>Most times it may repeat in one instance.</td>
+<td><code>OccurrenceDef::max</code></td>
+</tr>
+<tr>
+<td><code>qualifier</code></td>
+<td>no</td>
+<td>Tells this occurrence apart from others of the same segment in the loop.</td>
+<td><code>Qualifier</code></td>
+</tr>
+<tr>
+<td><code>codes</code></td>
+<td>no</td>
+<td>Code lists of its own, by <code>"&lt;element&gt;"</code> or <code>"&lt;element&gt;-&lt;component&gt;"</code>; for a segment at this occurrence the list replaces the element's own; it need not be a subset, and it works on an element that has none.</td>
+<td><code>OccurrenceDef::codes</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>qualifier</code>: <code>element</code> (required), <code>component</code> (optional) and <code>codes</code> (required, the values
+that identify the occurrence). Two occurrences of one segment in a loop need qualifiers on the
+same place with no code in common. Occurrences are checked by <code>check/occurrences.rs</code>; columns and
+balancing rules refer to them by name.</p>
+<h3 id="segmentsidelementsposition"><code>segments.&lt;id&gt;.elements.&lt;position&gt;</code><a class="headerlink" href="#segmentsidelementsposition" title="Permanent link">&para;</a></h3>
+<p>The only key of a segment is <code>elements</code>. An element or a component takes these keys:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>yes</td>
+<td>Name used downstream; unique among its siblings.</td>
+<td><code>ElementDef::name</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>yes</td>
+<td><code>AN</code>, <code>ID</code>, <code>N0</code> to <code>N9</code>, <code>R</code>, <code>DT</code> or <code>TM</code>.</td>
+<td><code>ElementType</code>, <code>segments.rs</code></td>
+</tr>
+<tr>
+<td><code>required</code></td>
+<td>no</td>
+<td>The element must be present and not empty. Default false.</td>
+<td><code>ElementDef::required</code></td>
+</tr>
+<tr>
+<td><code>min</code>, <code>max</code></td>
+<td>no</td>
+<td>Length bounds, counted as X12 counts them (digits only for <code>N</code> and <code>R</code>).</td>
+<td><code>ElementDef</code></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td>no</td>
+<td>Decimal places of an <code>R</code> element, 2 by default, at most 18. Only <code>R</code> accepts it.</td>
+<td><code>ElementType::R</code></td>
+</tr>
+<tr>
+<td><code>codes</code></td>
+<td>no</td>
+<td>The values the element may hold: non-empty, no empty or repeated code, each within <code>min</code> and <code>max</code>. Refused on <code>N0</code> to <code>N9</code> and <code>R</code>, and on an element with <code>composite</code>.</td>
+<td><code>ElementDef::codes</code></td>
+</tr>
+<tr>
+<td><code>composite</code></td>
+<td>no</td>
+<td>Components by position, with these same keys. Only on <code>AN</code>, and not nested.</td>
+<td><code>ElementDef::composite</code></td>
+</tr>
+</tbody>
+</table>
+<p>The element checks of <code>project</code> and the writer's formatting read these.</p>
+<h3 id="tablesname"><code>tables.&lt;name&gt;</code><a class="headerlink" href="#tablesname" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loops</code></td>
+<td>yes</td>
+<td>The anchors: one row per instance of each listed loop. In a table without <code>segment</code>, no anchor may sit inside another, and a loop anchors only one such table.</td>
+<td><code>TableDef::loops</code></td>
+</tr>
+<tr>
+<td><code>ref</code></td>
+<td>no</td>
+<td>The name of the column that tables below this one use to refer to a row of it. Defaults to the table's name; unique among tables.</td>
+<td><code>TableDef::reference</code></td>
+</tr>
+<tr>
+<td><code>segment</code></td>
+<td>no</td>
+<td>One row per occurrence of this segment in an anchor, instead of per loop instance.</td>
+<td><code>TableDef::segment</code></td>
+</tr>
+<tr>
+<td><code>repeat</code></td>
+<td>no</td>
+<td>One row per element group of <code>segment</code>; needs <code>segment</code>.</td>
+<td><code>Repeat</code></td>
+</tr>
+<tr>
+<td><code>columns</code></td>
+<td>no</td>
+<td>The declared columns, by name.</td>
+<td><code>ColumnSource</code>, <code>columns.rs</code></td>
+</tr>
+<tr>
+<td><code>phi_seed</code></td>
+<td>no</td>
+<td>Name of one column flagged <code>"id"</code>; its value decides how far the row's dates shift.</td>
+<td><code>TableDef::phi_seed</code>, <code>phi.rs</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>repeat</code>, both required: <code>from</code> (position of the first group's first element) and <code>step</code>
+(elements per group). Both are at least 1.</p>
+<p>The names <code>row</code> and <code>segment</code> are reserved for columns and for <code>ref</code>. The rows of a table are
+built by <code>oxedi_core::project</code>.</p>
+<h3 id="tablesnamecolumnsname"><code>tables.&lt;name&gt;.columns.&lt;name&gt;</code><a class="headerlink" href="#tablesnamecolumnsname" title="Permanent link">&para;</a></h3>
+<p>A column has exactly one source: <code>element</code>, <code>group_element</code> or <code>segment_index</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>element</code></td>
+<td>Position of the element to read.</td>
+</tr>
+<tr>
+<td><code>component</code></td>
+<td>Position of the component of a composite element (with <code>element</code> or <code>group_element</code>).</td>
+</tr>
+<tr>
+<td><code>group_element</code></td>
+<td>Offset inside the group of a <code>repeat</code> table, from 0 to <code>step - 1</code>. Needs <code>repeat</code>.</td>
+</tr>
+<tr>
+<td><code>segment_index</code></td>
+<td><code>true</code> reads the index of the segment instead of a value. Cannot take <code>component</code>.</td>
+</tr>
+<tr>
+<td><code>segment</code></td>
+<td>Id of the segment to read. A column of a table without <code>segment</code> names <code>segment</code> or <code>occurrence</code>.</td>
+</tr>
+<tr>
+<td><code>where</code></td>
+<td>Conditions on its elements: <code>{"&lt;position&gt;": "&lt;value&gt;"}</code>; with <code>segment</code>.</td>
+</tr>
+<tr>
+<td><code>occurrence</code></td>
+<td>Name of an occurrence of the reading loop, instead of <code>segment</code>; it excludes <code>segment</code> and <code>where</code>.</td>
+</tr>
+<tr>
+<td><code>loop</code></td>
+<td>The loop to read from, inside the anchor or above it; the anchor loop when absent.</td>
+</tr>
+<tr>
+<td><code>pick</code></td>
+<td>Which match to take: <code>"first"</code> (the default), <code>"last"</code> or a position counted from 1. Needs <code>occurrence</code>, on an occurrence that can repeat (not <code>max: 1</code>); a position cannot pass its <code>max</code>.</td>
+</tr>
+<tr>
+<td><code>phi</code></td>
+<td><code>"name"</code>, <code>"id"</code> or <code>"date"</code>: the column holds patient data, hidden by a mask. <code>name</code> and <code>id</code> need a text column, <code>date</code> a date column; refused on an envelope control or count element.</td>
+</tr>
+</tbody>
+</table>
+<p>In a table with <code>segment</code>, the column reads that segment only, so <code>segment</code>, <code>where</code>,
+<code>occurrence</code>, <code>loop</code> and <code>pick</code> are rejected. See <a href="#choose-where-a-column-reads">Choose where a column
+reads</a> and <a href="#flag-patient-data">Flag patient data</a>.</p>
+<h3 id="balancingname"><code>balancing.&lt;name&gt;</code><a class="headerlink" href="#balancingname" title="Permanent link">&para;</a></h3>
+<p>A rule holds when, in every instance of the <code>per</code> loop, both sides add up to the same amount
+to the last decimal place. A failure is reported as a diagnostic by <code>check/balance.rs</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>per</code></td>
+<td>yes</td>
+<td>The loop whose every instance is checked.</td>
+<td><code>BalanceRule::per</code></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>yes</td>
+<td>The amounts the rule expects: a list of values.</td>
+<td><code>BalanceTerm</code></td>
+</tr>
+<tr>
+<td><code>sum</code></td>
+<td>yes</td>
+<td>The amounts that must add up to the target: a list of values.</td>
+<td><code>BalanceTerm</code></td>
+</tr>
+</tbody>
+</table>
+<p>A value of <code>target</code> or <code>sum</code> takes <code>occurrence</code> (required, the name of an occurrence),
+<code>elements</code> (required, positions to read), <code>loop</code> (optional, a loop below <code>per</code>; <code>per</code> itself
+when absent), <code>component</code> (optional) and <code>sign</code> (<code>"+"</code>, the default, or <code>"-"</code>). Every
+appearance of the occurrence adds to its side.</p>
 
 
 
