@@ -8,7 +8,8 @@ keeps, and how to send it. [ARCHITECTURE.md](ARCHITECTURE.md) explains how the c
 1. Read [ARCHITECTURE.md](ARCHITECTURE.md): the pipelines, where to change what, and the
    glossary of internal names.
 2. Install the tools (see [Setup](#setup)), then run `make venv && make gates`. When it passes,
-   your machine builds and tests everything a pull request needs.
+   your machine builds the Rust workspace and passes the commit gates. The Python, SQL and
+   viewer checks are separate targets (`make py-test`, `make test_release`, `make viewer-test`).
 3. While you work, run only the tests you need: see [the fast loop](#the-fast-loop).
 
 ## The fast loop
@@ -162,9 +163,11 @@ maps every suite to what it pins.
 ids, claim numbers, service dates). Instead:
 
 - share masked output: parse with `oxedi.Mask` (see
-  [Sharing data without patient information](docs/python/without-patient-data.md)), or turn on
-  the viewer's mask switch, which masks the tables, the diagnostics and the CSV export (its
-  Text and Loops views still show the original file);
+  [Sharing data without patient information](docs/python/without-patient-data.md)) and share
+  the tables or the diagnostics. The mask hides only those: never share `result.document`,
+  whose every `Segment` keeps the original bytes. In the viewer, the mask switch masks the
+  tables, the diagnostics and the CSV export; its Text and Loops views still show the original
+  file;
 - or cut the file down to the few segments that show the problem and replace every name, id
   and date by hand.
 
@@ -299,8 +302,9 @@ It then checks that `versions.json`, every version directory and the viewer are 
 ## CI
 
 `ci.yml` runs six areas, each a reusable workflow (`_rust.yml`, `_python.yml`, `_duckdb.yml`,
-`_docs.yml`, `_viewer.yml`, and `_lint.yml`, which lints the workflows and their scripts), only when files that area depends on changed: a pull request is
-compared with its base, a push to `master` with the previous commit. The `Changes` job holds the
+`_docs.yml`, `_viewer.yml`, and `_lint.yml`, which lints the workflows and their scripts), only
+when files that area depends on changed: a pull request is compared with its base, a push to
+`master` with the previous commit. The `Changes` job holds the
 path filters; a change under `.github/` runs Rust, and a change to the composite actions in
 `.github/actions/` runs every area. A draft pull request runs Rust only; the other areas start
 when it is marked ready for review. A new push to a pull request cancels its running checks.

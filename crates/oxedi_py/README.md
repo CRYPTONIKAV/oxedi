@@ -103,4 +103,5 @@ FROM read_835('remits/*.835', table_name := 'diagnostics', ignore_errors := true
 ## Versioning, contributing, license
 
 Semantic versioning; while the version is `0.x`, a minor release may change the API. See
-[`CHANGELOG.md`](https://github.com/javillegasna/oxedi/blob/master/CHANGELOG.md) and [`CONTRIBUTING.md`](https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md). MIT license, see [`LICENSE`](https://github.com/javillegasna/oxedi/blob/master/LICENSE) and [`THIRD_PARTY_NOTICES`](https://github.com/javillegasna/oxedi/blob/master/THIRD_PARTY_NOTICES).
+[`CHANGELOG.md`](https://github.com/javillegasna/oxedi/blob/master/CHANGELOG.md), [`CONTRIBUTING.md`](https://github.com/javillegasna/oxedi/blob/master/CONTRIBUTING.md) and
+[`ARCHITECTURE.md`](https://github.com/javillegasna/oxedi/blob/master/ARCHITECTURE.md). MIT license, see [`LICENSE`](https://github.com/javillegasna/oxedi/blob/master/LICENSE) and [`THIRD_PARTY_NOTICES`](https://github.com/javillegasna/oxedi/blob/master/THIRD_PARTY_NOTICES).

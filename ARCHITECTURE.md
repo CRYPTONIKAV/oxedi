@@ -67,9 +67,9 @@ flowchart LR
 **The order inside `Processor::feed` is a contract.** The projector runs first, because it
 works out which occurrence the segment matched, and the checker reuses that match
 (`Projector::matched` → `StructureChecker::on_matched`). The checker's diagnostics still come
-first in `Output`, then the projector's. When a `Mask` is set, the projector masks the datums
-of every diagnostic, the checker's included, before they leave the processor. Change this order
-and the goldens change.
+first in `Output`, then the projector's. When a `Mask` is set, the projector masks the datum of
+every diagnostic about a place a patient-data column reads, the checker's included, before they
+leave the processor. Change this order and the goldens change.
 
 The loop tree is not built by the processor. A caller that wants it folds the events into a
 `TreeBuilder` in the same pass (the viewer does, in `crates/oxedi_wasm/src/view/mod.rs`) or
@@ -82,21 +82,21 @@ built-in 5010 or 4010 spec from the version the file declares in `GS08`.
 
 `write::write_with_findings` (`write/writer.rs`) runs two phases.
 
-- **Compile, once per spec.** `WritePlan::new` (`write/build.rs`, with passes in `codes.rs`,
-  `segments.rs`, `place.rs`, `required.rs`) inverts every table column into "where does this
-  element's value come from". A spec that cannot be written is refused with a `PlanError`
+- **Compile the plan.** `WritePlan::new` (`write/build.rs`) inverts every table column into
+  "where does this element's value come from". The plan depends only on the spec, but it is
+  built at the start of each call. A spec that cannot be written is refused with a `PlanError`
   holding every `Refusal` (`write/refusal.rs`).
-- **Write, once per call.**
+- **Write the tables.**
   1. `bind` (`write/data.rs`) matches the caller's tables and columns to the spec's.
   2. `nest` (`write/nest.rs`) nests the rows under their parent rows by their reference columns.
   3. `Layout::new` (`write/layout.rs`) works out the order of segments and loops.
-  4. `Emitter::run` (`write/emit.rs`) walks the loops: `walk.rs` gives the instances of a loop,
-     `cells.rs` turns each cell into one element, `render.rs` writes values as text and segments
-     as bytes, `envelope.rs` gives the values of the envelope segments (ISA, GS, ST) from the
-     caller's `Envelope`, and `trace.rs` records which cell each written element came from.
+  4. `Emitter::run` (`write/emit.rs`) walks the loops and writes the bytes, recording which
+     cell each written element came from.
   5. The written bytes are read back with `Processor::run`. Every diagnostic of that read
      becomes a `Finding::ReadBack` whose `ValueOrigin` names the cell, row or envelope field
-     behind it (`write/finding.rs`).
+     behind it, when it can be traced (`write/finding.rs`).
+
+`write/mod.rs` lists what every file of the folder holds.
 
 `write::write` is the strict form: any finding turns into `WriteError::Findings` and no bytes
 are returned. Findings from the writer itself (a value holding a delimiter, a broken
@@ -116,19 +116,20 @@ The spec files live in `crates/oxedi_core/specs/`:
 Loading goes `Spec::from_json` → `Spec::from_value` (`spec/build.rs`):
 
 1. `shape.rs` checks the JSON shape, with errors that name the loop and key as written.
-2. `raw.rs` deserializes each entry into plain serde shapes (`RawSpec`, `RawLoop`, …).
-3. `build.rs` compiles loops, triggers and controls; `occurrences.rs` and `segments.rs` the
-   occurrences and element definitions; `compile.rs` and `columns.rs` the tables;
-   `balance.rs` the balancing rules; `phi.rs` the patient-data flags; `version.rs` the
-   declared version.
+2. `raw.rs` deserializes each entry into serde structs (`RawSpec`, `RawLoop`, …).
+3. `build.rs` compiles loops, triggers and controls, and calls the other files for
+   occurrences, segments, tables, balancing, patient-data flags and the version;
+   `spec/mod.rs` lists which file holds what.
 4. The result is index-based: `LoopDef` (by `LoopId`), `SegmentDef`, `ElementDef`, `TableDef`
    with a `ColumnSource` per column, `BalanceRule`. The engine compares indices, never strings.
 
 `Spec::merge_patch` (`spec/patch.rs`) applies a patch to the spec's JSON and loads the result
 again, so a patched spec goes through the same checks as a new one.
 
-A few JSON keys have a different name in code: a table's `loops` are its **anchor** loops, a
-loop's `end` is its **closer**, and a table's `ref` is the name child rows use to point at it.
+Most JSON keys keep their name in code (`TableDef::loops`, `LoopDef::end`). A table's `ref`
+becomes `TableDef::reference`, the name child rows use to point at it. Comments, helpers and a
+few error types use two more words: a table's `loops` are its **anchor** loops
+(`AnchorChains`), and a loop's `end` segment is its **closer**.
 Every key is listed in [the spec keys reference](docs/customize/spec.md#spec-keys-reference).
 
 ## Where to change what
@@ -136,15 +137,15 @@ Every key is listed in [the spec keys reference](docs/customize/spec.md#spec-key
 | I want to… | Start in | Then |
 |---|---|---|
 | Add a column to a built-in table | `tables.<table>.columns` in `crates/oxedi_core/specs/835.json` | `UPDATE_GOLDEN=1 cargo test -p oxedi_core --test project_golden`, review the diff; document it in `docs/reference/tables.md` |
-| Add a key to the spec format | `spec/raw.rs` (shape), `spec/shape.rs` (JSON check) | Compile it in `spec/build.rs` or `spec/compile.rs`; a new `SpecError` in `spec/error.rs` with its `Display` test in `spec/tests/display.rs`; add the key to `docs/customize/spec.md` |
-| Add a diagnostic rule | `diagnostic/rule.rs` (`Rule` variant, `level`, `kind`) and `diagnostic/display.rs` (message) | Raise it in `check/` (structure) or `project/check.rs` (elements); a full-text `Display` test in `diagnostic/tests.rs` |
+| Add a key to the spec format | `spec/raw.rs` (serde structs), `spec/shape.rs` (JSON check) | Compile it in `spec/build.rs` or `spec/compile.rs`; a new error in `spec/error.rs` (`SpecError`), or in `occurrence_error.rs`, `table_error.rs` or `balance_error.rs` when it is about one of those, with its `Display` test in `spec/tests/`; add the key to `docs/customize/spec.md` |
+| Add a diagnostic rule | `diagnostic/rule.rs` (`Rule` variant, `level`, `kind`, and `segment_id` when the rule is about one segment's elements, so its datum can be masked) and `diagnostic/display.rs` (message) | Raise it in `check/` (structure) or `project/check.rs` (elements); a full-text `Display` test in `diagnostic/tests.rs` |
 | Change an element check | `project/check.rs` | `cargo test -p oxedi_core --lib project::`, then both golden suites |
 | Change how loops are recognized | `engine/mod.rs` | `cargo test -p oxedi_core --test engine_golden` and `--test engine_invariants` |
-| Add a value type | `ElementType` in `spec/segments.rs`, `ColumnType::of` in `column/mod.rs`, a parser in `column/parse.rs` | Writer text in `write/render.rs`; DuckDB `types/`, Python `arrow.rs` and `import.rs`, viewer cells in `crates/oxedi_wasm/src/view/mod.rs` |
+| Add a value type | `ElementType` in `spec/segments.rs`; `ColumnType`, `ColumnData` and `render` in `column/mod.rs`; a parser in `column/parse.rs` | Core writer in `write/render.rs` and `write/data.rs`; DuckDB `types/`, `scan/write.rs` and `copy/`; Python `arrow.rs`, `import.rs` and `native.rs` |
 | Refuse a spec the writer cannot write | `write/refusal.rs` (`Refusal`) | Raise it in the compile pass that finds it; `Display` test in `write/tests/display.rs` |
 | Report a new problem in written tables | `write/finding.rs` (`Finding`) | Raise it where the writer meets it (`write/nest.rs` for references, `write/emit.rs` and `write/cells.rs` while writing); test in `tests/write_findings.rs` |
 | Change patient-data masking | `mask/` (tokens, dates), `project/mask.rs` (columns and datums) | `spec/phi.rs` for the flags; `tests/mask.rs` |
-| Add or change a Python attribute | `crates/oxedi_py/src/<class>.rs` | `make stubs`, `make stubtest`, a test in `crates/oxedi_py/tests/` |
+| Add or change a Python attribute | the file in `crates/oxedi_py/src/` with `#[pyclass(name = "X")]` (files are by topic: `Result` is in `parse.rs`), plus `python/oxedi/` when a Python wrapper is involved | `make stubs`, `make stubtest`, a test in `crates/oxedi_py/tests/` |
 | Add a `read_835` parameter | `crates/oxedi_duckdb/src/options/mod.rs` | An error in `error/` with its `Display` test; a SQLLogicTest in `crates/oxedi_duckdb/test/sql/` |
 | Change the viewer | `viewer/js/` (page), `crates/oxedi_wasm/src/view/` (JSON it reads) | `make viewer-units`, `make viewer-test` |
 
@@ -241,7 +242,7 @@ Internal words used in the code. X12 and payment terms for users are in
 | origin | Which validator produced a diagnostic (`oxedi`, or for example `pyx12`). | `Rule::External` |
 | balancing | Amounts that must add up inside a loop instance (charge − payment = adjustments). | `spec/balance.rs`, `check/balance.rs` |
 | PHI / mask / phi seed | Patient-data columns flagged in the spec (`Phi`); a keyed digest replaces them; the seed column keys the date shift. User docs say "patient data". | `mask/`, `spec/phi.rs`, `project/mask.rs` |
-| write plan | Where each written loop instance and element value comes from, built once per spec. | `write/plan.rs`, `write/build.rs` |
+| write plan | Where each written loop instance and element value comes from; depends only on the spec, built at the start of each write. | `write/plan.rs`, `write/build.rs` |
 | refusal | Why a **spec** cannot be written (`Refusal`, collected in `PlanError`). | `write/refusal.rs` |
 | finding | Something wrong in the **tables or the written file** (`Finding`); strict writing turns findings into `WriteError::Findings`. In prose, "diagnostic" is a reading result and "finding" a writing or external-validator result. | `write/finding.rs` |
 | value origin | The cell, row or envelope field a written value came from (`ValueOrigin`). | `write/finding.rs` |

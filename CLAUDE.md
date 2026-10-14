@@ -27,20 +27,19 @@ public planning page is `docs/roadmap.md` on the site.
 
 ## Non-negotiables in code
 
-The code conventions live in one place, `CONTRIBUTING.md#code-conventions`, written for any
-contributor: lossless, no panics on input (and its exception for the built-in specs), errors
-explain themselves, the structure is data, the sans-IO core and its dependencies, comments,
-module layout, file size, positions, names, renames and the commit gates; the test-data rules
-are in `CONTRIBUTING.md#tests-and-test-data`. Follow them exactly as written there.
-`ARCHITECTURE.md` is the public map of the code. Agent-specific additions:
+The code conventions and test-data rules are in `CONTRIBUTING.md` (sections Code conventions
+and Tests and test data), imported here; follow them exactly as written there.
+`ARCHITECTURE.md` is the public map of the code.
+
+@CONTRIBUTING.md
+
+Agent-specific additions:
 
 - The public names map to the contract's codes: "Lossless" is N1, "Errors explain themselves"
   is P10.
 - "Comments describe the code, not its history" also excludes stage numbers, principle codes
   (N1, P3) and links to `.doc/` or other planning docs.
 - Each new dependency is approved in a §7 section before it is added.
-- A stage that renames a public core item or moves a module updates `ARCHITECTURE.md` and
-  `crates/oxedi_core/tests/public_paths.rs` in the same commit.
 
 ## How a stage runs
 
