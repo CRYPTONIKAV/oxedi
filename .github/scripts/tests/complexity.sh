@@ -95,6 +95,17 @@ measurements 'b.rs,big,13,2'
 expect 1 'FAIL b.rs: big: CCN 13, nesting 2 is over the targets'
 expect 1 'STALE a.rs: big: baseline entry CCN 12, nesting 2 is now within the targets'
 
+# A function simplified below the targets still exists, so its entry cannot move to a new
+# function of the same name elsewhere: the entry is stale and the new function fails.
+baseline 'a.rs fmt 20 0'
+measurements 'a.rs,fmt,5,0' 'b.rs,fmt,15,0'
+expect 1 'STALE a.rs: fmt: baseline entry CCN 20, nesting 0 is now within the targets'
+expect 1 'FAIL b.rs: fmt: CCN 15, nesting 0 is over the targets'
+if grep -q MOVED <<< "$(python3 "$script" "$tmp/baseline" --measurements "$tmp/measured.csv")"; then
+  echo "FAIL: an entry whose function still exists was taken as moved"
+  failed=1
+fi
+
 # A reviewed exception is recorded on purpose with --accept.
 baseline 'a.rs fmt 20 0'
 measurements 'a.rs,fmt,21,0' 'a.rs,other,9,0'
@@ -112,7 +123,8 @@ output=$(GITHUB_STEP_SUMMARY="$tmp/summary" python3 "$script" "$tmp/baseline" --
 status=$?
 for want in '::warning title=Complexity baseline::2 entry' \
   'a.rs. .fmt.: CCN 22, nesting 0, raised from CCN 20, nesting 0' \
-  'c.rs. .fresh.: CCN 9, nesting 1, added' '1 entry\(ies\) moved'; do
+  'c.rs. .fresh.: CCN 9, nesting 1, added' '1 entry\(ies\) moved' \
+  '- .big.: .a\.rs. → .b\.rs., CCN 12, nesting 2'; do
   if [ "$status" != 0 ] || ! grep -qE -- "$want" <<< "$output"; then
     echo "FAIL: the report wanted /$want/ and status 0, got $status:"
     echo "$output"

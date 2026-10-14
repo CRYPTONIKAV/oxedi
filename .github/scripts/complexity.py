@@ -186,8 +186,11 @@ class Finding(NamedTuple):
     origin: Key | None = None  # MOVED: the gone baseline entry it matches
 
 
-def compare(current: Table, baseline: Table) -> list[Finding]:
+def compare(current: Table, baseline: Table, present: set[Key]) -> list[Finding]:
     """Every difference between the measurements over a target and the baseline.
+
+    present holds every measured (path, function), over the targets or not; a baseline entry can
+    only be the origin of a move when its function is absent from it.
 
     Functions that share a path and a name are paired by rank, worst with worst. That cannot tell
     which of them changed: if one gets worse while another gets better by as much, the pair reads
@@ -205,16 +208,19 @@ def compare(current: Table, baseline: Table) -> list[Finding]:
                 findings.append(Finding("BETTER", key, m, b))
         findings += [Finding("NEW", key, m, None) for m in now[len(before):]]
         findings += [Finding("GONE", key, None, b) for b in before[len(now):]]
-    return pair_moves(findings)
+    return pair_moves(findings, present)
 
 
-def pair_moves(findings: list[Finding]) -> list[Finding]:
+def pair_moves(findings: list[Finding], present: set[Key]) -> list[Finding]:
     """Turns a NEW finding and a GONE one with the same function name into one MOVED finding.
 
-    The NEW function must be no worse than the gone entry; among several candidates the tightest
-    one is taken, so a small function never uses up a large entry another move needs.
+    The gone entry's function must no longer exist at its path (one simplified below the targets
+    still does, so its entry stays STALE and the new function stays NEW), and the NEW function
+    must be no worse than the entry. Among several candidates the tightest one is taken, so a
+    small function never uses up a large entry another move needs.
     """
-    gone = sorted((f for f in findings if f.kind == "GONE"), key=lambda f: allowance(f.before))
+    gone = sorted((f for f in findings if f.kind == "GONE" and f.key not in present),
+                  key=lambda f: allowance(f.before))
     used: set[int] = set()
     result = []
     for f in findings:
@@ -230,6 +236,7 @@ def pair_moves(findings: list[Finding]) -> list[Finding]:
             used.add(match)
             result.append(Finding("MOVED", f.key, f.now, gone[match].before, gone[match].key))
     result += [g for i, g in enumerate(gone) if i not in used]
+    result += [f for f in findings if f.kind == "GONE" and f.key in present]
     return sorted(result, key=lambda f: (f.key, f.kind))
 
 
@@ -314,10 +321,14 @@ def check(baseline: Table, findings: list[Finding], measured: int) -> int:
 
 
 def report_changes(new: Table, old: Table) -> int:
-    """Logs the entries a baseline gained or raised against an older one; never fails."""
-    findings = compare(new, old)
+    """Logs the entries a baseline gained or raised against an older one; never fails.
+
+    A baseline lists only functions over the targets, so an old entry counts as gone here when its
+    function has no entry in the new baseline.
+    """
+    findings = compare(new, old, set(new))
     raised = [f for f in findings if f.kind in FAIL_KINDS]
-    moved = sum(1 for f in findings if f.kind == "MOVED")
+    moved = [f for f in findings if f.kind == "MOVED"]
     if raised:
         print(f"::warning title=Complexity baseline::{len(raised)} entry(ies) added or raised; "
               "the pull request must say why each is a reviewed exception")
@@ -329,7 +340,10 @@ def report_changes(new: Table, old: Table) -> int:
     else:
         body = "### Complexity baseline: no entry added or raised\n"
     if moved:
-        body += f"\n{moved} entry(ies) moved with their files, no worse.\n"
+        body += f"\n{len(moved)} entry(ies) moved with their files, no worse:\n\n"
+        for f in moved:
+            origin = f.origin[0] if f.origin else "-"
+            body += f"- `{f.key[1]}`: `{origin}` → `{f.key[0]}`, {describe(f.now)}\n"
     print(body, end="")
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
@@ -360,7 +374,7 @@ def main() -> int:
         rows = read_measurements(args.measurements)
     current = group(rows)
     baseline = read_baseline(args.baseline) if args.baseline.exists() else {}
-    findings = compare(current, baseline)
+    findings = compare(current, baseline, {(path, name) for path, name, _ in rows})
     if args.update:
         return update(args.baseline, current, findings, args.accept)
     return check(baseline, findings, len(rows))

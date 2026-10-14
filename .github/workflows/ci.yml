@@ -5,8 +5,8 @@ name: CI
 # on a push against the previous commit of the branch. A draft pull request runs Rust only; the
 # rest runs once it is ready for review. nightly.yml runs every area on master. Runs of a pull
 # request share a group and a new push cancels the running one; each push to a branch has its own
-# group, so no push is replaced by a later one. `CI result` is the one check to require: it fails when any area failed or was
-# cancelled and passes when each one passed or was not needed.
+# group, so no push is replaced by a later one. `CI result` is the one check to require: it
+# fails when any area failed or was cancelled and passes when each one passed or was not needed.
 on:
   push:
     branches: [main, master]

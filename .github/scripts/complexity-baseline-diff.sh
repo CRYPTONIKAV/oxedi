@@ -11,8 +11,11 @@ if [ -z "${GITHUB_BASE_REF:-}" ]; then
   echo "complexity-baseline-diff: not a pull request; nothing to compare"
   exit 0
 fi
-git fetch --quiet --no-tags --depth=1 origin \
-  "+refs/heads/$GITHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF"
+if ! git fetch --quiet --no-tags --depth=1 origin \
+  "+refs/heads/$GITHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF"; then
+  echo "complexity-baseline-diff: could not fetch $GITHUB_BASE_REF from origin; nothing compared"
+  exit 0
+fi
 old=$(mktemp)
 trap 'rm -f "$old"' EXIT
 if ! git show "origin/$GITHUB_BASE_REF:$baseline" > "$old" 2>/dev/null; then
