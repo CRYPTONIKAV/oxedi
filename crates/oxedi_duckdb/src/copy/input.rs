@@ -11,8 +11,8 @@ use oxedi_core::ColumnType;
 use oxedi_core::write::WriteError;
 
 use super::error::CopyError;
-use crate::builtins::{Builtin, TableSchema};
-use crate::schema::LogicalType;
+use crate::builtins::{Builtin, BuiltinTable};
+use crate::types::LogicalType;
 use crate::value::{primitive_name, take_text};
 
 /// The DuckDB type of a struct field, as far as conversion cares.
@@ -214,7 +214,7 @@ pub fn bind(builtin: &Builtin, columns: &[InputColumn]) -> Result<Vec<BoundTable
         .collect()
 }
 
-fn bind_field(table: &TableSchema, field: &InputField) -> Result<BoundField, CopyError> {
+fn bind_field(table: &BuiltinTable, field: &InputField) -> Result<BoundField, CopyError> {
     let kind = table
         .columns
         .iter()

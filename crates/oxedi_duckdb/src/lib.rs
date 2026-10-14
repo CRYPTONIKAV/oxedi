@@ -54,27 +54,27 @@
 //!
 //! - `builtins`: the built-in specs and the schema of their tables.
 //! - `copy`: the `edi835` copy format.
-//! - `describe`: the `oxedi_schema` table function.
 //! - `diagnostics`: the `diagnostics` table.
 //! - `error`: the errors `read_835` reports.
 //! - `files`: reading and writing files through DuckDB's file system.
 //! - `function`: `read_835`'s registration and callbacks, and the panic
 //!   guard every callback uses.
 //! - `options`: the arguments of a call.
+//! - `oxedi_schema`: the `oxedi_schema` table function.
 //! - `scan`: emitting one file's rows at a time.
-//! - `schema`: the DuckDB type of each core column type; owned logical types.
+//! - `types`: the DuckDB type of each core column type; owned logical types.
 //! - `value`: owned DuckDB values and C strings read through the C API.
 
 mod builtins;
 mod copy;
-mod describe;
 mod diagnostics;
 mod error;
 mod files;
 mod function;
 mod options;
+mod oxedi_schema;
 mod scan;
-mod schema;
+mod types;
 mod value;
 
 use std::ffi::CString;
@@ -125,7 +125,7 @@ unsafe fn load(
     // SAFETY: `connection` is the live connection created above.
     let registered = unsafe { function::register(connection, Arc::clone(&builtins)) }
         // SAFETY: as above.
-        .and_then(|()| unsafe { describe::register(connection, Arc::clone(&builtins)) })
+        .and_then(|()| unsafe { oxedi_schema::register(connection, Arc::clone(&builtins)) })
         // SAFETY: as above.
         .and_then(|()| unsafe { copy::register(connection, builtins) });
     // SAFETY: `connection` was created above and is closed once; the

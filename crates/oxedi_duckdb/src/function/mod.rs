@@ -16,7 +16,7 @@ use crate::error::{FUNCTION, ReadError};
 use crate::files::{self, CallerSettings, ClientContext};
 use crate::options::{NAMED, Options};
 use crate::scan::{Bound, Scan};
-use crate::schema::{self, SqlType};
+use crate::types::{self, SqlType};
 
 /// The name of the output column that holds each row's file.
 const FILENAME_COLUMN: &str = "filename";
@@ -33,7 +33,7 @@ pub unsafe fn register(
 ) -> Result<(), String> {
     let name = CString::new(FUNCTION).map_err(|err| err.to_string())?;
     let function = TableFunction::new();
-    let any = schema::any_type();
+    let any = types::any_type();
     // SAFETY: `function` is the live handle created above; every logical
     // type and string passed lives across the call, and DuckDB copies them.
     unsafe {
@@ -42,9 +42,9 @@ pub unsafe fn register(
         for (parameter, boolean) in NAMED {
             let parameter = CString::new(parameter).map_err(|err| err.to_string())?;
             let kind = if boolean {
-                schema::boolean_type()
+                types::boolean_type()
             } else {
-                schema::varchar_type()
+                types::varchar_type()
             };
             ffi::duckdb_table_function_add_named_parameter(
                 function.0,

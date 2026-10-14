@@ -5,7 +5,7 @@ use oxedi_core::{ColumnType, Segment, Spec, spec_schema};
 
 /// The columns of one projected table, in order.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TableSchema {
+pub struct BuiltinTable {
     /// The table's name.
     pub name: String,
     /// Each column's name and core type.
@@ -23,7 +23,7 @@ pub struct Builtin {
     /// The spec.
     pub spec: Spec,
     /// Every table the spec projects, in the spec's order.
-    pub tables: Vec<TableSchema>,
+    pub tables: Vec<BuiltinTable>,
 }
 
 impl Builtin {
@@ -37,7 +37,7 @@ impl Builtin {
     }
 
     /// The schema of the table `name`, if the spec projects it.
-    pub fn table(&self, name: &str) -> Option<&TableSchema> {
+    pub fn table(&self, name: &str) -> Option<&BuiltinTable> {
         self.tables.iter().find(|table| table.name == name)
     }
 
@@ -48,7 +48,7 @@ impl Builtin {
 }
 
 /// The tables a spec projects, as the core describes them.
-fn schema_of(spec: &Spec) -> Vec<TableSchema> {
+fn schema_of(spec: &Spec) -> Vec<BuiltinTable> {
     spec_schema(spec)
         .into_iter()
         .map(|table| {
@@ -57,7 +57,7 @@ fn schema_of(spec: &Spec) -> Vec<TableSchema> {
                 .into_iter()
                 .map(|column| ((column.name, column.kind), column.parent))
                 .unzip();
-            TableSchema {
+            BuiltinTable {
                 name: table.name,
                 columns,
                 parents,

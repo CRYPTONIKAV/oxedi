@@ -38,7 +38,7 @@ use oxedi_core::{Table, Tables};
 use crate::builtins::Builtins;
 use crate::files::ClientContext;
 use crate::function::{c_message, drop_box, guarded};
-use crate::schema::LogicalType;
+use crate::types::LogicalType;
 use error::{CopyError, FORMAT};
 use input::BoundTable;
 use options::Settings;

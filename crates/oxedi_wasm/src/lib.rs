@@ -6,8 +6,8 @@
 mod view;
 
 pub use view::{
-    ColumnView, Delimiters, DiagnosticView, NodeView, SegmentView, TableView, View, to_json, view,
-    view_masked,
+    ColumnView, DelimitersView, DiagnosticView, NodeView, SegmentView, TableView, View, to_json,
+    view, view_masked,
 };
 
 use wasm_bindgen::prelude::*;

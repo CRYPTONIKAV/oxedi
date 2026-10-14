@@ -6,7 +6,7 @@ use libduckdb_sys as ffi;
 use oxedi_core::{Cell, Column, ColumnData};
 
 use crate::error::ReadError;
-use crate::schema::SqlType;
+use crate::types::SqlType;
 
 /// Microseconds in a second: DuckDB's `TIME` counts microseconds.
 const MICROS_PER_SECOND: i64 = 1_000_000;

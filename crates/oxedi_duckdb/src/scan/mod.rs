@@ -17,7 +17,7 @@ use crate::builtins::{Builtin, Builtins};
 use crate::diagnostics;
 use crate::error::ReadError;
 use crate::files::FileSystem;
-use crate::schema::SqlType;
+use crate::types::SqlType;
 use write::Place;
 pub(crate) use write::Vector;
 
