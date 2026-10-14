@@ -10,8 +10,9 @@ body:
         A real 835 holds patient data, and a GitHub issue is public. Never paste or attach one,
         and never paste a diagnostic or a table that quotes one.
 
-        - A mask (`oxedi.Mask(key)`; the viewer's "Hide patient data" switch) hides the tables
-          (and in Python the diagnostics), never the file itself: the raw bytes stay as they were.
+        - A mask (`oxedi.Mask(key)`; the viewer's "Hide patient data" switch) hides the values
+          in the tables and diagnostics (the viewer's Text and Loops views still show the
+          original), never the file itself: the raw bytes stay as they were.
         - To get a file you can share, write the masked tables back (see "Make synthetic test
           files" in https://javillegas.dev/oxedi/python/without-patient-data/), or cut the
           file to the few segments that show the problem and replace the values with invented
@@ -38,7 +39,7 @@ body:
     id: sample
     attributes:
       label: A minimal file
-      description: Only invented values or masked output, never a real file.
+      description: Only invented values, or a file written back from masked tables; never a real file.
       render: text
   - type: input
     id: version

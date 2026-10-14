@@ -278,7 +278,7 @@ A column has exactly one source: `element`, `group_element` or `segment_index`.
 | `where` | Conditions on its elements: `{"<position>": "<value>"}`; with `segment`. |
 | `occurrence` | Name of an occurrence of the reading loop, instead of `segment`; it excludes `segment` and `where`. |
 | `loop` | The loop to read from, inside the anchor or above it; the anchor loop when absent. |
-| `pick` | Which match to take: `"first"` (the default), `"last"` or a position counted from 1. Needs `occurrence`, whose `max` must be above 1; a position cannot pass that `max`. |
+| `pick` | Which match to take: `"first"` (the default), `"last"` or a position counted from 1. Needs `occurrence`, on an occurrence that can repeat (not `max: 1`); a position cannot pass its `max`. |
 | `phi` | `"name"`, `"id"` or `"date"`: the column holds patient data, hidden by a mask. `name` and `id` need a text column, `date` a date column; refused on an envelope control or count element. |
 
 In a table with `segment`, the column reads that segment only, so `segment`, `where`,
