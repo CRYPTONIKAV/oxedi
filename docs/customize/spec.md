@@ -158,7 +158,7 @@ A patched spec also writes: pass it to `oxedi.write(frames, envelope, spec=spec)
 
 Every key a spec can hold, with what it means and the Rust code that reads it. The JSON is
 deserialized into the `Raw*` structs of `crates/oxedi_core/src/spec/raw.rs`, checked by
-`spec/shape.rs`, then compiled into the definitions of `oxedi_core::spec`. An unknown key is an
+`spec/shape.rs`, then compiled into the definitions of `oxedi_core::spec`. For the internal names, see the [glossary](https://github.com/javillegasna/oxedi/blob/master/ARCHITECTURE.md#glossary). An unknown key is an
 error that names its path, and so is a missing required key. Positions of elements and
 components are 1-based. The code names differ from the JSON in three places: a table's
 `loops` are its *anchors*, `end` is a loop's *closer*, and `ref` is the *reference* name.
@@ -168,7 +168,7 @@ components are 1-based. The code names differ from the JSON in three places: a t
 | Key | Required | Meaning | Rust |
 |-----|----------|---------|------|
 | `name` | yes | The spec's name, shown in `Spec(name=...)`. | `Spec::name`, `build.rs` |
-| `loops` | yes | The loop structure, by loop name. | `LoopDef`, `build.rs` |
+| `loops` | yes | The loop structure, by loop name; at least one loop. | `LoopDef`, `build.rs` |
 | `segments` | no | Names and types the elements of each segment id. | `SegmentDef`, `segments.rs` |
 | `tables` | no | The tables of the projection, by table name. | `TableDef`, `compile.rs` |
 | `balancing` | no | Amounts that must add up inside a loop, by rule name. | `BalanceRule`, `balance.rs` |
@@ -224,7 +224,7 @@ opens on has the lowest `pos` of its loop.
 | `usage` | no | `required` or `situational` (the default). | `OccurrenceDef::usage` |
 | `max` | no | Most times it may repeat in one instance. | `OccurrenceDef::max` |
 | `qualifier` | no | Tells this occurrence apart from others of the same segment in the loop. | `Qualifier` |
-| `codes` | no | Code lists of its own, by `"<element>"` or `"<element>-<component>"`; each narrows the element's own list. | `OccurrenceDef::codes` |
+| `codes` | no | Code lists of its own, by `"<element>"` or `"<element>-<component>"`; for a segment at this occurrence the list replaces the element's own; it need not be a subset, and it works on an element that has none. | `OccurrenceDef::codes` |
 
 `qualifier`: `element` (required), `component` (optional) and `codes` (required, the values
 that identify the occurrence). Two occurrences of one segment in a loop need qualifiers on the
@@ -242,7 +242,7 @@ The only key of a segment is `elements`. An element or a component takes these k
 | `required` | no | The element must be present and not empty. Default false. | `ElementDef::required` |
 | `min`, `max` | no | Length bounds, counted as X12 counts them (digits only for `N` and `R`). | `ElementDef` |
 | `scale` | no | Decimal places of an `R` element, 2 by default, at most 18. Only `R` accepts it. | `ElementType::R` |
-| `codes` | no | The values the element may hold. | `ElementDef::codes` |
+| `codes` | no | The values the element may hold: non-empty, no empty or repeated code, each within `min` and `max`. Refused on `N0` to `N9` and `R`, and on an element with `composite`. | `ElementDef::codes` |
 | `composite` | no | Components by position, with these same keys. Only on `AN`, and not nested. | `ElementDef::composite` |
 
 The element checks of `project` and the writer's formatting read these.
@@ -251,7 +251,7 @@ The element checks of `project` and the writer's formatting read these.
 
 | Key | Required | Meaning | Rust |
 |-----|----------|---------|------|
-| `loops` | yes | The anchors: one row per instance of each listed loop. No anchor may sit inside another. | `TableDef::loops` |
+| `loops` | yes | The anchors: one row per instance of each listed loop. In a table without `segment`, no anchor may sit inside another, and a loop anchors only one such table. | `TableDef::loops` |
 | `ref` | no | The name of the column that tables below this one use to refer to a row of it. Defaults to the table's name; unique among tables. | `TableDef::reference` |
 | `segment` | no | One row per occurrence of this segment in an anchor, instead of per loop instance. | `TableDef::segment` |
 | `repeat` | no | One row per element group of `segment`; needs `segment`. | `Repeat` |
@@ -274,12 +274,12 @@ A column has exactly one source: `element`, `group_element` or `segment_index`.
 | `component` | Position of the component of a composite element (with `element` or `group_element`). |
 | `group_element` | Offset inside the group of a `repeat` table, from 0 to `step - 1`. Needs `repeat`. |
 | `segment_index` | `true` reads the index of the segment instead of a value. Cannot take `component`. |
-| `segment` | Id of the segment to read. |
+| `segment` | Id of the segment to read. A column of a table without `segment` names `segment` or `occurrence`. |
 | `where` | Conditions on its elements: `{"<position>": "<value>"}`; with `segment`. |
-| `occurrence` | Name of an occurrence of the reading loop, instead of `segment` and `where`. |
+| `occurrence` | Name of an occurrence of the reading loop, instead of `segment`; it excludes `segment` and `where`. |
 | `loop` | The loop to read from, inside the anchor or above it; the anchor loop when absent. |
-| `pick` | Which match to take: `"first"` (the default), `"last"` or a position counted from 1. |
-| `phi` | `"name"`, `"id"` or `"date"`: the column holds patient data, hidden by a mask. |
+| `pick` | Which match to take: `"first"` (the default), `"last"` or a position counted from 1. Needs `occurrence`, whose `max` must be above 1; a position cannot pass that `max`. |
+| `phi` | `"name"`, `"id"` or `"date"`: the column holds patient data, hidden by a mask. `name` and `id` need a text column, `date` a date column; refused on an envelope control or count element. |
 
 In a table with `segment`, the column reads that segment only, so `segment`, `where`,
 `occurrence`, `loop` and `pick` are rejected. See [Choose where a column

@@ -33,9 +33,11 @@ produced, and on a produced one that is missing.
 | `golden/*.events.txt`, `*.summary.txt` | `engine_golden` | Engine events per file. Small files keep every event; the two large samples (`SUMMARY_ONLY` in `common/mod.rs`) keep a count summary. |
 | `golden/project/` | `project_golden` | Tables (`*.tables.txt`, or `*.tables.summary.txt` for the large samples) and diagnostics (`*.diagnostics.txt`) under the built-in spec. |
 | `golden/project/edi_835_parser/` | `project_golden` | The same tables under the `edi_835_parser.json` patch. |
-| `golden/project/masked/` | `project_golden` | The same, masked with a fixed key. |
+| `golden/project/masked/` | `project_golden` | The same, masked with a fixed key and dates reduced to the year; one file also with shifted dates. |
 
 ## Suites
+
+For where each stage of the pipeline lives in the code, see [ARCHITECTURE.md](../../../ARCHITECTURE.md#where-to-change-what).
 
 Names follow `<layer>_golden` (compared with a golden), `<layer>_fixtures` (run over the
 files), `<layer>_props` (property tests with random input). "All files" means every fixture,
@@ -48,9 +50,9 @@ the ISA-less fragment and every sample.
 | `frame_props` | Framing is lossless for any input, with or without a release byte. | Random bytes |
 | `tokenize_fixtures` | The tokenizer returns one segment per frame and concatenating the raw bytes gives the file back; the ISA-less fragment needs caller delimiters. | The five original fixtures |
 | `document_fixtures` | `Document` equals the tokenizer, borrowed and owned. | The five original fixtures |
-| `document_props` | The document yields what the tokenizer yields; its spans partition the input. | Random bytes |
+| `document_props` | The document yields what the tokenizer yields; its spans partition the input, and the spans derived from its compact index equal the ones recorded from framing. | Random bytes and all files |
 | `samples_fixtures` | The samples are lossless, identical through document and tokenizer, and write back byte for byte. | Samples |
-| `byte_order_mark` | A leading UTF-8 mark is trivia of segment 0 and changes nothing else but one informational diagnostic. | All files |
+| `byte_order_mark` | A leading UTF-8 mark is trivia of segment 0 and changes nothing else but one informational diagnostic. | All files and random input |
 
 ### Structure: segments become a loop tree
 
@@ -58,9 +60,9 @@ the ISA-less fragment and every sample.
 |-------|------|------|
 | `engine_golden` | The event stream per file, under the built-in spec of the version the file declares. | All files, `golden/` |
 | `engine_invariants` | Properties of the engine that hold on any real-shaped file. | All files |
-| `engine_custom_spec` | A patch captures a segment the built-in spec does not know, and a proprietary loop opens, with no code. | A fixture |
+| `engine_custom_spec` | A patch captures a segment the built-in spec does not know, and a proprietary loop opens, with no code. | Two fixtures (`trizetto_sample.rmt`, `multi_claim_sample.txt`) |
 | `check_envelope` | The known envelope anomalies, rendered in full, and nothing else. | All files |
-| `spec_selection` | Each file gets the built-in spec of the version its group header declares; the 5010 spec when it declares none the specs know. | All files |
+| `spec_selection` | Each file gets the built-in spec of the version its group header declares; the 5010 spec when it declares none the specs know. Also pins the 4010 codes and structure and the `PLB` reason-code checks. | Every fixture and sample except the ISA-less fragment |
 
 ### Tables: events become rows
 
@@ -74,7 +76,7 @@ the ISA-less fragment and every sample.
 
 | Suite | Pins | Data |
 |-------|------|------|
-| `write_roundtrip` | Parse, write, parse again: the tables match and the written file reads without a diagnostic. Files that do not balance are refused when written strictly. | All files |
+| `write_roundtrip` | Parse, write, parse again: the tables match and the written file reads without a diagnostic. Files that do not read clean or do not balance are refused when written strictly. | All files |
 | `write_findings` | The envelope written, how values become elements, and every finding and error with its full text. | One fixture and one sample |
 | `roundtrip_props` | Write then tokenize is the identity on `(id, elements)`; on real files the writer reproduces each segment's bytes. | Random input and the four enveloped original fixtures |
 
