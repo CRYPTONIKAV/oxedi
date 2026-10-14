@@ -279,13 +279,30 @@ pub fn delimiters(use_release: bool) -> oxedi_core::Delimiters {
     }
 }
 
-/// Fails naming the files `named` lacks and the ones it names that `listed`
-/// does not hold, so a file added to one list and not the other is found at a glance.
+/// The names `names` holds more than once.
+fn repeated<'a>(names: &[&'a str]) -> Vec<&'a str> {
+    let mut twice = Vec::new();
+    for (i, n) in names.iter().enumerate() {
+        if names[..i].contains(n) && !twice.contains(n) {
+            twice.push(*n);
+        }
+    }
+    twice
+}
+
+/// Fails naming the files `named` lacks, the ones it names that `listed`
+/// does not hold and the ones either list names twice, so a file added to one
+/// list and not the other is found at a glance.
 pub fn assert_same_names(what: &str, named: &[&str], listed: &[&str]) {
     let missing: Vec<&&str> = listed.iter().filter(|n| !named.contains(n)).collect();
     let unknown: Vec<&&str> = named.iter().filter(|n| !listed.contains(n)).collect();
+    let (twice_named, twice_listed) = (repeated(named), repeated(listed));
     assert!(
-        missing.is_empty() && unknown.is_empty(),
-        "{what}: missing {missing:?}, unknown {unknown:?}"
+        missing.is_empty()
+            && unknown.is_empty()
+            && twice_named.is_empty()
+            && twice_listed.is_empty(),
+        "{what}: missing {missing:?}, unknown {unknown:?}, named twice {twice_named:?}, \
+         listed twice {twice_listed:?}"
     );
 }
