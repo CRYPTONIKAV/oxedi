@@ -9,49 +9,46 @@ This file covers the Python package; the DuckDB extension has its own changelog 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-16
+
 ### Added
 - `oxedi.Mask(key, dates="year")` and the `mask=` argument of `parse`, `parse_file` and `stream`:
   the columns the spec flags as patient data (names and ids as keyed 16-character tokens, dates
   reduced to the year, shifted or kept) are masked in the tables and in the diagnostics that
-  quote them. The spec marks them with the new `phi` and `phi_seed` keys. The raw document is
-  never masked. A key under 16 bytes raises `ValueError`. A spec that flags a column reading an
-  envelope control number or count (`ST02`, `SE01`, `GS06`, ...) is refused.
+  quote them. The spec marks them with the new `phi` and `phi_seed` keys. The built-in spec
+  flags the patient's name and id, the claim number, the payer control number, the group number,
+  the statement and service dates, the line item control number and
+  `provider_adjustments.reference_id`; a `PLB` reference that equals a claim number gets the same
+  token as `claims.claim_id`. The raw document is never masked. A key under 16 bytes raises
+  `ValueError`. A spec that flags a column reading an envelope control number or count (`ST02`,
+  `SE01`, `GS06`, ...) is refused.
 - `oxedi.pyx12.validate` accepts `mask=` and `spec=`. With `mask=`, a finding about a place a
   column flagged as patient data reads has its value masked as `parse` masks its diagnostics, in
   its datum and in pyx12's message, and the flagged values of its segment that the message quotes
-  are masked too; pyx12 still reads the original file. `spec=` locates the findings' loops and
-  sets the columns masked, so a patched spec masks here what it flags in `parse`.
-- A "Hide patient data" switch in the browser viewer.
-- A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
-  reference, recipes and every example run in CI); the README is now its front page.
-- The documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
-  reference of every table and column, a glossary, and short guides by task. Old page addresses
-  redirect to the new ones.
+  are masked too; pyx12 still reads the original file. Values of 4 or more characters are replaced
+  wherever the message quotes them, shorter ones only where they stand apart. A finding for an
+  exception inside pyx12 keeps the exception's type and leaves out its text. `spec=` locates the
+  findings' loops and sets the columns masked, so a patched spec masks here what it flags in
+  `parse`. The exact rules are in [Sharing data without patient
+  information](https://javillegas.dev/oxedi/latest/python/without-patient-data/).
 - A viewer in the browser at <https://javillegas.dev/oxedi/viewer/>: drop an 835 file to see its
   summary, tables, diagnostics, text and loops. The parser runs as WebAssembly in the page, and
-  the page cannot open network connections.
+  the page cannot open network connections. A "Hide patient data" switch masks the patient data
+  the spec flags.
 - `Spec.schema()`: the schema of every table of a spec (built-in or patched) without a file, as a
   mapping of table name to `pyarrow.Schema` with the Arrow types `parse` gives each table. The
   field metadata of a reference column (`payment`, `claim`, `service`) names the table it points
   at under `oxedi.parent`. It needs pyarrow.
+- A documentation site at <https://javillegas.dev/oxedi/> (versioned, with a Python API
+  reference, recipes and every example run in CI); the README is now its front page. The
+  documentation is organized for readers: a five-minute tutorial, a primer on the 835, a
+  reference of every table and column, a glossary, and short guides by task. Old page addresses
+  redirect to the new ones.
 
 ### Changed
 - A spec patch that removes or unflags `claims.patient_id` now needs `"phi_seed"` cleared
   (`"phi_seed": null`) or pointed at another `id` column in the same patch; otherwise it raises
   `SpecError`, with or without a mask.
-- `provider_adjustments.reference_id` is flagged as an `id`, so a `PLB` reference that equals a
-  claim number gets the same token as `claims.claim_id`.
-- With `mask=`, `oxedi.pyx12.validate` replaces a flagged value of 4 characters or more wherever
-  pyx12's message quotes it, and a shorter one only where it stands apart: next to the message's
-  edge, a character that is not an ASCII letter or digit, or another replaced value. Short values
-  that overlap or touch are replaced as one group when the group stands apart. The message's own
-  words and numbers keep their letters, but a short value glued to letters that are not flagged
-  values stays (with `XAB` and `ABYZ` flagged, `QXABYZ` keeps `QX`), and two short values that
-  together spell a word of the message replace it.
-- With `mask=`, a `validate` finding for an exception inside pyx12 keeps the exception's type
-  and leaves out its text (`could not finish validating: ValueError, whose message is not shown
-  with a mask; ...`, also when pyx12's error tree cannot be read), since that text could quote
-  any value of the file.
 
 ### Fixed
 - The documentation now describes how interest balances: a claim's interest is reported in
@@ -284,7 +281,8 @@ First usable version of oxedi835.
 
 Release candidate of 0.1.0, published to TestPyPI only. Same code as 0.1.0.
 
-[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/javillegasna/oxedi/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.6.0
 [0.5.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.5.0
 [0.5.0rc1]: https://github.com/javillegasna/oxedi/releases/tag/v0.5.0rc1
 [0.4.0]: https://github.com/javillegasna/oxedi/releases/tag/v0.4.0

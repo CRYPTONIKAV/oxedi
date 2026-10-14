@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/oxedi_core", "crates/oxedi_py", "crates/oxedi_duckdb", "crates/oxedi_wasm"]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 license = "MIT"
 authors = ["javillegasna <javillegasna@gmail.com>"]
