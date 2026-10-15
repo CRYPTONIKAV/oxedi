@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import os
 from bisect import bisect_right
+from dataclasses import dataclass
 from typing import Any, BinaryIO, Optional, Union
 
 from .. import Diagnostic, Mask, Spec, parse
@@ -13,7 +14,19 @@ from . import _capture
 from ._tree import Finding, collect
 
 # The arguments of one finding for ``_external_diagnostic``, but its loop path.
-Draft = dict[str, Any]
+@dataclass(frozen=True)
+class Draft:
+    """One finding waiting for its loop path; a typo in a field name fails here."""
+
+    message: str
+    level: int
+    segment: Optional[int]
+    datum: bytes = b""
+    element: Optional[int] = None
+    component: Optional[int] = None
+    code: Optional[str] = None
+    own_text: bool = False
+    """Whether the message is text oxedi wrote rather than pyx12's."""
 
 Source = Union[bytes, bytearray, memoryview, str, "os.PathLike[str]", BinaryIO]
 
@@ -146,7 +159,7 @@ def _diagnostic(found: Finding, positions: _Positions, document: Any) -> Draft:
             datum = _element_bytes(document[segment], found.element, found.component, separator)
         else:
             datum = bytes(document[segment].id)
-    return dict(
+    return Draft(
         message=found.text,
         level=found.level,
         code=found.code,
@@ -199,7 +212,7 @@ def _failure(reason: str, track: list[int], positions: _Positions, document: Any
         segment = None
         where = "it reached no segment"
     datum = bytes(document[segment].id) if segment is not None else b""
-    return dict(
+    return Draft(
         message=f"could not finish validating: {reason}; {where}",
         level=_FAILURE_LEVEL,
         segment=segment,
@@ -230,7 +243,7 @@ def _rejection(text: str, positions: _Positions, document: Any, masked: bool) ->
             raw = bytes(document[segment].raw)
             datum = raw[max(raw.find(b"ISA"), 0):].rstrip(b"\r\n")
     where = f"it rejected segment #{segment}" if segment is not None else "it reached no segment"
-    return dict(
+    return Draft(
         message=f"could not finish validating: {reason}; {where}",
         level=_FAILURE_LEVEL,
         segment=segment,
@@ -239,7 +252,7 @@ def _rejection(text: str, positions: _Positions, document: Any, masked: bool) ->
 
 
 def _by_segment(draft: Draft) -> tuple[bool, int]:
-    return (draft["segment"] is None, draft["segment"] or 0)
+    return (draft.segment is None, draft.segment or 0)
 
 
 def _finish(result: Any, drafts: list[Draft]) -> tuple[list[Diagnostic], list[bool]]:
@@ -247,13 +260,20 @@ def _finish(result: Any, drafts: list[Draft]) -> tuple[list[Diagnostic], list[bo
     path ``parse`` gives its segment, and, for each, whether its message is
     text oxedi wrote (a failure finding) rather than pyx12's."""
     drafts = sorted(drafts, key=_by_segment)
-    own = [d.get("own_text", False) for d in drafts]
-    drafts = [{k: v for k, v in d.items() if k != "own_text"} for d in drafts]
-    segments = [d["segment"] for d in drafts if d["segment"] is not None]
+    own = [d.own_text for d in drafts]
+    segments = [d.segment for d in drafts if d.segment is not None]
     paths = iter(_loop_paths(result, segments))
     found = [
         _external_diagnostic(
-            _ORIGIN, path=next(paths) if d["segment"] is not None else None, **d
+            _ORIGIN,
+            message=d.message,
+            level=d.level,
+            code=d.code,
+            segment=d.segment,
+            element=d.element,
+            component=d.component,
+            datum=d.datum,
+            path=next(paths) if d.segment is not None else None,
         )
         for d in drafts
     ]

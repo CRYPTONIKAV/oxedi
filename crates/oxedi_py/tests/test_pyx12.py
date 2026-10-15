@@ -1106,3 +1106,22 @@ def test_a_spec_that_is_not_a_spec_is_refused():
     with pytest.raises(TypeError) as exc:
         validate(balanced_5010(), spec="nope")
     assert str(exc.value) == "validate: spec must be an oxedi.Spec or None, not str"
+
+
+def test_draft_rejects_a_misspelled_field_at_construction():
+    from oxedi.pyx12._validate import Draft
+
+    with pytest.raises(TypeError):
+        Draft(message="m", level=1, segment=1, own_textt=True)
+
+
+def test_draft_is_immutable_and_tracks_own_text_without_a_parallel_list():
+    from oxedi.pyx12._validate import Draft
+
+    draft = Draft(message="m", level=1, segment=2)
+    with pytest.raises(AttributeError):
+        draft.message = "x"  # type: ignore[misc]
+
+    assert draft.own_text is False
+    flagged = Draft(message="m", level=1, segment=2, own_text=True)
+    assert flagged.own_text is True
