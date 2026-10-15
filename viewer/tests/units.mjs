@@ -55,5 +55,5 @@ assert.equal(errorMessage(42), '42');
 assert.equal(formatSize(512), '512 bytes');
 assert.equal(formatSize(1536), '1.5 KB');
 assert.equal(formatSize(25 * 1024 * 1024), '25.0 MB');
-assert.deepEqual(SNIP_LEVELS, ['SNIP 1', 'SNIP 2', 'SNIP 3']);
+assert.deepStrictEqual(SNIP_LEVELS, ['SNIP 1', 'SNIP 2', 'SNIP 3']);
 console.log('units ok');
