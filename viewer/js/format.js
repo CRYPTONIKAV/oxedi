@@ -14,4 +14,4 @@ export function formatSize(size) {
 }
 
 /** The SNIP levels every diagnostics view groups by. */
-export const SNIP_LEVELS = ['SNIP 1', 'SNIP 2', 'SNIP 3'];
+export const SNIP_LEVELS = Object.freeze(['SNIP 1', 'SNIP 2', 'SNIP 3']);
