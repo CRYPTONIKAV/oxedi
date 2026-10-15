@@ -1,5 +1,6 @@
 // Reading a file, parsing it with the module and reporting progress or errors.
 
+import { errorMessage, formatSize } from './format.js';
 export const CONFIRM_BYTES = 20 * 1024 * 1024;
 
 /** True when the file is large enough that the user should confirm first. */
@@ -8,10 +9,6 @@ export function needsConfirmation(file) {
 }
 
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
-
-function megabytes(size) {
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * @param {object} options
@@ -45,7 +42,7 @@ export function createLoader({ parse, maskKey = () => undefined, status, alert, 
     } catch (err) {
       if (mine === ticket) {
         status.hidden = true;
-        fail(`${src.name}: could not be read (${err instanceof Error ? err.message : String(err)})`);
+        fail(`${src.name}: could not be read (${errorMessage(err)})`);
       }
       return;
     }
@@ -58,7 +55,7 @@ export function createLoader({ parse, maskKey = () => undefined, status, alert, 
       if (mine !== ticket) return;
       onLoad({ name: src.name, size: bytes.length, bytes, view, source: src });
     } catch (err) {
-      if (mine === ticket) fail(`${src.name}: ${err instanceof Error ? err.message : String(err)}`);
+      if (mine === ticket) fail(`${src.name}: ${errorMessage(err)}`);
     } finally {
       if (mine === ticket) status.hidden = true;
     }
@@ -72,7 +69,7 @@ export function createLoader({ parse, maskKey = () => undefined, status, alert, 
   async function loadFile(file) {
     if (needsConfirmation(file)) {
       const ok = window.confirm(
-        `${file.name} is ${megabytes(file.size)}. Parsing a file this large can take a while and use a lot of memory. Continue?`,
+        `${file.name} is ${formatSize(file.size)}. Parsing a file this large can take a while and use a lot of memory. Continue?`,
       );
       if (!ok) return;
     }

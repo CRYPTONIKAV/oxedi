@@ -2,7 +2,7 @@
 
 import { el } from './dom.js';
 
-const LEVELS = ['SNIP 1', 'SNIP 2', 'SNIP 3'];
+import { SNIP_LEVELS as LEVELS } from './format.js';
 const PAGE = 200;
 
 /**

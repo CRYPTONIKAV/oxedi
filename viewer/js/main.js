@@ -6,6 +6,7 @@ import { createTables } from './tables.js';
 import { createDiagnostics } from './diagnostics.js';
 import { createText } from './text.js';
 import { createTree } from './tree.js';
+import { errorMessage } from './format.js';
 
 const $ = (id) => document.getElementById(id);
 const TABS = ['summary', 'tables', 'diagnostics', 'text', 'loops'];
@@ -105,7 +106,7 @@ async function start() {
   try {
     module = await import('../pkg/index.js');
   } catch (err) {
-    fail(`The WebAssembly module could not be loaded (${err instanceof Error ? err.message : String(err)}). If you build this page yourself, run "make wasm" first.`);
+    fail(`The WebAssembly module could not be loaded (${errorMessage(err)}). If you build this page yourself, run "make wasm" first.`);
     return;
   }
   $('version').textContent = `v${module.version()}`;
@@ -161,7 +162,7 @@ async function start() {
       const { SAMPLE, SAMPLE_NAME } = await import('../pkg/sample.js');
       loader.loadBytes(SAMPLE_NAME, SAMPLE);
     } catch (err) {
-      fail(`The sample could not be loaded (${err instanceof Error ? err.message : String(err)}). If you build this page yourself, run "make wasm" first.`);
+      fail(`The sample could not be loaded (${errorMessage(err)}). If you build this page yourself, run "make wasm" first.`);
     }
   });
 }

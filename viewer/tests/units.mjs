@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { toCsv } from '../js/tables.js';
 import { bodyRange, decode, elementRange, loopPath, visible } from '../js/bytes.js';
 import { needsConfirmation, CONFIRM_BYTES } from '../js/load.js';
+import { errorMessage, formatSize, SNIP_LEVELS } from '../js/format.js';
 
 assert.equal(toCsv(['a', 'b'], [['x', null], ['1,2', 'say "hi"'], ['l1\nl2', '']]),
   'a,b\r\nx,\r\n"1,2","say ""hi"""\r\n"l1\nl2",\r\n');
@@ -48,4 +49,11 @@ const repView = {
 assert.equal(decode(rep, ...elementRange(rep, repView, 0, 1, 2)), 'B');
 assert.equal(decode(rep, ...elementRange(rep, repView, 0, 1)), 'A:B^C:D');
 assert.deepEqual(loopPath(view, 0), []);
+assert.equal(errorMessage(new Error('boom')), 'boom');
+assert.equal(errorMessage('plain'), 'plain');
+assert.equal(errorMessage(42), '42');
+assert.equal(formatSize(512), '512 bytes');
+assert.equal(formatSize(1536), '1.5 KB');
+assert.equal(formatSize(25 * 1024 * 1024), '25.0 MB');
+assert.deepEqual(SNIP_LEVELS, ['SNIP 1', 'SNIP 2', 'SNIP 3']);
 console.log('units ok');

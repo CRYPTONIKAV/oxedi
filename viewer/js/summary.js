@@ -1,6 +1,7 @@
 // The Summary tab: one card per payment and the file's counts.
 
 import { el } from './dom.js';
+import { formatSize, SNIP_LEVELS } from './format.js';
 
 const MAX_CARDS = 50;
 
@@ -21,12 +22,6 @@ const join = (name, id) => {
   return name || id || null;
 };
 
-function formatSize(size) {
-  if (size < 1024) return `${size} bytes`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export function renderSummary(root, { name, size, view }) {
   root.textContent = '';
   const table = (n) => view.tables.find((t) => t.name === n);
@@ -35,7 +30,7 @@ export function renderSummary(root, { name, size, view }) {
 
   const facts = el('dl', 'facts');
   const show = (v) => (v === null ? '—' : String(v));
-  const levels = ['SNIP 1', 'SNIP 2', 'SNIP 3']
+  const levels = SNIP_LEVELS
     .map((l) => [l, view.diagnostics.filter((d) => d.level === l).length])
     .map(([l, c]) => `${l}: ${c}`)
     .join(' · ');
