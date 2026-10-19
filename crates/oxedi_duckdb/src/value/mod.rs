@@ -118,8 +118,11 @@ unsafe fn type_name(logical_type: ffi::duckdb_logical_type) -> String {
             format!("{name}[]")
         };
     }
-    primitive_name(id).to_owned()
+    primitive_name_or_id(id)
 }
+
+/// What [`primitive_name`] answers for a kind this crate does not name yet.
+pub const UNNAMED: &str = "a type without a primitive name";
 
 /// The SQL name of a type id.
 pub fn primitive_name(id: ffi::DUCKDB_TYPE) -> &'static str {
@@ -161,7 +164,19 @@ pub fn primitive_name(id: ffi::DUCKDB_TYPE) -> &'static str {
         ffi::DUCKDB_TYPE_DUCKDB_TYPE_UNION => "UNION",
         ffi::DUCKDB_TYPE_DUCKDB_TYPE_ENUM => "ENUM",
         ffi::DUCKDB_TYPE_DUCKDB_TYPE_SQLNULL => "NULL",
-        _ => "a type without a primitive name",
+        _ => UNNAMED,
+    }
+}
+
+/// [`primitive_name`], but for messages: a kind this crate does not name yet is
+/// the refusal **with its id**, so a type DuckDB adds in a later version says
+/// which one to name instead of dead-ending on a sentence.
+pub fn primitive_name_or_id(id: ffi::DUCKDB_TYPE) -> String {
+    let name = primitive_name(id);
+    if name == UNNAMED {
+        format!("{} (DuckDB type id {id})", UNNAMED)
+    } else {
+        name.to_owned()
     }
 }
 

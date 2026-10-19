@@ -13,7 +13,7 @@ use oxedi_core::write::WriteError;
 use super::error::CopyError;
 use crate::builtins::{Builtin, BuiltinTable};
 use crate::types::LogicalType;
-use crate::value::{primitive_name, take_text};
+use crate::value::{primitive_name_or_id, take_text};
 
 /// The DuckDB type of a struct field, as far as conversion cares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -472,6 +472,6 @@ unsafe fn sql_name(logical_type: ffi::duckdb_logical_type) -> String {
                 .collect();
             format!("STRUCT({})", parts.join(", "))
         }
-        _ => primitive_name(id).to_owned(),
+        _ => primitive_name_or_id(id),
     }
 }
